@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+import sys
+sys.path.append('/usr/local/lib/python2.7/dist-packages')
+import cv2
+import go_vncdriver
+import tensorflow as tf
+import argparse
+import logging
+import os
+from a3c import A3C
+from envs import create_env, if_log_scan_path_global, if_log_cc_global
+from config import cluster_host, cluster_name, cluster_main, model_to_restore, if_restore_model, num_workers_total_global, cluster_current
+import time
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Disables write_meta_graph argument, which freezes entire process and is mostly useless.
+class FastSaver(tf.train.Saver):
+    def save(self, sess, save_path, global_step=None, latest_filename=None,
+             meta_graph_suffix="meta", write_meta_graph=True):
+        super(FastSaver, self).save(sess, save_path, global_step, latest_filename,
+                                    meta_graph_suffix, False)
+
+def run(args, server):
+    if((if_log_scan_path_global==True)and(args.if_log=='True')):
+        if_log_scan_path = True
+    else:
+        if_log_scan_path = False
+    if((if_log_cc_global==True)and(args.if_log=='True')):
+        if_log_cc = True
+    else:
+        if_log_cc = False
+    env = create_env(args.env_id,
+                     client_id=str(args.task),
+                     remotes=args.remotes,
+                     id_ff = args.id_ff,
+                     select=args.select,
+                     if_log_scan_path=if_log_scan_path,
+                     if_log_cc=if_log_cc)
+    trainer = A3C(args.consi_depth, env, args.env_id, args.task)
+
+    # Variable names that start with "local" are not saved in checkpoints.
+    variables_to_save = [v for v in tf.global_variables() if not v.name.startswith("local")]
+    init_op = tf.variables_initializer(variables_to_save)
+    init_all_op = tf.global_variables_initializer()
+    saver = FastSaver(variables_to_save)
+
+    variables_to_restore = [v for v in tf.all_variables() if v.name.startswith("global")]
+    pre_train_saver = FastSaver(variables_to_restore)
+    def init_fn(ses):
+        logger.info("Initializing all parameters.")
+        ses.run(init_all_op)
+        if (if_restore_model==True) and (cluster_current==cluster_main):
+            '''restore is only needed fot main cluster'''
+            restore_path = model_to_restore
+            print('restore model from:'+restore_path)
+            pre_train_saver.restore(ses,
+                                    restore_path)
+
+    config = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
+    logdir = os.path.join(args.log_dir, 'train')
+    summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
+    logger.info("Events directory: %s_%s", logdir, args.task)
+    # tf.Session(server.target, config=config).run(tf.global_variables_initializer())
+    sv = tf.train.Supervisor(is_chief=(args.task == 0),
+                             logdir=logdir,
+                             saver=saver,
+                             summary_op=None,
+                             init_op=init_op,
+                             init_fn=init_fn,
+                             summary_writer=summary_writer,
+                             ready_op=tf.report_uninitialized_variables(variables_to_save),
+                             global_step=trainer.global_step,
+                             save_model_secs=30,
+                             save_summaries_secs=30)
+
+    # num_global_steps = 100000000 ** 100000000
+
+    logger.info(
+        "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
+        "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
+    with sv.managed_session(server.target, config=config) as sess:
+        trainer.start(sess, summary_writer)
+        global_step = sess.run(trainer.global_step)
+        logger.info("Starting training at step=%d", global_step)
+        while not sv.should_stop() and True:
+            trainer.process(sess)
+            global_step = sess.run(trainer.global_step)
+
+    # Ask for all the services to stop.
+    sv.stop()
+    logger.info('reached %s steps. worker stopped.', global_step)
+
+def cluster_spec(num_workers, num_ps):
+    """
+More tensorflow setup for data parallelism
+"""
+    cluster = {}
+    port = 12222
+
+    all_ps = []
+
+    host = cluster_host[cluster_main]
+    for _ in range(num_ps):
+        all_ps.append('{}:{}'.format(host, port))
+        port += 1
+    cluster['ps'] = all_ps
+
+    all_workers = []
+    for host in cluster_host:
+        for _ in range(num_workers):
+            all_workers.append('{}:{}'.format(host, port))
+            port += 1
+    cluster['worker'] = all_workers
+
+    return cluster
+
+def main(_):
+    """
+Setting up Tensorflow for data parallel work
+"""
+
+    parser = argparse.ArgumentParser(description=None)
+    parser.add_argument('-v', '--verbose', action='count', dest='verbosity', default=0, help='Set verbosity.')
+    parser.add_argument('--task', default=0, type=int, help='Task index')
+    parser.add_argument('--job-name', default="worker", help='worker or ps')
+    parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
+    parser.add_argument('-d', '--consi-depth', type=int, default=1,
+                        help="hyper paramter: depth of the consciousness")
+    parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
+    parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
+    parser.add_argument('--select', default=0, type=int, help='select id')
+    parser.add_argument('--id-ff', default='Movie/Help', help='Environment id ff')
+    parser.add_argument('--if-log', default='False', help='if the worker is a log thread')
+    parser.add_argument('-r', '--remotes', default=None,
+                        help='References to environments to create (e.g. -r 20), '
+                             'or the address of pre-existing VNC servers and '
+                             'rewarders to use (e.g. -r vnc://localhost:5900+15900,vnc://localhost:5901+15901)')
+
+    args = parser.parse_args()
+    spec = cluster_spec(args.num_workers, 1)
+    cluster = tf.train.ClusterSpec(spec).as_cluster_def()
+
+
+    if args.job_name == "worker":
+        server = tf.train.Server(cluster, job_name="worker", task_index=args.task,
+                                 config=tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=2))
+        run(args, server)
+    else:
+        server = tf.train.Server(cluster, job_name="ps", task_index=args.task,
+                                 config=tf.ConfigProto(device_filters=["/job:ps"]))
+
+        server.join()
+
+if __name__ == "__main__":
+    tf.app.run()

@@ -10,14 +10,9 @@ from socket import *
 import struct
 import time
 from numpy import array
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import subprocess
 import copy
-
-from envs import terminal_type_far_away, terminal_type_meet_end
-from config import num_workers_total_global, update_step, cluster_current, cluster_main
+import config
 
 DebugInModel = False
 GAMMA = 0.99
@@ -144,7 +139,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     the policy, and as long as the rollout exceeds a certain length, the thread
     runner appends the policy to the queue.
     """
-    last_state = env.reset(terminal_type=terminal_type_meet_end)
+    last_state = env.reset()
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0
@@ -152,7 +147,11 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     max_reward = 1.0
 
     have_been_run = 0
-    detecting = False # set to false to shut down reward detecting
+
+    if config.if_reward_auto_normalize is True:
+        detecting = True
+    else:
+        detecting = False
 
     while True:
 
@@ -164,7 +163,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             action, value_, features = fetched[0], fetched[1], fetched[2:]
 
             # argmax to convert from one-hot
-            state, reward, terminal, info, terminal_type, env_id_ff = env.step(action.argmax())
+            state, reward, terminal, info = env.step(action.argmax())
             reward, max_reward = reward_auto_nomalize(reward, max_reward, detecting)
 
             # collect the experience
@@ -181,26 +180,18 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 summary = tf.Summary()
                 for k, v in info.items():
                     '''YuhangSong: here we add game id to compare different games in different graph'''
-                    k = env_id_ff + "/" + k
+                    k = env_id + "/" + k
                     summary.value.add(tag=k, simple_value=float(v))
                 summary_writer.add_summary(summary, policy.global_step.eval())
                 summary_writer.flush()
 
-
-            if terminal:
+            timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
+            if terminal or length >= timestep_limit:
                 terminal_end = True
-                if(detecting==True):
-                    have_been_run += 1
-                    if(have_been_run>AutoDedectingEpisode):
-                        detecting=False
-                if(terminal_type==terminal_type_meet_end):
-                    terminal_type_string = 'terminal_type_meet_end'
-                elif(terminal_type==terminal_type_far_away):
-                    terminal_type_string = 'terminal_type_far_away'
-                elif(terminal_type==None):
-                    terminal_type_string = 'None'
+                if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
+                    last_state = env.reset()
                 last_features = policy.get_initial_features()
-                print("Episode finished. Sum of rewards: %d. Length: %d RewardNormalize: %f Detecting: %s terminal_type: %s" % (rewards, length, (1.0/max_reward), detecting, terminal_type_string))
+                print("Episode finished. Sum of rewards: %d. Length: %d RewardNormalize: %f Detecting: %s " % (rewards, length, (1.0/max_reward), detecting))
                 length = 0
                 rewards = 0
                 break
@@ -264,13 +255,13 @@ should be computed.
             bs = tf.to_float(tf.shape(pi.x)[0])
             self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
 
-            # update_step represents the number of "local steps":  the number of timesteps
+            # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
             # The larger local steps is, the lower is the variance in our policy gradients estimate
             # on the one hand;  but on the other hand, we get less frequent parameter updates, which
             # slows down learning.  In this code, we found that making local steps be much
             # smaller than 20 makes the algorithm more difficult to tune and to get to work.
-            self.runner = RunnerThread(env, env_id, pi, update_step, self.log_thread)
+            self.runner = RunnerThread(env, env_id, pi, config.update_step, self.log_thread)
 
 
             grads = tf.gradients(self.loss, pi.var_list)
@@ -298,11 +289,15 @@ should be computed.
             self.local_steps = 0
 
     def start(self, sess, summary_writer):
-        if(cluster_current!=cluster_main):
-            print('this is not cluster_main, async from global network before start interaction and training')
+        if(self.task!=0):
+            print('this is not task 0, async from global network before start interaction and training')
             sess.run(self.sync)  # copy weights from shared to local
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
+
+        print('before start mix exp')
+        subprocess.call(["rm", "-r", config.mix_exp_temp_dir])
+        subprocess.call(["mkdir", config.mix_exp_temp_dir])
 
     def pull_batch_from_queue(self):
         """
@@ -318,10 +313,10 @@ self explanatory:  take a rollout from the queue of the thread runner.
 
     def process(self, sess):
         """
-process grabs a rollout that's been produced by the thread runner,
-and updates the parameters.  The update is then sent to the parameter
-server.
-"""
+        process grabs a rollout that's been produced by the thread runner,
+        and updates the parameters.  The update is then sent to the parameter
+        server.
+        """
 
         sess.run(self.sync)  # copy weights from shared to local
         rollout = self.pull_batch_from_queue()
@@ -334,33 +329,8 @@ server.
         else:
             fetches = [self.train_op, self.global_step]
 
-        '''
-        ##################################################################
-        '''
-
-
         '''get batch_size'''
         batch_size = np.shape(batch.si)[0]
-
-        '''
-        ##########################mix experience#####################
-        '''
-        print("===========================mix exp==============================")
-
-        '''save'''
-        file_name = str(self.task)+'.npz'
-
-        try:
-            np.savez(file_name,
-                     batch_si=batch.si,
-                     batch_a=batch.a,
-                     batch_adv=batch.adv,
-                     batch_r=batch.r,
-                     batch_features_0=batch.features_0,
-                     batch_features_1=batch.features_1)
-
-        except Exception:
-            print('\tsave failed, go over\t')
 
         '''load current one'''
         batch_si=batch.si
@@ -373,50 +343,69 @@ server.
         print('\tload ok for task:\t'+str(self.task)+'\tsized:\t'+str(np.shape(batch.si)[0]))
         step_forward = np.shape(batch.si)[0]
 
-        '''load exp from other exp'''
-        for task_i in range(num_workers_total_global):
+        if config.if_mix_exp is True:
 
-            if(task_i==self.task):
-                continue
+            print("===========================mix exp==============================")
 
-            else:
+            '''save'''
+            file_name = config.mix_exp_temp_dir + str(self.task) + '.npz'
 
-                file_name = str(task_i)+'.npz'
+            try:
+                np.savez(file_name,
+                         batch_si=batch.si,
+                         batch_a=batch.a,
+                         batch_adv=batch.adv,
+                         batch_r=batch.r,
+                         batch_features_0=batch.features_0,
+                         batch_features_1=batch.features_1)
 
-                try:
-                    data = np.load(file_name)
+            except Exception:
+                print('\tsave failed, go over\t')
 
-                except Exception:
-                    print('\tload failed for task:\t'+str(task_i)+'\tgo over\t')
+            '''load exp from other exp'''
+            for task_i in range(config.num_workers_total_global):
+
+                if(task_i==self.task):
                     continue
 
-                try:
-                    '''temp data, for this could be wrong'''
-                    batch_si_temp = np.concatenate((batch_si, data['batch_si']), axis=0)
-                    batch_a_temp = np.concatenate((batch_a, data['batch_a']), axis=0)
-                    batch_adv_temp = np.concatenate((batch_adv, data['batch_adv']), axis=0)
-                    batch_r_temp = np.concatenate((batch_r, data['batch_r']), axis=0)
-                    batch_features_0_temp = np.concatenate((batch_features_0, data['batch_features_0']), axis=0)
-                    batch_features_1_temp = np.concatenate((batch_features_1, data['batch_features_1']), axis=0)
+                else:
 
-                    '''if not wrong'''
-                    batch_si = batch_si_temp
-                    batch_a = batch_a_temp
-                    batch_adv = batch_adv_temp
-                    batch_r = batch_r_temp
-                    batch_features_0 = batch_features_0_temp
-                    batch_features_1 = batch_features_1_temp
+                    file_name = config.mix_exp_temp_dir + str(task_i) + '.npz'
 
-                    print('\tload ok for task:\t'+str(task_i)+'\tsized:\t'+str(np.shape(data['batch_si'])[0]))
-                    data.close()
+                    try:
+                        data = np.load(file_name)
 
-                except Exception:
-                    print('\twrong data in task:\t'+str(task_i)+'\tgo over\t')
-                    data.close()
-                    continue
+                    except Exception:
+                        print('\tload failed for task:\t'+str(task_i)+'\tgo over\t')
+                        continue
 
-        print('\tload all sized:\t'+str(np.shape(batch_si)[0]))
-        print("==================================================================")
+                    try:
+                        '''temp data, for this could be wrong'''
+                        batch_si_temp = np.concatenate((batch_si, data['batch_si']), axis=0)
+                        batch_a_temp = np.concatenate((batch_a, data['batch_a']), axis=0)
+                        batch_adv_temp = np.concatenate((batch_adv, data['batch_adv']), axis=0)
+                        batch_r_temp = np.concatenate((batch_r, data['batch_r']), axis=0)
+                        batch_features_0_temp = np.concatenate((batch_features_0, data['batch_features_0']), axis=0)
+                        batch_features_1_temp = np.concatenate((batch_features_1, data['batch_features_1']), axis=0)
+
+                        '''if not wrong'''
+                        batch_si = batch_si_temp
+                        batch_a = batch_a_temp
+                        batch_adv = batch_adv_temp
+                        batch_r = batch_r_temp
+                        batch_features_0 = batch_features_0_temp
+                        batch_features_1 = batch_features_1_temp
+
+                        print('\tload ok for task:\t'+str(task_i)+'\tsized:\t'+str(np.shape(data['batch_si'])[0]))
+                        data.close()
+
+                    except Exception:
+                        print('\twrong data in task:\t'+str(task_i)+'\tgo over\t')
+                        data.close()
+                        continue
+
+            print('\tload all sized:\t'+str(np.shape(batch_si)[0]))
+            print("==================================================================")
         '''
         ##################################################################
         '''

@@ -8,8 +8,8 @@ import argparse
 import logging
 import os
 from a3c import A3C
-from envs import create_env, if_log_scan_path_global, if_log_cc_global
-from config import cluster_host, cluster_name, cluster_main, model_to_restore, if_restore_model, num_workers_total_global, cluster_current
+from envs import create_env
+import config
 import time
 
 logger = logging.getLogger(__name__)
@@ -23,21 +23,12 @@ class FastSaver(tf.train.Saver):
                                     meta_graph_suffix, False)
 
 def run(args, server):
-    if((if_log_scan_path_global==True)and(args.if_log=='True')):
-        if_log_scan_path = True
-    else:
-        if_log_scan_path = False
-    if((if_log_cc_global==True)and(args.if_log=='True')):
-        if_log_cc = True
-    else:
-        if_log_cc = False
+
     env = create_env(args.env_id,
                      client_id=str(args.task),
                      remotes=args.remotes,
-                     id_ff = args.id_ff,
-                     select=args.select,
-                     if_log_scan_path=if_log_scan_path,
-                     if_log_cc=if_log_cc)
+                     select=args.select)
+
     trainer = A3C(args.consi_depth, env, args.env_id, args.task)
 
     # Variable names that start with "local" are not saved in checkpoints.
@@ -51,18 +42,18 @@ def run(args, server):
     def init_fn(ses):
         logger.info("Initializing all parameters.")
         ses.run(init_all_op)
-        if (if_restore_model==True) and (cluster_current==cluster_main):
-            '''restore is only needed fot main cluster'''
-            restore_path = model_to_restore
-            print('restore model from:'+restore_path)
-            pre_train_saver.restore(ses,
-                                    restore_path)
+        # if (config.if_restore_model==True) and (config.cluster_current==config.cluster_main):
+        #     '''restore is only needed fot main cluster'''
+        #     restore_path = config.model_to_restore
+        #     print('restore model from:'+restore_path)
+        #     pre_train_saver.restore(ses,
+        #                             restore_path)
 
-    config = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
+    config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
     logdir = os.path.join(args.log_dir, 'train')
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
-    # tf.Session(server.target, config=config).run(tf.global_variables_initializer())
+    # tf.Session(server.target, config=config_tf).run(tf.global_variables_initializer())
     sv = tf.train.Supervisor(is_chief=(args.task == 0),
                              logdir=logdir,
                              saver=saver,
@@ -80,7 +71,7 @@ def run(args, server):
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
         "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
-    with sv.managed_session(server.target, config=config) as sess:
+    with sv.managed_session(server.target, config=config_tf) as sess:
         trainer.start(sess, summary_writer)
         global_step = sess.run(trainer.global_step)
         logger.info("Starting training at step=%d", global_step)
@@ -101,14 +92,14 @@ More tensorflow setup for data parallelism
 
     all_ps = []
 
-    host = cluster_host[cluster_main]
+    host = config.cluster_host[config.cluster_main]
     for _ in range(num_ps):
         all_ps.append('{}:{}'.format(host, port))
         port += 1
     cluster['ps'] = all_ps
 
     all_workers = []
-    for host in cluster_host:
+    for host in config.cluster_host:
         for _ in range(num_workers):
             all_workers.append('{}:{}'.format(host, port))
             port += 1
@@ -131,8 +122,6 @@ Setting up Tensorflow for data parallel work
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
     parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
     parser.add_argument('--select', default=0, type=int, help='select id')
-    parser.add_argument('--id-ff', default='Movie/Help', help='Environment id ff')
-    parser.add_argument('--if-log', default='False', help='if the worker is a log thread')
     parser.add_argument('-r', '--remotes', default=None,
                         help='References to environments to create (e.g. -r 20), '
                              'or the address of pre-existing VNC servers and '

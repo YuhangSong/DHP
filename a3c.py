@@ -17,20 +17,13 @@ import config
 DebugInModel = False
 GAMMA = 0.99
 
-'''
-Coder: YuhangSong
-Description: auto detect reward normalize lenth.
-             we think 15 will be fine
-'''
-AutoDedectingEpisode = 2
-
 def discount(x, gamma):
     return scipy.signal.lfilter([1], [1, -gamma], x[::-1], axis=0)[::-1]
 
 def process_rollout(rollout, gamma, lambda_=1.0):
     """
-given a rollout, compute its returns and the advantage
-"""
+    given a rollout, compute its returns and the advantage
+    """
     batch_si = np.asarray(rollout.states, dtype=np.float32)
     batch_a = np.asarray(rollout.actions)
     rewards = np.asarray(rollout.rewards)
@@ -56,9 +49,9 @@ Batch = namedtuple("Batch", ["si", "a", "adv", "r", "terminal", "features_0", "f
 
 class PartialRollout(object):
     """
-a piece of a complete rollout.  We run our agent, and process its experience
-once it has processed enough steps.
-"""
+    a piece of a complete rollout.  We run our agent, and process its experience
+    once it has processed enough steps.
+    """
     def __init__(self):
         self.states = []
         self.actions = []
@@ -91,10 +84,10 @@ once it has processed enough steps.
 
 class RunnerThread(threading.Thread):
     """
-One of the key distinctions between a normal environment and a universe environment
-is that a universe environment is _real time_.  This means that there should be a thread
-that would constantly interact with the environment and tell it what to do.  This thread is here.
-"""
+    One of the key distinctions between a normal environment and a universe environment
+    is that a universe environment is _real time_.  This means that there should be a thread
+    that would constantly interact with the environment and tell it what to do.  This thread is here.
+    """
     def __init__(self, env, env_id, policy, num_local_steps, log_thread):
         threading.Thread.__init__(self)
         self.queue = queue.Queue(5)
@@ -126,13 +119,6 @@ that would constantly interact with the environment and tell it what to do.  Thi
 
             self.queue.put(next(rollout_provider), timeout=600.0)
 
-
-def reward_auto_nomalize(reward, max_reward, detecting):
-    if(detecting==True):
-        if(abs(reward)>max_reward):
-            max_reward = abs(reward)
-    return (reward / max_reward), max_reward
-
 def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread):
     """
     The logic of the thread runner.  In brief, it constantly keeps on running
@@ -143,15 +129,6 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0
-
-    max_reward = 1.0
-
-    have_been_run = 0
-
-    if config.if_reward_auto_normalize is True:
-        detecting = True
-    else:
-        detecting = False
 
     while True:
 
@@ -164,7 +141,6 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
 
             # argmax to convert from one-hot
             state, reward, terminal, info = env.step(action.argmax())
-            reward, max_reward = reward_auto_nomalize(reward, max_reward, detecting)
 
             # collect the experience
             last_features_0 = last_features[0][0]
@@ -191,7 +167,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
                     last_state = env.reset()
                 last_features = policy.get_initial_features()
-                print("Episode finished. Sum of rewards: %d. Length: %d RewardNormalize: %f Detecting: %s " % (rewards, length, (1.0/max_reward), detecting))
+                print("Episode finished. Sum of rewards: %d. Length: %d" % (rewards, length))
                 length = 0
                 rewards = 0
                 break
@@ -200,17 +176,16 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             rollout.r = policy.value(last_state, *last_features)
 
         '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
-        if(detecting==False):
-            yield rollout
+        yield rollout
 
 class A3C(object):
     def __init__(self, consi_depth, env, env_id, task):
         """
-An implementation of the A3C algorithm that is reasonably well-tuned for the VNC environments.
-Below, we will have a modest amount of complexity due to the way TensorFlow handles data parallelism.
-But overall, we'll define the model, specify its inputs, and describe how the policy gradients step
-should be computed.
-"""
+        An implementation of the A3C algorithm that is reasonably well-tuned for the VNC environments.
+        Below, we will have a modest amount of complexity due to the way TensorFlow handles data parallelism.
+        But overall, we'll define the model, specify its inputs, and describe how the policy gradients step
+        should be computed.
+        """
 
         self.env = env
         self.env_id = env_id
@@ -226,13 +201,13 @@ should be computed.
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
             with tf.variable_scope("global"):
-                self.network = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n)
+                self.network = LSTMPolicy(self.consi_depth, env.observation_space.shape, self.env_id)
                 self.global_step = tf.get_variable("global_step", [], tf.int32, initializer=tf.zeros_initializer(),
                                                    trainable=False)
 
         with tf.device(worker_device):
             with tf.variable_scope("local"):
-                self.local_network = pi = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n)
+                self.local_network = pi = LSTMPolicy(self.consi_depth, env.observation_space.shape, self.env_id)
                 pi.global_step = self.global_step
 
             self.ac = tf.placeholder(tf.float32, [None, env.action_space.n], name="ac")
@@ -240,8 +215,8 @@ should be computed.
             self.r = tf.placeholder(tf.float32, [None], name="r")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
 
-            log_prob_tf = tf.nn.log_softmax(pi.logits)
-            prob_tf = tf.nn.softmax(pi.logits)
+            log_prob_tf = tf.nn.log_softmax(pi.logits[self.env_id])
+            prob_tf = tf.nn.softmax(pi.logits[self.env_id])
 
             # the "policy gradients" loss:  its derivative is precisely the policy gradient
             # notice that self.ac is a placeholder that is provided externally.
@@ -249,7 +224,7 @@ should be computed.
             pi_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * self.ac, [1]) * self.adv)
 
             # loss of value function
-            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.r))
+            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf[self.env_id] - self.r))
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
             bs = tf.to_float(tf.shape(pi.x)[0])
@@ -266,12 +241,11 @@ should be computed.
 
             grads = tf.gradients(self.loss, pi.var_list)
 
-            tf.summary.scalar("model/policy_loss", pi_loss / bs)
-            tf.summary.scalar("model/value_loss", vf_loss / bs)
-            tf.summary.scalar("model/entropy", entropy / bs)
-            tf.summary.image("model/state", pi.x)
-            tf.summary.scalar("model/grad_global_norm", tf.global_norm(grads))
-            tf.summary.scalar("model/var_global_norm", tf.global_norm(pi.var_list))
+            tf.summary.scalar(self.env_id+"/model/policy_loss", pi_loss / bs)
+            tf.summary.scalar(self.env_id+"/model/value_loss", vf_loss / bs)
+            tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
+            tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
+            tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
 
             self.summary_op = tf.summary.merge_all()
             grads, _ = tf.clip_by_global_norm(grads, 40.0)
@@ -301,8 +275,8 @@ should be computed.
 
     def pull_batch_from_queue(self):
         """
-self explanatory:  take a rollout from the queue of the thread runner.
-"""
+        self explanatory:  take a rollout from the queue of the thread runner.
+        """
         rollout = self.runner.queue.get(timeout=self.time_limit)
         while not rollout.terminal:
             try:
@@ -322,7 +296,7 @@ self explanatory:  take a rollout from the queue of the thread runner.
         rollout = self.pull_batch_from_queue()
         batch = process_rollout(rollout, gamma=GAMMA, lambda_=1.0)
 
-        should_compute_summary = self.task == 0 and self.local_steps % 11 == 0
+        should_compute_summary = self.task%config.num_workers_global == 0 and self.local_steps % 11 == 0
 
         if should_compute_summary:
             fetches = [self.summary_op, self.train_op, self.global_step]

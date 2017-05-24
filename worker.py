@@ -85,8 +85,8 @@ def run(args, server):
 
 def cluster_spec(num_workers, num_ps):
     """
-More tensorflow setup for data parallelism
-"""
+    More tensorflow setup for data parallelism
+    """
     cluster = {}
     port = 12222
 

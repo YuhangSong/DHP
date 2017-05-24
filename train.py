@@ -3,6 +3,7 @@ import os
 import sys
 import gym
 import config
+import copy
 
 parser = argparse.ArgumentParser(description="Run commands")
 
@@ -41,19 +42,6 @@ parser.add_argument('-v', '--game-version', type=str, default="Deterministic-v3"
 parser.add_argument('-l', '--log-dir', type=str, default="../../result/"+config.basic_log_dir+config.status+"/" + parser.parse_args().exp_id,
                     help="Log directory path")
 
-def get_env_seq():
-
-    env_seq_id = config.game_dic
-
-    print("Total Games:" + str(len(env_seq_id)))
-
-    for i in range(len(env_seq_id)):
-        name = ''.join([g.capitalize() for g in env_seq_id[i].split('_')])
-        env_seq_id[i] = '{}Deterministic-v3'.format(name)
-
-    return env_seq_id
-
-
 def new_tmux_cmd(session, name, cmd):
     if isinstance(cmd, (list, tuple)):
         cmd = " ".join(str(v) for v in cmd)
@@ -66,7 +54,7 @@ def create_tmux_commands(session, consi_depth, num_workers_per_game, num_games, 
     Coder: YuhangSong
     Description: specific sequence of games to run
     '''
-    env_seq_id = get_env_seq()
+    env_seq_id = config.get_env_seq(config.game_dic)
 
     num_workers = num_workers_per_game * num_games
     # for launching the TF workers and for launching tensorboard

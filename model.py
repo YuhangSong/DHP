@@ -2,6 +2,10 @@ import numpy as np
 import tensorflow as tf
 import numpy as np
 import random
+import copy
+
+import envs
+
 import config
 
 '''
@@ -62,15 +66,16 @@ def categorical_sample(logits, d):
 
 class LSTMPolicy(object):
 
-    def __init__(self, consi_depth, ob_space, ac_space):
+    def __init__(self, consi_depth, ob_space, id_for_this_model):
+
+        self.id_for_this_model = id_for_this_model
+
         self.x = x = tf.placeholder(tf.float32, [None] + list(ob_space))
 
         for i in range(4):
             x = tf.nn.elu(conv2d(x, 32, "l{}".format(i + 1), [3, 3], [2, 2]))
 
         x = tf.expand_dims(flatten(x), 1)
-        # x = tf.expand_dims(flatten(x), [0])
-        print(x)
 
         size = 256
         lstm = tf.contrib.rnn.BasicLSTMCell(size, state_is_tuple=True)
@@ -99,24 +104,32 @@ class LSTMPolicy(object):
 
         x = tf.reshape(lstm_outputs, [-1, size])
 
-        self.logits = linear(x, ac_space, "action", normalized_columns_initializer(0.01))
-        self.vf = tf.reshape(linear(x, 1, "value", normalized_columns_initializer(1.0)), [-1])
-        self.state_out = [lstm_c[:1, :], lstm_h[:1, :]]
-        self.sample = categorical_sample(self.logits, ac_space)[0, :]
-        self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
+        '''every game has its own logits and sample'''
+        self.logits = {}
+        self.sample = {}
+        self.vf = {}
+        '''get game id seq'''
+        env_seq_id = config.get_env_seq(config.game_dic_all)
+        for env_id in env_seq_id:
+            '''get action space'''
+            env = envs.create_atari_env(env_id)
+            ac_space = env.action_space.n
+            '''create logits and sample for each game'''
+            self.logits[env_id] = linear(x, ac_space, "action_"+env_id, normalized_columns_initializer(0.01))
+            self.sample[env_id] = categorical_sample(self.logits[env_id], ac_space)[0, :]
+            self.vf[env_id] = tf.reshape(linear(x, 1, "value_"+env_id, normalized_columns_initializer(1.0)), [-1])
 
+        self.state_out = [lstm_c[:1, :], lstm_h[:1, :]]
+        self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
     def get_initial_features(self):
         return self.state_init
 
     def act(self, ob, c, h):
         sess = tf.get_default_session()
-        return sess.run([self.sample, self.vf] + self.state_out,
+        return sess.run([self.sample[self.id_for_this_model], self.vf[self.id_for_this_model]] + self.state_out,
                         {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})
-        # return sess.run([self.sample, self.vf] + self.state_out,
-        #                 {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h})
 
     def value(self, ob, c, h):
         sess = tf.get_default_session()
-        return sess.run(self.vf, {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})[0]
-        # return sess.run(self.vf, {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h})[0]
+        return sess.run(self.vf[self.id_for_this_model], {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})[0]

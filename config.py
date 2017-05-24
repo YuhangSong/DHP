@@ -11,10 +11,9 @@
     then run other
 
 '''
-
 status = "coding"
 basic_log_dir = "gtn_1"
-log_dir = "test_9"
+log_dir = "test_26"
 
 cluster_current = 0 # specific current cluster here
 cluster_main = 0
@@ -58,3 +57,11 @@ mix_exp_temp_dir = 'mix_exp_temp_dir/'
 cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
+def get_env_seq(env_seq_id):
+    import copy
+    env_seq_id = copy.deepcopy(env_seq_id)
+    print("Total Games:" + str(len(env_seq_id)))
+    for i in range(len(env_seq_id)):
+        name = ''.join([g.capitalize() for g in env_seq_id[i].split('_')])
+        env_seq_id[i] = '{}Deterministic-v3'.format(name)
+    return env_seq_id

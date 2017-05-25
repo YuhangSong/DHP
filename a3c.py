@@ -188,35 +188,30 @@ class A3C(object):
         """
 
         self.env = env
-        self.env_id = env_id
-        self.consi_depth = consi_depth
         self.task = task
-        if(self.task==0):
-            self.log_thread = True
-            self.time_limit = None
-        else:
-            self.log_thread = False
-            self.time_limit = 1000.0
-            # self.time_limit = None
+        self.consi_depth = consi_depth
+        self.env_id = env_id
+        self.log_thread = False
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
             with tf.variable_scope("global"):
-                self.network = LSTMPolicy(self.consi_depth, env.observation_space.shape, self.env_id)
+                self.network = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n, self.env_id)
                 self.global_step = tf.get_variable("global_step", [], tf.int32, initializer=tf.zeros_initializer(),
                                                    trainable=False)
 
         with tf.device(worker_device):
             with tf.variable_scope("local"):
-                self.local_network = pi = LSTMPolicy(self.consi_depth, env.observation_space.shape, self.env_id)
+                self.local_network = pi = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n, self.env_id)
                 pi.global_step = self.global_step
 
+            # self.env_id = 'PongDeterministic-v3'
             self.ac = tf.placeholder(tf.float32, [None, env.action_space.n], name="ac")
             self.adv = tf.placeholder(tf.float32, [None], name="adv")
             self.r = tf.placeholder(tf.float32, [None], name="r")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
 
-            log_prob_tf = tf.nn.log_softmax(pi.logits[self.env_id])
-            prob_tf = tf.nn.softmax(pi.logits[self.env_id])
+            log_prob_tf = tf.nn.log_softmax(pi.logits)
+            prob_tf = tf.nn.softmax(pi.logits)
 
             # the "policy gradients" loss:  its derivative is precisely the policy gradient
             # notice that self.ac is a placeholder that is provided externally.
@@ -224,7 +219,7 @@ class A3C(object):
             pi_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * self.ac, [1]) * self.adv)
 
             # loss of value function
-            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf[self.env_id] - self.r))
+            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.r))
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
             bs = tf.to_float(tf.shape(pi.x)[0])
@@ -265,6 +260,8 @@ class A3C(object):
     def start(self, sess, summary_writer):
         if(self.task!=0):
             print('this is not task 0, async from global network before start interaction and training')
+            print('wait for the cheif thread before async')
+            time.sleep(5)
             sess.run(self.sync)  # copy weights from shared to local
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
@@ -277,7 +274,7 @@ class A3C(object):
         """
         self explanatory:  take a rollout from the queue of the thread runner.
         """
-        rollout = self.runner.queue.get(timeout=self.time_limit)
+        rollout = self.runner.queue.get(timeout=600.0)
         while not rollout.terminal:
             try:
                 rollout.extend(self.runner.queue.get_nowait())

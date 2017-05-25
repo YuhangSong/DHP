@@ -37,23 +37,15 @@ def run(args, server):
     init_all_op = tf.global_variables_initializer()
     saver = FastSaver(variables_to_save)
 
-    variables_to_restore = [v for v in tf.all_variables() if v.name.startswith("global")]
-    pre_train_saver = FastSaver(variables_to_restore)
     def init_fn(ses):
         logger.info("Initializing all parameters.")
         ses.run(init_all_op)
-        # if (config.if_restore_model==True) and (config.cluster_current==config.cluster_main):
-        #     '''restore is only needed fot main cluster'''
-        #     restore_path = config.model_to_restore
-        #     print('restore model from:'+restore_path)
-        #     pre_train_saver.restore(ses,
-        #                             restore_path)
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
     logdir = os.path.join(args.log_dir, 'train')
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
-    # tf.Session(server.target, config=config_tf).run(tf.global_variables_initializer())
+    tf.Session(server.target, config=config_tf).run(tf.global_variables_initializer())
     sv = tf.train.Supervisor(is_chief=(args.task == 0),
                              logdir=logdir,
                              saver=saver,
@@ -72,7 +64,9 @@ def run(args, server):
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
         "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
     with sv.managed_session(server.target, config=config_tf) as sess:
+        print('ssssssssssssss')
         trainer.start(sess, summary_writer)
+        print('aaaaaaaaaaaaaaaaaaaaaa')
         global_step = sess.run(trainer.global_step)
         logger.info("Starting training at step=%d", global_step)
         while not sv.should_stop() and True:

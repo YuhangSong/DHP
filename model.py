@@ -66,9 +66,10 @@ def categorical_sample(logits, d):
 
 class LSTMPolicy(object):
 
-    def __init__(self, consi_depth, ob_space, id_for_this_model):
+    def __init__(self, consi_depth, ob_space, ac_space, env_id_str):
 
-        self.id_for_this_model = id_for_this_model
+        '''convert env_id string to env_id num'''
+        env_id_num = config.get_env_seq(config.game_dic_all).index(env_id_str)
 
         self.x = x = tf.placeholder(tf.float32, [None] + list(ob_space))
 
@@ -105,19 +106,15 @@ class LSTMPolicy(object):
         x = tf.reshape(lstm_outputs, [-1, size])
 
         '''every game has its own logits and sample'''
-        self.logits = {}
-        self.sample = {}
-        self.vf = {}
-        '''get game id seq'''
-        env_seq_id = config.get_env_seq(config.game_dic_all)
-        for env_id in env_seq_id:
-            '''get action space'''
-            env = envs.create_atari_env(env_id)
-            ac_space = env.action_space.n
-            '''create logits and sample for each game'''
-            self.logits[env_id] = linear(x, ac_space, "action_"+env_id, normalized_columns_initializer(0.01))
-            self.sample[env_id] = categorical_sample(self.logits[env_id], ac_space)[0, :]
-            self.vf[env_id] = tf.reshape(linear(x, 1, "value_"+env_id, normalized_columns_initializer(1.0)), [-1])
+        logits_all = range(len(config.game_dic_all))
+        vf_all = range(len(config.game_dic_all))
+        for env_id_i_num in range(len(config.game_dic_all)):
+            logits_all[env_id_i_num] = linear(x, config.get_env_ac_space(config.get_env_seq(config.game_dic_all)[env_id_i_num]), "action_"+str(env_id_i_num), normalized_columns_initializer(0.01))
+            vf_all[env_id_i_num] = tf.reshape(linear(x, 1, "value_"+str(env_id_i_num), normalized_columns_initializer(1.0)), [-1])
+
+        self.logits = logits_all[env_id_num]
+        self.sample = categorical_sample(self.logits, ac_space)[0, :]
+        self.vf = vf_all[env_id_num]
 
         self.state_out = [lstm_c[:1, :], lstm_h[:1, :]]
         self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
@@ -127,9 +124,9 @@ class LSTMPolicy(object):
 
     def act(self, ob, c, h):
         sess = tf.get_default_session()
-        return sess.run([self.sample[self.id_for_this_model], self.vf[self.id_for_this_model]] + self.state_out,
+        return sess.run([self.sample, self.vf] + self.state_out,
                         {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})
 
     def value(self, ob, c, h):
         sess = tf.get_default_session()
-        return sess.run(self.vf[self.id_for_this_model], {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})[0]
+        return sess.run(self.vf, {self.x: [ob], self.state_in[0]: c, self.state_in[1]: h, self.step_size: [1]})[0]

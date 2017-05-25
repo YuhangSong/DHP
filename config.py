@@ -15,7 +15,7 @@ status = "coding"
 basic_log_dir = "gtn_2"
 log_dir = "basic_a3c_shooting_games"
 
-cluster_current = 1 # specific current cluster here
+cluster_current = 2 # specific current cluster here
 cluster_main = 1
 
 if_restore_model = False

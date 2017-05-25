@@ -105,7 +105,7 @@ class LSTMPolicy(object):
 
         x = tf.reshape(lstm_outputs, [-1, size])
 
-        '''every game has its own logits and sample'''
+        '''every game has its own pi and v'''
         logits_all = range(len(config.game_dic_all))
         vf_all = range(len(config.game_dic_all))
         for env_id_i_num in range(len(config.game_dic_all)):

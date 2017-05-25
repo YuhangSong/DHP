@@ -12,11 +12,11 @@
 
 '''
 status = "coding"
-basic_log_dir = "gtn_1"
-log_dir = "test_56"
+basic_log_dir = "gtn_2"
+log_dir = "basic_a3c_shooting_games"
 
-cluster_current = 0 # specific current cluster here
-cluster_main = 0
+cluster_current = 1 # specific current cluster here
+cluster_main = 1
 
 if_restore_model = False
 if if_restore_model is True:
@@ -35,7 +35,10 @@ game_dic_test_single_pong = [
 game_dic_test_multi_pong = [
     'pong', 'breakout',
 ]
-game_dic = game_dic_test_multi_pong
+game_dic_shooting = [
+    'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
+]
+game_dic = game_dic_shooting
 
 '''default'''
 num_games_global = len(game_dic)

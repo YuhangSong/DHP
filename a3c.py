@@ -36,16 +36,15 @@ def process_rollout(rollout, gamma, lambda_=1.0):
     # https://arxiv.org/abs/1506.02438
     batch_adv = discount(delta_t, gamma * lambda_)
 
-    features_0 = np.asarray(rollout.features_0)
-    features_1 = np.asarray(rollout.features_1)
+    features = rollout.features
 
     batch_adv_out = copy.deepcopy(batch_r)
     for i in range(len(batch_r)):
         batch_adv_out[i] = batch_adv[i]
 
-    return Batch(batch_si, batch_a, batch_adv_out, batch_r, rollout.terminal, features_0, features_1)
+    return Batch(batch_si, batch_a, batch_adv_out, batch_r, rollout.terminal, features)
 
-Batch = namedtuple("Batch", ["si", "a", "adv", "r", "terminal", "features_0", "features_1"])
+Batch = namedtuple("Batch", ["si", "a", "adv", "r", "terminal", "features"])
 
 class PartialRollout(object):
     """
@@ -59,17 +58,15 @@ class PartialRollout(object):
         self.values = []
         self.r = 0.0
         self.terminal = False
-        self.features_0 = []
-        self.features_1 = []
+        self.features = []
 
-    def add(self, state, action, reward, value, terminal, features_0, features_1):
+    def add(self, state, action, reward, value, terminal, features):
         self.states += [state]
         self.actions += [action]
         self.rewards += [reward]
         self.values += [value]
         self.terminal = terminal
-        self.features_0 += [features_0]
-        self.features_1 += [features_1]
+        self.features += [features]
 
     def extend(self, other):
         assert not self.terminal
@@ -79,8 +76,7 @@ class PartialRollout(object):
         self.values.extend(other.values)
         self.r = other.r
         self.terminal = other.terminal
-        self.features_0.extend(other.features_0)
-        self.features_1.extend(other.features_1)
+        self.features.extend(other.features)
 
 class RunnerThread(threading.Thread):
     """
@@ -136,16 +132,15 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
         rollout = PartialRollout()
 
         for _ in range(num_local_steps):
-            fetched = policy.act(last_state, *last_features)
-            action, value_, features = fetched[0], fetched[1], fetched[2:]
+            fetched = policy.act(last_state, last_features)
 
+            action, value_, features = fetched[0], fetched[1], fetched[2]
+            
             # argmax to convert from one-hot
             state, reward, terminal, info = env.step(action.argmax())
 
             # collect the experience
-            last_features_0 = last_features[0][0]
-            last_features_1 = last_features[1][0]
-            rollout.add(last_state, action, reward, value_, terminal, last_features_0, last_features_1)
+            rollout.add(last_state, action, reward, value_, terminal, last_features)
             length += 1
             rewards += reward
 
@@ -173,7 +168,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 break
 
         if not terminal_end:
-            rollout.r = policy.value(last_state, *last_features)
+            rollout.r = policy.value(last_state, last_features)
 
         '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
         yield rollout
@@ -195,13 +190,13 @@ class A3C(object):
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
             with tf.variable_scope("global"):
-                self.network = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n, self.env_id)
+                self.network = LSTMPolicy(env.observation_space.shape, env.action_space.n, self.env_id)
                 self.global_step = tf.get_variable("global_step", [], tf.int32, initializer=tf.zeros_initializer(),
                                                    trainable=False)
 
         with tf.device(worker_device):
             with tf.variable_scope("local"):
-                self.local_network = pi = LSTMPolicy(self.consi_depth, env.observation_space.shape, env.action_space.n, self.env_id)
+                self.local_network = pi = LSTMPolicy(env.observation_space.shape, env.action_space.n, self.env_id)
                 pi.global_step = self.global_step
 
             # self.env_id = 'PongDeterministic-v3'
@@ -308,89 +303,93 @@ class A3C(object):
         batch_a=batch.a
         batch_adv=batch.adv
         batch_r=batch.r
-        batch_features_0=batch.features_0
-        batch_features_1=batch.features_1
+        batch_features=batch.features
 
-        print('\tload ok for task:\t'+str(self.task)+'\tsized:\t'+str(np.shape(batch.si)[0]))
-        step_forward = np.shape(batch.si)[0]
-
-        if config.if_mix_exp is True:
-
-            print("===========================mix exp==============================")
-
-            '''save'''
-            file_name = config.mix_exp_temp_dir + str(self.task) + '.npz'
-
-            try:
-                np.savez(file_name,
-                         batch_si=batch.si,
-                         batch_a=batch.a,
-                         batch_adv=batch.adv,
-                         batch_r=batch.r,
-                         batch_features_0=batch.features_0,
-                         batch_features_1=batch.features_1)
-
-            except Exception:
-                print('\tsave failed, go over\t')
-
-            '''load exp from other exp'''
-            for task_i in range(config.num_workers_total_global):
-
-                if(task_i==self.task):
-                    continue
-
-                else:
-
-                    file_name = config.mix_exp_temp_dir + str(task_i) + '.npz'
-
-                    try:
-                        data = np.load(file_name)
-
-                    except Exception:
-                        print('\tload failed for task:\t'+str(task_i)+'\tgo over\t')
-                        continue
-
-                    try:
-                        '''temp data, for this could be wrong'''
-                        batch_si_temp = np.concatenate((batch_si, data['batch_si']), axis=0)
-                        batch_a_temp = np.concatenate((batch_a, data['batch_a']), axis=0)
-                        batch_adv_temp = np.concatenate((batch_adv, data['batch_adv']), axis=0)
-                        batch_r_temp = np.concatenate((batch_r, data['batch_r']), axis=0)
-                        batch_features_0_temp = np.concatenate((batch_features_0, data['batch_features_0']), axis=0)
-                        batch_features_1_temp = np.concatenate((batch_features_1, data['batch_features_1']), axis=0)
-
-                        '''if not wrong'''
-                        batch_si = batch_si_temp
-                        batch_a = batch_a_temp
-                        batch_adv = batch_adv_temp
-                        batch_r = batch_r_temp
-                        batch_features_0 = batch_features_0_temp
-                        batch_features_1 = batch_features_1_temp
-
-                        print('\tload ok for task:\t'+str(task_i)+'\tsized:\t'+str(np.shape(data['batch_si'])[0]))
-                        data.close()
-
-                    except Exception:
-                        print('\twrong data in task:\t'+str(task_i)+'\tgo over\t')
-                        data.close()
-                        continue
-
-            print('\tload all sized:\t'+str(np.shape(batch_si)[0]))
-            print("==================================================================")
-        '''
-        ##################################################################
-        '''
+        # print('\tload ok for task:\t'+str(self.task)+'\tsized:\t'+str(np.shape(batch.si)[0]))
+        #
+        # if config.if_mix_exp is True:
+        #
+        #     print("===========================mix exp==============================")
+        #
+        #     '''save'''
+        #     file_name = config.mix_exp_temp_dir + str(self.task) + '.npz'
+        #
+        #     try:
+        #         np.savez(file_name,
+        #                  batch_si=batch.si,
+        #                  batch_a=batch.a,
+        #                  batch_adv=batch.adv,
+        #                  batch_r=batch.r,
+        #                  batch_features_0=batch.features_0,
+        #                  batch_features_1=batch.features_1)
+        #
+        #     except Exception:
+        #         print('\tsave failed, go over\t')
+        #
+        #     '''load exp from other exp'''
+        #     for task_i in range(config.num_workers_total_global):
+        #
+        #         if(task_i==self.task):
+        #             continue
+        #
+        #         else:
+        #
+        #             file_name = config.mix_exp_temp_dir + str(task_i) + '.npz'
+        #
+        #             try:
+        #                 data = np.load(file_name)
+        #
+        #             except Exception:
+        #                 print('\tload failed for task:\t'+str(task_i)+'\tgo over\t')
+        #                 continue
+        #
+        #             try:
+        #                 '''temp data, for this could be wrong'''
+        #                 batch_si_temp = np.concatenate((batch_si, data['batch_si']), axis=0)
+        #                 batch_a_temp = np.concatenate((batch_a, data['batch_a']), axis=0)
+        #                 batch_adv_temp = np.concatenate((batch_adv, data['batch_adv']), axis=0)
+        #                 batch_r_temp = np.concatenate((batch_r, data['batch_r']), axis=0)
+        #                 batch_features_0_temp = np.concatenate((batch_features_0, data['batch_features_0']), axis=0)
+        #                 batch_features_1_temp = np.concatenate((batch_features_1, data['batch_features_1']), axis=0)
+        #
+        #                 '''if not wrong'''
+        #                 batch_si = batch_si_temp
+        #                 batch_a = batch_a_temp
+        #                 batch_adv = batch_adv_temp
+        #                 batch_r = batch_r_temp
+        #                 batch_features_0 = batch_features_0_temp
+        #                 batch_features_1 = batch_features_1_temp
+        #
+        #                 print('\tload ok for task:\t'+str(task_i)+'\tsized:\t'+str(np.shape(data['batch_si'])[0]))
+        #                 data.close()
+        #
+        #             except Exception:
+        #                 print('\twrong data in task:\t'+str(task_i)+'\tgo over\t')
+        #                 data.close()
+        #                 continue
+        #
+        #     print('\tload all sized:\t'+str(np.shape(batch_si)[0]))
+        #     print("==================================================================")
+        # '''
+        # ##################################################################
+        # '''
 
         feed_dict = {
             self.local_network.x: batch_si,
             self.ac: batch_a,
             self.adv: batch_adv,
             self.r: batch_r,
-            self.local_network.state_in[0]: batch_features_0,
-            self.local_network.state_in[1]: batch_features_1,
-            self.local_network.step_size: [1]*( np.shape(batch_si)[0] ),
-            self.step_forward: [1]*step_forward,
+            self.local_network.step_size: [1]*batch_size,
+            self.step_forward: [1]*batch_size,
         }
+
+        '''remap state'''
+        for consi_layer_id in range(config.consi_depth):
+            batch_features_maped_layer = batch_features[0][consi_layer_id]
+            for batch_i in range(1,len(batch_features)):
+                batch_features_maped_layer = np.concatenate((batch_features_maped_layer, batch_features[batch_i][consi_layer_id]), axis=1)
+            feed_dict[self.local_network.c_in[consi_layer_id]] = batch_features_maped_layer[0]
+            feed_dict[self.local_network.h_in[consi_layer_id]] = batch_features_maped_layer[1]
 
         fetched = sess.run(fetches, feed_dict=feed_dict)
 

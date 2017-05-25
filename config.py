@@ -13,14 +13,18 @@
 '''
 status = "coding"
 basic_log_dir = "gtn_2"
-log_dir = "basic_a3c_shooting_games"
+log_dir = "test_8"
 
-cluster_current = 1 # specific current cluster here
-cluster_main = 1
+cluster_current = 0 # specific current cluster here
+cluster_main = 0
 
 if_restore_model = False
 if if_restore_model is True:
     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
+
+'''model structure'''
+consi_depth = 3
+lstm_size = [288,128,32]
 
 if_mix_exp = False
 if_reward_auto_normalize = False
@@ -38,7 +42,7 @@ game_dic_test_multi_pong = [
 game_dic_shooting = [
     'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
 ]
-game_dic = game_dic_shooting
+game_dic = game_dic_test_multi_pong
 
 '''default'''
 num_games_global = len(game_dic)

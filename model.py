@@ -195,7 +195,7 @@ class LSTMPolicy(object):
             if(consi_layer_id > 0):
                 right_in[consi_layer_id - 1] = tf.concat([right_to_down[consi_layer_id], lift_out[consi_layer_id - 1]],2)
 
-        consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size)])
+        consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
 
         '''every game has its own pi and v'''
         logits_all = range(len(config.game_dic_all))

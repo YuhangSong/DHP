@@ -1,7 +1,7 @@
 
 '''log config'''
 status = ""
-basic_log_dir = "gtn_6"
+basic_log_dir = "gtn_7"
 log_dir = "test_gtn_1"
 
 '''cluster config'''

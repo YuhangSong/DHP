@@ -5,8 +5,8 @@ basic_log_dir = "gtn_4"
 log_dir = "test_gtn_1"
 
 '''cluster config'''
-cluster_current = 0
-cluster_main = 0
+cluster_current = 1
+cluster_main = 1
 
 '''restore model config''' # currently not support
 if_restore_model = False
@@ -24,7 +24,7 @@ if_reward_auto_normalize = False # currently not support
 
 '''worker config'''
 num_workers_global = 2
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = num_workers_global # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 '''game dic'''
 game_dic_test_single_pong = [
@@ -58,6 +58,7 @@ mix_exp_temp_dir = 'mix_exp_temp_dir/'
 cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
+task_plus = cluster_current * num_workers_total_global
 def get_env_seq(env_seq_id):
     import copy
     env_seq_id = copy.deepcopy(env_seq_id)

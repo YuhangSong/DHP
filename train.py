@@ -7,8 +7,6 @@ import copy
 
 parser = argparse.ArgumentParser(description="Run commands")
 
-task_plus = config.cluster_current * config.num_workers_total_global
-
 
 '''
 normoly default paramters
@@ -61,7 +59,7 @@ def create_tmux_commands(session, remotes, logdir):
         cmds_map += [new_tmux_cmd(session,
                                   "w-%d" % i,
                                   base_cmd + ["--job-name", "worker",
-                                              "--task", str(i+task_plus),
+                                              "--task", str(i+config.task_plus),
                                               "--remotes", remotes[i]])]
 
     windows = [v[0] for v in cmds_map]

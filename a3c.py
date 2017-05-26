@@ -258,7 +258,7 @@ class A3C(object):
             self.local_steps = 0
 
     def start(self, sess, summary_writer):
-        if(self.task!=0):
+        if(self.task!=config.task_plus):
             print('this is not task 0, async from global network before start interaction and training')
             print('wait for the cheif thread before async')
             time.sleep(5)

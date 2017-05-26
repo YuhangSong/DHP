@@ -263,12 +263,12 @@ class A3C(object):
             print('wait for the cheif thread before async')
             time.sleep(5)
             sess.run(self.sync)  # copy weights from shared to local
+            print('before start mix exp')
+            subprocess.call(["rm", "-r", config.mix_exp_temp_dir])
+            subprocess.call(["mkdir", config.mix_exp_temp_dir])
+
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
-
-        print('before start mix exp')
-        subprocess.call(["rm", "-r", config.mix_exp_temp_dir])
-        subprocess.call(["mkdir", config.mix_exp_temp_dir])
 
     def pull_batch_from_queue(self):
         """

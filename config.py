@@ -1,7 +1,7 @@
 
 '''log config'''
 status = ""
-basic_log_dir = "gtn_3"
+basic_log_dir = "gtn_4"
 log_dir = "test_gtn_1"
 
 '''cluster config'''
@@ -36,7 +36,7 @@ game_dic_test_multi_pong = [
 game_dic_shooting = [
     'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
 ]
-game_dic = game_dic_test_multi_pong # specific game dic
+game_dic = game_dic_shooting # specific game dic
 
 '''default config'''
 num_games_global = len(game_dic)

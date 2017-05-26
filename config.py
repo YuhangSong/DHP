@@ -11,9 +11,9 @@
     then run other
 
 '''
-status = "coding"
-basic_log_dir = "gtn_2"
-log_dir = "test_8"
+status = ""
+basic_log_dir = "gtn_3"
+log_dir = "test_gtn_1"
 
 cluster_current = 0 # specific current cluster here
 cluster_main = 0
@@ -29,7 +29,7 @@ lstm_size = [288,128,32]
 if_mix_exp = False
 if_reward_auto_normalize = False
 
-num_workers_global = 2
+num_workers_global = 4
 
 update_step = 20
 

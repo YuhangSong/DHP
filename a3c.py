@@ -258,12 +258,14 @@ class A3C(object):
             self.local_steps = 0
 
     def start(self, sess, summary_writer):
-        if(self.task!=config.task_plus):
-            print('this is not task 0, async from global network before start interaction and training')
-            print('wait for the cheif thread before async')
+
+        if(self.task!=config.task_chief):
+            print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
             time.sleep(5)
             sess.run(self.sync)  # copy weights from shared to local
-            print('before start mix exp')
+
+        if(self.task==config.task_plus):
+            print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
             subprocess.call(["rm", "-r", config.mix_exp_temp_dir])
             subprocess.call(["mkdir", config.mix_exp_temp_dir])
 

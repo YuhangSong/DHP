@@ -1,7 +1,7 @@
 
 '''log config'''
 status = ""
-basic_log_dir = "gtn_4"
+basic_log_dir = "gtn_6"
 log_dir = "test_gtn_1"
 
 '''cluster config'''
@@ -59,6 +59,7 @@ cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cl
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
 task_plus = cluster_current * num_workers_total_global
+task_chief = cluster_main * num_workers_total_global
 def get_env_seq(env_seq_id):
     import copy
     env_seq_id = copy.deepcopy(env_seq_id)

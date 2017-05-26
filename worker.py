@@ -46,7 +46,7 @@ def run(args, server):
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
     tf.Session(server.target, config=config_tf).run(tf.global_variables_initializer())
-    sv = tf.train.Supervisor(is_chief=(args.task == config.task_plus),
+    sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
                              logdir=logdir,
                              saver=saver,
                              summary_op=None,

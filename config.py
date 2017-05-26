@@ -1,23 +1,14 @@
-'''for cluster'''
-'''
-    if restore:
-        with main cluster:
-            put model to ../../result/model_to_restore/
-            set if_restore_model to True
-        if continou log:
-            set log_dir_global
-    modify cluster_current only
-    run main cluster first
-    then run other
 
-'''
+'''log config'''
 status = ""
 basic_log_dir = "gtn_3"
 log_dir = "test_gtn_1"
 
-cluster_current = 0 # specific current cluster here
+'''cluster config'''
+cluster_current = 0
 cluster_main = 0
 
+'''restore model config''' # currently not support
 if_restore_model = False
 if if_restore_model is True:
     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
@@ -26,13 +17,16 @@ if if_restore_model is True:
 consi_depth = 3
 lstm_size = [288,128,32]
 
-if_mix_exp = False
-if_reward_auto_normalize = False
-
-num_workers_global = 4
-
+'''behaviour config'''
 update_step = 20
+if_mix_exp = False # currently not support
+if_reward_auto_normalize = False # currently not support
 
+'''worker config'''
+num_workers_global = 2
+num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+
+'''game dic'''
 game_dic_test_single_pong = [
     'pong',
 ]
@@ -42,9 +36,9 @@ game_dic_test_multi_pong = [
 game_dic_shooting = [
     'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
 ]
-game_dic = game_dic_test_multi_pong
+game_dic = game_dic_test_multi_pong # specific game dic
 
-'''default'''
+'''default config'''
 num_games_global = len(game_dic)
 num_workers_total_global = num_games_global * num_workers_global
 game_dic_all = [
@@ -75,25 +69,3 @@ def get_env_seq(env_seq_id):
 def get_env_ac_space(env_id):
     import envs
     return envs.create_atari_env(env_id).action_space.n
-'''
-for env_id_i in config.get_env_seq(config.game_dic_all):
-    self.ac[env_id_i] = tf.placeholder(tf.float32, [None, envs.create_atari_env(env_id_i).action_space.n], name="ac_"+env_id_i)
-    self.adv[env_id_i] = tf.placeholder(tf.float32, [None], name="adv_"+env_id_i)
-    self.r[env_id_i] = tf.placeholder(tf.float32, [None], name="r_"+env_id_i)
-    self.step_forward[env_id_i] = tf.placeholder(tf.int32, [None], name="step_forward_"+env_id_i)
-
-    log_prob_tf[env_id_i] = tf.nn.log_softmax(pi.logits[env_id_i])
-    prob_tf[env_id_i] = tf.nn.softmax(pi.logits[env_id_i])
-
-    # the "policy gradients" loss:  its derivative is precisely the policy gradient
-    # notice that self.ac is a placeholder that is provided externally.
-    # ac will contain the advantages, as calculated in process_rollout
-    pi_loss[env_id_i] = - tf.reduce_sum(tf.reduce_sum(log_prob_tf[env_id_i] * self.ac[env_id_i], [1]) * self.adv[env_id_i])
-
-    # loss of value function
-    vf_loss[env_id_i] = 0.5 * tf.reduce_sum(tf.square(pi.vf[env_id_i] - self.r[env_id_i]))
-    entropy[env_id_i] = - tf.reduce_sum(prob_tf[env_id_i] * log_prob_tf[env_id_i])
-
-
-    self.loss[env_id_i] = pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01
-'''

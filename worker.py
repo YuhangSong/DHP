@@ -29,7 +29,7 @@ def run(args, server):
                      remotes=args.remotes,
                      select=args.select)
 
-    trainer = A3C(args.consi_depth, env, args.env_id, args.task)
+    trainer = A3C(env, args.env_id, args.task)
 
     # Variable names that start with "local" are not saved in checkpoints.
     variables_to_save = [v for v in tf.global_variables() if not v.name.startswith("local")]
@@ -57,8 +57,6 @@ def run(args, server):
                              global_step=trainer.global_step,
                              save_model_secs=30,
                              save_summaries_secs=30)
-
-    # num_global_steps = 100000000 ** 100000000
 
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
@@ -111,8 +109,6 @@ Setting up Tensorflow for data parallel work
     parser.add_argument('--task', default=0, type=int, help='Task index')
     parser.add_argument('--job-name', default="worker", help='worker or ps')
     parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
-    parser.add_argument('-d', '--consi-depth', type=int, default=1,
-                        help="hyper paramter: depth of the consciousness")
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
     parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
     parser.add_argument('--select', default=0, type=int, help='select id')

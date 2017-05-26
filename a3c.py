@@ -135,7 +135,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             fetched = policy.act(last_state, last_features)
 
             action, value_, features = fetched[0], fetched[1], fetched[2]
-            
+
             # argmax to convert from one-hot
             state, reward, terminal, info = env.step(action.argmax())
 
@@ -147,7 +147,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             last_state = state
             last_features = features
 
-            if info:
+            if info and log_thread:
                 summary = tf.Summary()
                 for k, v in info.items():
                     '''YuhangSong: here we add game id to compare different games in different graph'''
@@ -174,7 +174,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
         yield rollout
 
 class A3C(object):
-    def __init__(self, consi_depth, env, env_id, task):
+    def __init__(self, env, env_id, task):
         """
         An implementation of the A3C algorithm that is reasonably well-tuned for the VNC environments.
         Below, we will have a modest amount of complexity due to the way TensorFlow handles data parallelism.
@@ -184,9 +184,14 @@ class A3C(object):
 
         self.env = env
         self.task = task
-        self.consi_depth = consi_depth
         self.env_id = env_id
-        self.log_thread = False
+
+        '''only log if the task is on zero and cluster is the main cluster'''
+        if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+            self.log_thread = True
+        else:
+            self.log_thread = False
+
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
             with tf.variable_scope("global"):
@@ -288,7 +293,7 @@ class A3C(object):
         rollout = self.pull_batch_from_queue()
         batch = process_rollout(rollout, gamma=GAMMA, lambda_=1.0)
 
-        should_compute_summary = self.task%config.num_workers_global == 0 and self.local_steps % 11 == 0
+        should_compute_summary = (self.log_thread and (self.local_steps % 11 == 0))
 
         if should_compute_summary:
             fetches = [self.summary_op, self.train_op, self.global_step]

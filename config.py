@@ -2,7 +2,7 @@
 '''log config'''
 status = ""
 basic_log_dir = "gtn_7"
-log_dir = "test_gtn_15"
+log_dir = "test_gtn_15_mix_exp_2"
 
 '''cluster config'''
 cluster_current = 0

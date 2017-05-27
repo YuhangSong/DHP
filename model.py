@@ -127,12 +127,12 @@ def conv_layers(x, num_layers, consi_layer_id):
 
 class LSTMPolicy(object):
 
-    def __init__(self, ob_space, ac_space, env_id_str):
+    def __init__(self, ob_space, ac_space, env_id):
 
         with tf.variable_scope("GTN"):
 
             '''convert env_id string to env_id num'''
-            env_id_num = config.get_env_seq(config.game_dic_all).index(env_id_str)
+            self.env_id = env_id
 
             '''placeholder for x and step_size'''
             self.x = tf.placeholder(tf.float32, [None] + list(ob_space))
@@ -200,19 +200,19 @@ class LSTMPolicy(object):
             consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
 
             '''every game has its own pi and v'''
-            logits_all = range(len(config.game_dic_all))
-            sample_all = range(len(config.game_dic_all))
-            vf_all = range(len(config.game_dic_all))
-            for env_id_i_num in range(len(config.game_dic_all)):
-                with tf.variable_scope("game_spec_layer_"+str(str(env_id_i_num))):
-                    ac_space_i = config.get_env_ac_space(config.get_env_seq(config.game_dic_all)[env_id_i_num])
-                    logits_all[env_id_i_num] = linear(consi_output, ac_space_i, "action", normalized_columns_initializer(0.01))
-                    sample_all[env_id_i_num] = categorical_sample(logits_all[env_id_i_num], ac_space_i)[0, :]
-                    vf_all[env_id_i_num] = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
+            logits_all = {}
+            sample_all = {}
+            vf_all = {}
+            for env_id_i in config.get_env_seq(config.game_dic_all):
+                with tf.variable_scope("game_spec_layer_"+str(env_id_i)):
+                    ac_space_i = config.get_env_ac_space(env_id_i)
+                    logits_all[env_id_i] = linear(consi_output, ac_space_i, "action", normalized_columns_initializer(0.01))
+                    sample_all[env_id_i] = categorical_sample(logits_all[env_id_i], ac_space_i)[0, :]
+                    vf_all[env_id_i] = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
 
-            self.logits = logits_all[env_id_num]
-            self.sample = sample_all[env_id_num]
-            self.vf = vf_all[env_id_num]
+            self.logits = logits_all[self.env_id]
+            self.sample = sample_all[self.env_id]
+            self.vf = vf_all[self.env_id]
 
             self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 

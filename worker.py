@@ -45,7 +45,10 @@ def run(args, server):
     logdir = os.path.join(args.log_dir, 'train')
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
-    tf.Session(server.target, config=config_tf).run(tf.global_variables_initializer())
+    if args.task is not config.task_chief:
+        # tf.Session(server.target, config=config_tf).run(tf.variables_initializer([v for v in tf.global_variables() if v.name.startswith("local")]))
+        # tf.Session(server.target, config=config_tf).run(trainer.sync)
+        tf.Session(server.target, config=config_tf).run(init_all_op)
     sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
                              logdir=logdir,
                              saver=saver,
@@ -62,9 +65,7 @@ def run(args, server):
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
         "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
     with sv.managed_session(server.target, config=config_tf) as sess:
-        print('ssssssssssssss')
         trainer.start(sess, summary_writer)
-        print('aaaaaaaaaaaaaaaaaaaaaa')
         global_step = sess.run(trainer.global_step)
         logger.info("Starting training at step=%d", global_step)
         while not sv.should_stop() and True:

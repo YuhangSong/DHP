@@ -129,86 +129,92 @@ class LSTMPolicy(object):
 
     def __init__(self, ob_space, ac_space, env_id_str):
 
-        '''convert env_id string to env_id num'''
-        env_id_num = config.get_env_seq(config.game_dic_all).index(env_id_str)
+        with tf.variable_scope("GTN"):
 
-        '''placeholder for x and step_size'''
-        self.x = tf.placeholder(tf.float32, [None] + list(ob_space))
-        self.step_size = tf.placeholder(tf.int32, [None])
+            '''convert env_id string to env_id num'''
+            env_id_num = config.get_env_seq(config.game_dic_all).index(env_id_str)
 
-        '''nodes'''
-        lift_in = range(config.consi_depth)
-        lift_out = range(config.consi_depth)
-        lift_to_up = range(config.consi_depth)
+            '''placeholder for x and step_size'''
+            self.x = tf.placeholder(tf.float32, [None] + list(ob_space))
+            self.step_size = tf.placeholder(tf.int32, [None])
 
-        right_in = range(config.consi_depth)
-        right_out = range(config.consi_depth)
-        right_to_down = range(config.consi_depth)
+            '''nodes'''
+            lift_in = range(config.consi_depth)
+            lift_out = range(config.consi_depth)
+            lift_to_up = range(config.consi_depth)
 
-        self.state_init = []
-        self.c_in = []
-        self.h_in = []
-        self.state_out = []
+            right_in = range(config.consi_depth)
+            right_out = range(config.consi_depth)
+            right_to_down = range(config.consi_depth)
 
-        lift_in[0] = self.x
-        for consi_layer_id_pos in range(config.consi_depth):
+            self.state_init = []
+            self.c_in = []
+            self.h_in = []
+            self.state_out = []
 
-            '''the construction of consi_right is from bottom to top'''
-            consi_layer_id = consi_layer_id_pos
+            lift_in[0] = self.x
+            for consi_layer_id_pos in range(config.consi_depth):
 
-            '''creat a consi layer'''
-            with tf.variable_scope("consi_layer_right_"+str(consi_layer_id)):
-                x = lift_in[consi_layer_id]
-                x, lift_to_up[consi_layer_id] = conv_layers(x              = x,
-                                                            num_layers     = 4,
-                                                            consi_layer_id = 0)
-                x, state_init_t, c_in_t, h_in_t, state_out_t = lstm_layer(x         = x,
-                                                                      size      = config.lstm_size[consi_layer_id],
-                                                                      step_size = self.step_size)
-                lift_out[consi_layer_id] = x
+                '''the construction of consi_right is from bottom to top'''
+                consi_layer_id = consi_layer_id_pos
 
-            '''set lift_in for next consi layer'''
-            if(consi_layer_id < (config.consi_depth - 1)):
-                lift_in[consi_layer_id + 1] = lift_to_up[consi_layer_id]
+                '''creat a consi layer'''
+                with tf.variable_scope("consi_layer_right_"+str(consi_layer_id)):
+                    x = lift_in[consi_layer_id]
+                    x, lift_to_up[consi_layer_id] = conv_layers(x              = x,
+                                                                num_layers     = 4,
+                                                                consi_layer_id = 0)
+                    x, state_init_t, c_in_t, h_in_t, state_out_t = lstm_layer(x         = x,
+                                                                          size      = config.lstm_size[consi_layer_id],
+                                                                          step_size = self.step_size)
+                    lift_out[consi_layer_id] = x
 
-            self.state_init += [state_init_t]
-            self.c_in += [c_in_t]
-            self.h_in += [h_in_t]
-            self.state_out += [state_out_t]
+                '''set lift_in for next consi layer'''
+                if(consi_layer_id < (config.consi_depth - 1)):
+                    lift_in[consi_layer_id + 1] = lift_to_up[consi_layer_id]
 
-        '''bootstrap from consi_lift to consi_right'''
-        right_in[config.consi_depth - 1] = lift_out[config.consi_depth - 1]
+                self.state_init += [state_init_t]
+                self.c_in += [c_in_t]
+                self.h_in += [h_in_t]
+                self.state_out += [state_out_t]
 
-        for consi_layer_id_pos in range(config.consi_depth):
+            '''bootstrap from consi_lift to consi_right'''
+            right_in[config.consi_depth - 1] = lift_out[config.consi_depth - 1]
 
-            '''the construction of consi_right is from top to bottom'''
-            consi_layer_id = config.consi_depth - 1 - consi_layer_id_pos
+            for consi_layer_id_pos in range(config.consi_depth):
 
-            '''creat a consi layer'''
-            with tf.variable_scope("consi_layer_right_"+str(consi_layer_id)):
-                right_out[consi_layer_id] = right_in[consi_layer_id]
+                '''the construction of consi_right is from top to bottom'''
+                consi_layer_id = config.consi_depth - 1 - consi_layer_id_pos
 
-            '''right_out flow to right_to_down'''
-            right_to_down[consi_layer_id] = right_out[consi_layer_id]
+                '''creat a consi layer'''
+                with tf.variable_scope("consi_layer_right_"+str(consi_layer_id)):
+                    right_out[consi_layer_id] = right_in[consi_layer_id]
 
-            '''set lift_in for next consi layer'''
-            if(consi_layer_id > 0):
-                right_in[consi_layer_id - 1] = tf.concat([right_to_down[consi_layer_id], lift_out[consi_layer_id - 1]],2)
+                '''right_out flow to right_to_down'''
+                right_to_down[consi_layer_id] = right_out[consi_layer_id]
 
-        consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
+                '''set lift_in for next consi layer'''
+                if(consi_layer_id > 0):
+                    right_in[consi_layer_id - 1] = tf.concat([right_to_down[consi_layer_id], lift_out[consi_layer_id - 1]],2)
 
-        '''every game has its own pi and v'''
-        logits_all = range(len(config.game_dic_all))
-        vf_all = range(len(config.game_dic_all))
-        for env_id_i_num in range(len(config.game_dic_all)):
-            logits_all[env_id_i_num] = linear(consi_output, config.get_env_ac_space(config.get_env_seq(config.game_dic_all)[env_id_i_num]), "action_"+str(env_id_i_num), normalized_columns_initializer(0.01))
-            vf_all[env_id_i_num] = tf.reshape(linear(consi_output, 1, "value_"+str(env_id_i_num), normalized_columns_initializer(1.0)), [-1])
+            consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
 
-        self.logits = logits_all[env_id_num]
-        self.sample = categorical_sample(self.logits, ac_space)[0, :]
-        self.vf = vf_all[env_id_num]
+            '''every game has its own pi and v'''
+            logits_all = range(len(config.game_dic_all))
+            sample_all = range(len(config.game_dic_all))
+            vf_all = range(len(config.game_dic_all))
+            for env_id_i_num in range(len(config.game_dic_all)):
+                with tf.variable_scope("game_spec_layer_"+str(str(env_id_i_num))):
+                    ac_space_i = config.get_env_ac_space(config.get_env_seq(config.game_dic_all)[env_id_i_num])
+                    logits_all[env_id_i_num] = linear(consi_output, ac_space_i, "action", normalized_columns_initializer(0.01))
+                    sample_all[env_id_i_num] = categorical_sample(logits_all[env_id_i_num], ac_space_i)[0, :]
+                    vf_all[env_id_i_num] = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
 
-        self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
+            self.logits = logits_all[env_id_num]
+            self.sample = sample_all[env_id_num]
+            self.vf = vf_all[env_id_num]
+
+            self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
     def get_initial_features(self):
         return self.state_init

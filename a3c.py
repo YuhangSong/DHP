@@ -124,7 +124,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_state = env.reset()
     last_features = policy.get_initial_features()
     length = 0
-    rewards = 0
+    rewards = 0.0
 
     while True:
 
@@ -157,6 +157,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 summary_writer.flush()
 
             timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
+            # print(env.spec.tags.get('wrapper_config.reward_range'))
             if terminal or length >= timestep_limit:
                 terminal_end = True
                 if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
@@ -164,7 +165,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 last_features = policy.get_initial_features()
                 print("Episode finished. Sum of rewards: %d. Length: %d" % (rewards, length))
                 length = 0
-                rewards = 0
+                rewards = 0.0
                 break
 
         if not terminal_end:

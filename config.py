@@ -2,11 +2,11 @@
 '''log config'''
 status = ""
 basic_log_dir = "gtn_7"
-log_dir = "test_gtn_1"
+log_dir = "test_gtn_15"
 
 '''cluster config'''
-cluster_current = 1
-cluster_main = 1
+cluster_current = 0
+cluster_main = 0
 
 '''restore model config''' # currently not support
 if_restore_model = False
@@ -15,7 +15,7 @@ if if_restore_model is True:
 
 '''model structure'''
 consi_depth = 3
-lstm_size = [288,128,32]
+lstm_size = [288,288,128,32] # consi first is to large
 
 '''behaviour config'''
 update_step = 20
@@ -24,7 +24,7 @@ if_reward_auto_normalize = False # currently not support
 
 '''worker config'''
 num_workers_global = 2
-num_workers_local = num_workers_global # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = 2 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 '''game dic'''
 game_dic_test_single_pong = [
@@ -37,6 +37,7 @@ game_dic_shooting = [
     'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
 ]
 game_dic = game_dic_shooting # specific game dic
+game_dic = game_dic_test_multi_pong # specific game dic
 
 '''default config'''
 num_games_global = len(game_dic)
@@ -71,3 +72,4 @@ def get_env_seq(env_seq_id):
 def get_env_ac_space(env_id):
     import envs
     return envs.create_atari_env(env_id).action_space.n
+reward_normalize_episode = 3

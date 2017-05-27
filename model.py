@@ -203,16 +203,16 @@ class LSTMPolicy(object):
             logits_all = {}
             sample_all = {}
             vf_all = {}
-            for env_id_i in config.get_env_seq(config.game_dic_all):
+            for env_id_i in config.game_dic_all:
                 with tf.variable_scope("game_spec_layer_"+str(env_id_i)):
-                    ac_space_i = config.get_env_ac_space(env_id_i)
+                    ac_space_i = config.game_dic_all_ac_space[env_id_i]
                     logits_all[env_id_i] = linear(consi_output, ac_space_i, "action", normalized_columns_initializer(0.01))
                     sample_all[env_id_i] = categorical_sample(logits_all[env_id_i], ac_space_i)[0, :]
                     vf_all[env_id_i] = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
 
-            self.logits = logits_all[self.env_id]
-            self.sample = sample_all[self.env_id]
-            self.vf = vf_all[self.env_id]
+            self.logits = logits_all
+            self.sample = sample_all
+            self.vf = vf_all
 
             self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
@@ -225,7 +225,7 @@ class LSTMPolicy(object):
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
-        return sess.run([self.sample, self.vf, self.state_out], feed_dict)
+        return sess.run([self.sample[self.env_id], self.vf[self.env_id], self.state_out], feed_dict)
 
     def value(self, ob, state_in):
         sess = tf.get_default_session()
@@ -233,4 +233,4 @@ class LSTMPolicy(object):
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
-        return sess.run(self.vf, feed_dict)[0]
+        return sess.run(self.vf[self.env_id], feed_dict)[0]

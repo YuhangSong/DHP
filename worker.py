@@ -45,10 +45,10 @@ def run(args, server):
     logdir = os.path.join(args.log_dir, 'train')
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
-    if args.task is not config.task_chief:
+    # if args.task is not config.task_chief:
         # tf.Session(server.target, config=config_tf).run(tf.variables_initializer([v for v in tf.global_variables() if v.name.startswith("local")]))
         # tf.Session(server.target, config=config_tf).run(trainer.sync)
-        tf.Session(server.target, config=config_tf).run(init_all_op)
+        # tf.Session(server.target, config=config_tf).run(init_all_op)
     sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
                              logdir=logdir,
                              saver=saver,

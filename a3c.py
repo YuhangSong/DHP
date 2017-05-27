@@ -205,26 +205,39 @@ class A3C(object):
                 self.local_network = pi = LSTMPolicy(env.observation_space.shape, env.action_space.n, self.env_id)
                 pi.global_step = self.global_step
 
-            # self.env_id = 'PongDeterministic-v3'
-            self.ac = tf.placeholder(tf.float32, [None, env.action_space.n], name="ac")
-            self.adv = tf.placeholder(tf.float32, [None], name="adv")
-            self.r = tf.placeholder(tf.float32, [None], name="r")
+            self.game_spec_layer_enable = tf.placeholder(tf.float32, [len(config.game_dic_all)], name="game_spec_layer_enable")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
 
-            log_prob_tf = tf.nn.log_softmax(pi.logits)
-            prob_tf = tf.nn.softmax(pi.logits)
+            self.ac = {}
+            self.adv = {}
+            self.r = {}
+            log_prob_tf = {}
+            prob_tf = {}
+            pi_loss = {}
+            vf_loss = {}
+            entropy = {}
+            self.loss_all = {}
+            for env_id_i in config.game_dic_all:
+                self.ac[env_id_i] = tf.placeholder(tf.float32, [None, config.game_dic_all_ac_space[env_id_i]], name="ac")
+                self.adv[env_id_i] = tf.placeholder(tf.float32, [None], name="adv")
+                self.r[env_id_i] = tf.placeholder(tf.float32, [None], name="r")
 
-            # the "policy gradients" loss:  its derivative is precisely the policy gradient
-            # notice that self.ac is a placeholder that is provided externally.
-            # ac will contain the advantages, as calculated in process_rollout
-            pi_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * self.ac, [1]) * self.adv)
+                log_prob_tf[env_id_i] = tf.nn.log_softmax(pi.logits[env_id_i])
+                prob_tf[env_id_i] = tf.nn.softmax(pi.logits[env_id_i])
 
-            # loss of value function
-            vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.r))
-            entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
+                # the "policy gradients" loss:  its derivative is precisely the policy gradient
+                # notice that self.ac is a placeholder that is provided externally.
+                # ac will contain the advantages, as calculated in process_rollout
+                pi_loss[env_id_i] = - tf.reduce_sum(tf.reduce_sum(log_prob_tf[env_id_i] * self.ac[env_id_i], [1]) * self.adv[env_id_i])
 
-            bs = tf.to_float(tf.shape(pi.x)[0])
-            self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
+                # loss of value function
+                vf_loss[env_id_i] = 0.5 * tf.reduce_sum(tf.square(pi.vf[env_id_i] - self.r[env_id_i]))
+                entropy[env_id_i] = - tf.reduce_sum(prob_tf[env_id_i] * log_prob_tf[env_id_i])
+
+
+                self.loss_all[env_id_i] = pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01
+
+            self.loss = tf.reduce_sum(self.loss_all.values() * self.game_spec_layer_enable)
 
             # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
@@ -237,9 +250,10 @@ class A3C(object):
 
             grads = tf.gradients(self.loss, pi.var_list)
 
-            tf.summary.scalar(self.env_id+"/model/policy_loss", pi_loss / bs)
-            tf.summary.scalar(self.env_id+"/model/value_loss", vf_loss / bs)
-            tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
+            bs = tf.to_float(tf.shape(pi.x)[0])
+            tf.summary.scalar(self.env_id+"/model/policy_loss", pi_loss[self.env_id] / bs)
+            tf.summary.scalar(self.env_id+"/model/value_loss", vf_loss[self.env_id] / bs)
+            tf.summary.scalar(self.env_id+"/model/entropy", entropy[self.env_id] / bs)
             tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
             tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
 
@@ -384,9 +398,9 @@ class A3C(object):
 
         feed_dict = {
             self.local_network.x: batch_si,
-            self.ac: batch_a,
-            self.adv: batch_adv,
-            self.r: batch_r,
+            self.ac[self.env_id]: batch_a,
+            self.adv[self.env_id]: batch_adv,
+            self.r[self.env_id]: batch_r,
             self.local_network.step_size: [1]*batch_size,
             self.step_forward: [1]*batch_size,
         }
@@ -398,6 +412,13 @@ class A3C(object):
                 batch_features_maped_layer = np.concatenate((batch_features_maped_layer, batch_features[batch_i][consi_layer_id]), axis=1)
             feed_dict[self.local_network.c_in[consi_layer_id]] = batch_features_maped_layer[0]
             feed_dict[self.local_network.h_in[consi_layer_id]] = batch_features_maped_layer[1]
+
+        for env_id_i in config.game_dic_all:
+            feed_dict[self.ac[env_id_i]] = np.zeros((batch_size,config.game_dic_all_ac_space[env_id_i]))
+            feed_dict[self.adv[env_id_i]] = np.zeros((batch_size))
+            feed_dict[self.r[env_id_i]] = np.zeros((batch_size))
+
+        feed_dict[self.game_spec_layer_enable] = [0.0] * (config.game_dic_all.index(self.env_id)) + [1.0] + [0.0] * (len(config.game_dic_all)-config.game_dic_all.index(self.env_id)-1)
 
         fetched = sess.run(fetches, feed_dict=feed_dict)
 

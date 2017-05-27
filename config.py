@@ -2,7 +2,7 @@
 '''log config'''
 status = ""
 basic_log_dir = "gtn_7"
-log_dir = "test_gtn_15_mix_exp_11"
+log_dir = "test_gtn_15_mix_exp_15"
 
 '''cluster config'''
 cluster_current = 0
@@ -14,7 +14,8 @@ if if_restore_model is True:
     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
 
 '''model structure'''
-consi_depth = 3
+conv_depth = 3
+consi_depth = 4
 lstm_size = [288,288,128,32] # consi first is to large
 
 '''behaviour config'''
@@ -23,8 +24,8 @@ if_mix_exp = False # currently not support
 if_reward_auto_normalize = False # currently not support
 
 '''worker config'''
-num_workers_global = 2
-num_workers_local = 2 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_global = 4
+num_workers_local = 4 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 def get_env_dic(env_seq_id):
     import copy

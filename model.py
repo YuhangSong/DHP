@@ -162,7 +162,7 @@ class LSTMPolicy(object):
                 with tf.variable_scope("consi_layer_right_"+str(consi_layer_id)):
                     x = lift_in[consi_layer_id]
                     x, lift_to_up[consi_layer_id] = conv_layers(x              = x,
-                                                                num_layers     = 4,
+                                                                num_layers     = config.conv_depth,
                                                                 consi_layer_id = 0)
                     x, state_init_t, c_in_t, h_in_t, state_out_t = lstm_layer(x         = x,
                                                                           size      = config.lstm_size[consi_layer_id],

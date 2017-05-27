@@ -205,9 +205,9 @@ class A3C(object):
                 self.local_network = pi = LSTMPolicy(env.observation_space.shape, env.action_space.n, self.env_id)
                 pi.global_step = self.global_step
 
-            self.game_spec_layer_enable = tf.placeholder(tf.float32, [len(config.game_dic_all)], name="game_spec_layer_enable")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
 
+            self.game_spec_layer_enable = {}
             self.ac = {}
             self.adv = {}
             self.r = {}
@@ -218,9 +218,10 @@ class A3C(object):
             entropy = {}
             self.loss_all = {}
             for env_id_i in config.game_dic_all:
-                self.ac[env_id_i] = tf.placeholder(tf.float32, [None, config.game_dic_all_ac_space[env_id_i]], name="ac")
-                self.adv[env_id_i] = tf.placeholder(tf.float32, [None], name="adv")
-                self.r[env_id_i] = tf.placeholder(tf.float32, [None], name="r")
+                self.game_spec_layer_enable[env_id_i] = tf.placeholder(tf.float32, [1], name="game_spec_layer_enable_"+env_id_i)
+                self.ac[env_id_i] = tf.placeholder(tf.float32, [None, config.game_dic_all_ac_space[env_id_i]], name="ac_"+env_id_i)
+                self.adv[env_id_i] = tf.placeholder(tf.float32, [None], name="adv_"+env_id_i)
+                self.r[env_id_i] = tf.placeholder(tf.float32, [None], name="r_"+env_id_i)
 
                 log_prob_tf[env_id_i] = tf.nn.log_softmax(pi.logits[env_id_i])
                 prob_tf[env_id_i] = tf.nn.softmax(pi.logits[env_id_i])
@@ -235,9 +236,9 @@ class A3C(object):
                 entropy[env_id_i] = - tf.reduce_sum(prob_tf[env_id_i] * log_prob_tf[env_id_i])
 
 
-                self.loss_all[env_id_i] = pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01
+                self.loss_all[env_id_i] = (pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01) * self.game_spec_layer_enable[env_id_i]
 
-            self.loss = tf.reduce_sum(self.loss_all.values() * self.game_spec_layer_enable)
+            self.loss = tf.reduce_sum(self.loss_all.values())
 
             # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
@@ -412,13 +413,13 @@ class A3C(object):
                 batch_features_maped_layer = np.concatenate((batch_features_maped_layer, batch_features[batch_i][consi_layer_id]), axis=1)
             feed_dict[self.local_network.c_in[consi_layer_id]] = batch_features_maped_layer[0]
             feed_dict[self.local_network.h_in[consi_layer_id]] = batch_features_maped_layer[1]
+        feed_dict[self.game_spec_layer_enable[self.env_id]] = [1.0]
 
         for env_id_i in config.game_dic_all:
             feed_dict[self.ac[env_id_i]] = np.zeros((batch_size,config.game_dic_all_ac_space[env_id_i]))
             feed_dict[self.adv[env_id_i]] = np.zeros((batch_size))
             feed_dict[self.r[env_id_i]] = np.zeros((batch_size))
-
-        feed_dict[self.game_spec_layer_enable] = [0.0] * (config.game_dic_all.index(self.env_id)) + [1.0] + [0.0] * (len(config.game_dic_all)-config.game_dic_all.index(self.env_id)-1)
+            feed_dict[self.game_spec_layer_enable[env_id_i]] = [0.0]
 
         fetched = sess.run(fetches, feed_dict=feed_dict)
 

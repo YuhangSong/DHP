@@ -46,9 +46,11 @@ def run(args, server):
     summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
     logger.info("Events directory: %s_%s", logdir, args.task)
     if args.task is not config.task_chief:
-        # tf.Session(server.target, config=config_tf).run(tf.variables_initializer([v for v in tf.global_variables() if v.name.startswith("local")]))
-        # tf.Session(server.target, config=config_tf).run(trainer.sync)
-        tf.Session(server.target, config=config_tf).run(init_all_op)
+        if config.project is 'g':
+            print('this is g project, bug on ver init, since the graph is different across threads')
+            tf.Session(server.target, config=config_tf).run(init_all_op)
+        elif config.project is 'f':
+            print('this is f project, no bug on ver init, since the praph is exactly same across threads')
     sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
                              logdir=logdir,
                              saver=saver,

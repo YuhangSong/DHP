@@ -27,7 +27,7 @@ def create_tmux_commands(session, remotes, logdir):
     Coder: YuhangSong
     Description: specific sequence of games to run
     '''
-    env_seq_id = config.get_env_seq(config.game_dic)
+    env_seq_id = config.game_dic
 
     # for launching the TF workers and for launching tensorboard
     base_cmd = [

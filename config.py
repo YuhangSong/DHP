@@ -2,7 +2,7 @@
 '''log config'''
 status = ""
 basic_log_dir = "gtn_7"
-log_dir = "test_gtn_15_mix_exp_15"
+log_dir = "test_gtn_15_mix_exp_21"
 
 '''cluster config'''
 cluster_current = 0
@@ -14,9 +14,9 @@ if if_restore_model is True:
     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
 
 '''model structure'''
-conv_depth = 3
-consi_depth = 4
-lstm_size = [288,288,128,32] # consi first is to large
+conv_depth = 4
+consi_depth = 3
+lstm_size = [288,128,32] # consi first is to large
 
 '''behaviour config'''
 update_step = 20

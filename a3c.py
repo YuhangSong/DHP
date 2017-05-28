@@ -235,10 +235,9 @@ class A3C(object):
                 vf_loss[env_id_i] = 0.5 * tf.reduce_sum(tf.square(pi.vf[env_id_i] - self.r[env_id_i]))
                 entropy[env_id_i] = - tf.reduce_sum(prob_tf[env_id_i] * log_prob_tf[env_id_i])
 
+                self.loss_all[env_id_i] = (pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01) * self.game_spec_layer_enable[env_id_i][0] # * self.game_spec_layer_enable[env_id_i][0]
 
-                self.loss_all[env_id_i] = (pi_loss[env_id_i] + 0.5 * vf_loss[env_id_i] - entropy[env_id_i] * 0.01) * self.game_spec_layer_enable[env_id_i]
-
-            self.loss = tf.reduce_sum(self.loss_all.values())
+            self.loss = tf.reduce_sum(tf.convert_to_tensor(self.loss_all.values()))
 
             # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
@@ -275,10 +274,8 @@ class A3C(object):
 
     def start(self, sess, summary_writer):
 
-        if(self.task!=config.task_chief):
-            print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
-            time.sleep(5)
-            sess.run(self.sync)  # copy weights from shared to local
+        print('async from global network before start interaction and training, wait for the cheif thread before async')
+        sess.run(self.sync)  # copy weights from shared to local
 
         if(self.task==config.task_plus):
             print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')

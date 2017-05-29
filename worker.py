@@ -27,7 +27,7 @@ def run(args, server):
     env = create_env(args.env_id,
                      client_id=str(args.task),
                      remotes=args.remotes,
-                     select=args.select)
+                     task=args.task)
 
     trainer = A3C(env, args.env_id, args.task)
 
@@ -114,7 +114,6 @@ Setting up Tensorflow for data parallel work
     parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
     parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
-    parser.add_argument('--select', default=0, type=int, help='select id')
     parser.add_argument('-r', '--remotes', default=None,
                         help='References to environments to create (e.g. -r 20), '
                              'or the address of pre-existing VNC servers and '

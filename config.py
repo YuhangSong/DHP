@@ -1,10 +1,11 @@
 '''g of f'''
-project = 'g'
+project = 'f'
 
 '''log config'''
 status = ""
 basic_log_dir = project+"_1"
-log_dir = "6"
+log_dir = "9"
+final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 '''cluster config'''
 cluster_current = 0
@@ -33,7 +34,7 @@ if project is 'f':
 
 '''worker config'''
 num_workers_global = 16
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 def get_env_dic(env_seq_id):
     import copy
@@ -72,6 +73,17 @@ if project is 'g':
     game_dic = game_dic_test_multi_pong # specific game dic
 elif project is 'f':
     game_dic = game_dic_test_pokemon # specific game dic
+
+'''for env config'''
+data_tensity = 10
+view_range_lon = 110
+view_range_lat = 113
+final_discount_to = 10**(-4)
+from numpy import zeros
+observation_space = zeros((42, 42, 1))
+'''for env behaivour'''
+if_log_scan_path = False
+log_cc_interval = 20
 
 '''default config'''
 num_games_global = len(game_dic)

@@ -54,7 +54,6 @@ def create_tmux_commands(session, remotes, logdir):
             'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
             '--log-dir', logdir,
             '--env-id', env_seq_id[i / config.num_workers_global],
-            '--select', str(i),
             '--num-workers', str(config.num_workers_total_global)]
         cmds_map += [new_tmux_cmd(session,
                                   "w-%d" % i,
@@ -81,7 +80,7 @@ def create_tmux_commands(session, remotes, logdir):
 def run():
     args = parser.parse_args()
 
-    cmds = create_tmux_commands("a3c", args.remotes, "../../result/"+config.basic_log_dir+config.status+"/" + config.log_dir + config.status)
+    cmds = create_tmux_commands("a3c", args.remotes, config.final_log_dir)
     print("\n".join(cmds))
     os.system("\n".join(cmds))
 

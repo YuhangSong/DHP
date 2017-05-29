@@ -4,7 +4,7 @@ project = 'g'
 '''log config'''
 status = ""
 basic_log_dir = project+"_1"
-log_dir = "5"
+log_dir = "6"
 
 '''cluster config'''
 cluster_current = 0

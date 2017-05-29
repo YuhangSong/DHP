@@ -1,5 +1,5 @@
 '''g of f'''
-project = 'f'
+project = 'g'
 
 '''log config'''
 status = ""
@@ -33,7 +33,7 @@ if project is 'f':
 
 '''worker config'''
 num_workers_global = 16
-num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 def get_env_dic(env_seq_id):
     import copy

@@ -1,10 +1,10 @@
 '''g of f'''
-project = 'g'
+project = 'f'
 
 '''log config'''
 status = ""
 basic_log_dir = project+"_1"
-log_dir = "3"
+log_dir = "5"
 
 '''cluster config'''
 cluster_current = 0
@@ -32,8 +32,8 @@ if project is 'f':
     direction_num = 8
 
 '''worker config'''
-num_workers_global = 2
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_global = 16
+num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 def get_env_dic(env_seq_id):
     import copy
@@ -44,8 +44,8 @@ def get_env_dic(env_seq_id):
         env_seq_id[i] = '{}Deterministic-v3'.format(name)
     return env_seq_id
 def get_env_ac_space(env_id):
-    import envs
-    return envs.create_atari_env(env_id).action_space.n
+    from envs import create_atari_env
+    return create_atari_env(env_id).action_space.n
 def get_env_dic_ac_space(env_id_dic):
     env_dic_ac_space = {}
     for env_id in env_id_dic:
@@ -91,7 +91,6 @@ if project is 'g':
     ])
     game_dic_all_ac_space = get_env_dic_ac_space(game_dic_all)
 games_start_global = 0
-mix_exp_temp_dir = 'mix_exp_temp_dir/'
 cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first

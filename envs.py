@@ -26,23 +26,95 @@ import urllib
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from vrplayer import get_view
+from move_view_lib import move_view
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 universe.configure_logging()
 
+class env_f():
+    def __init__(self, log_interval=503, id_ = 'Movie/Help', select=0, if_log_scan_path=False, if_log_cc=False):
+
+        self._episode_reward = 0
+        self._episode_length = 0
+
+        self.observation_space = np.zeros((42, 42, 1))
+        class nnn():
+            def __init__(self, n):
+                self.n = n
+        import config
+        self.action_space = nnn(config.direction_num)
+
+        self.id_f = id_
+        import envs_li
+        self.env_li = envs_li.env_li(id_,
+                             self.observation_space,
+                             select,
+                             if_log_scan_path=if_log_scan_path,
+                             if_log_cc=if_log_cc)
+
+        '''warper to meet origin env'''
+
+        '''env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')'''
+
+        class spec():
+            def __init__(self, env_li):
+                class tags():
+                    def __init__(self, env_li):
+                        self.env_li = env_li
+                    def get(self,get_str):
+                        if get_str=='wrapper_config.TimeLimit.max_episode_steps':
+                            return self.env_li.step_total
+                        else:
+                            print(s)
+                self.tags = tags(env_li)
+        self.spec = spec(self.env_li)
+
+    def reset(self):
+        return self.env_li.reset()
+
+    def step(self, action):
+
+        observation, reward, done = self.env_li.step(action)
+
+        to_log = {}
+
+        if done:
+
+            logger.info('Episode terminating: episode_reward=%s episode_length=%s', self._episode_reward, self._episode_length)
+
+            to_log["global/episode_reward"] = self._episode_reward
+            # to_log["global/episode_length"] = self._episode_length
+
+            self._episode_reward = 0
+            self._episode_length = 0
+
+        else:
+
+            self._episode_reward += reward
+            self._episode_length += 1
+
+        return observation, reward, done, to_log
+
+
 def create_env(env_id, client_id, remotes, id_ff = 'Movie/Help', select=0, if_log_scan_path=False, if_log_cc=False, **kwargs):
-
-    spec = gym.spec(env_id)
-
-    if spec.tags.get('flashgames', False):
-        return create_flash_env(env_id, client_id, remotes, **kwargs)
-    elif spec.tags.get('atari', False) and spec.tags.get('vnc', False):
-        return create_vncatari_env(env_id, client_id, remotes, **kwargs)
-    else:
-        # Assume atari.
-        assert "." not in env_id  # universe environments have dots in names.
-        return create_atari_env(env_id)
+    import config
+    if config.project is 'g':
+        spec = gym.spec(env_id)
+        if spec.tags.get('flashgames', False):
+            return create_flash_env(env_id, client_id, remotes, **kwargs)
+        elif spec.tags.get('atari', False) and spec.tags.get('vnc', False):
+            return create_vncatari_env(env_id, client_id, remotes, **kwargs)
+        else:
+            # Assume atari.
+            assert "." not in env_id  # universe environments have dots in names.
+            return create_atari_env(env_id)
+    elif config.project is 'f':
+        return env_f(id_ = env_id,
+                           select=select,
+                           if_log_scan_path=if_log_scan_path,
+                           if_log_cc=if_log_cc)
 
 def create_flash_env(env_id, client_id, remotes, **_):
     env = gym.make(env_id)

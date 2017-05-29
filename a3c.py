@@ -163,7 +163,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
                     last_state = env.reset()
                 last_features = policy.get_initial_features()
-                print("Episode finished. Sum of rewards: %d. Length: %d" % (rewards, length))
+                print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
                 length = 0
                 rewards = 0.0
                 break
@@ -267,8 +267,8 @@ class A3C(object):
 
         if(self.task==config.task_plus):
             print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
-            subprocess.call(["rm", "-r", config.mix_exp_temp_dir])
-            subprocess.call(["mkdir", config.mix_exp_temp_dir])
+            subprocess.call(["rm", "-r", 'temp/mix_exp/'])
+            subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer

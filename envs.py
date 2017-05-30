@@ -34,25 +34,25 @@ logger.setLevel(logging.INFO)
 universe.configure_logging()
 
 class env_f():
-    def __init__(self, log_interval=503, id_ = 'Movie/Help', select=0, if_log_scan_path=False, if_log_cc=False):
+    def __init__(self, env_id, task):
 
         self._episode_reward = 0
         self._episode_length = 0
 
-        self.observation_space = np.zeros((42, 42, 1))
         class nnn():
             def __init__(self, n):
                 self.n = n
         import config
         self.action_space = nnn(config.direction_num)
 
-        self.id_f = id_
+        self.env_id = env_id
         import envs_li
-        self.env_li = envs_li.env_li(id_,
-                             self.observation_space,
-                             select,
-                             if_log_scan_path=if_log_scan_path,
-                             if_log_cc=if_log_cc)
+        self.env_li = envs_li.env_li(env_id=env_id,
+                                     task=task)
+
+        '''observation_space'''
+        from config import observation_space
+        self.observation_space = observation_space
 
         '''warper to meet origin env'''
 
@@ -76,7 +76,7 @@ class env_f():
 
     def step(self, action):
 
-        observation, reward, done = self.env_li.step(action)
+        observation, reward, done, cur_cc, max_cc = self.env_li.step(action)
 
         to_log = {}
 
@@ -85,6 +85,8 @@ class env_f():
             logger.info('Episode terminating: episode_reward=%s episode_length=%s', self._episode_reward, self._episode_length)
 
             to_log["global/episode_reward"] = self._episode_reward
+            to_log["global/cur_cc"] = cur_cc
+            to_log["global/max_cc"] = max_cc
             # to_log["global/episode_length"] = self._episode_length
 
             self._episode_reward = 0
@@ -98,7 +100,7 @@ class env_f():
         return observation, reward, done, to_log
 
 
-def create_env(env_id, client_id, remotes, id_ff = 'Movie/Help', select=0, if_log_scan_path=False, if_log_cc=False, **kwargs):
+def create_env(env_id, client_id, remotes, id_ff = 'Movie/Help', task=0, **kwargs):
     import config
     if config.project is 'g':
         spec = gym.spec(env_id)
@@ -111,10 +113,8 @@ def create_env(env_id, client_id, remotes, id_ff = 'Movie/Help', select=0, if_lo
             assert "." not in env_id  # universe environments have dots in names.
             return create_atari_env(env_id)
     elif config.project is 'f':
-        return env_f(id_ = env_id,
-                           select=select,
-                           if_log_scan_path=if_log_scan_path,
-                           if_log_cc=if_log_cc)
+        return env_f(env_id = env_id,
+                     task = task)
 
 def create_flash_env(env_id, client_id, remotes, **_):
     env = gym.make(env_id)

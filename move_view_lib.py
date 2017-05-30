@@ -144,4 +144,12 @@ def move_view(cur_lon, cur_lat, direction, degree_per_step):   #default R equals
     new_lon= trans_rar2deg(new_lon)
     new_lat= trans_rar2deg(new_lat)
 
+    if new_lon > 360.0:
+        print(s)
+    if new_lon < 0.0:
+        print(a)
+
+    if new_lon > 180.0:
+        new_lon -= 360.0
+
     return new_lon,new_lat

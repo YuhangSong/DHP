@@ -1,19 +1,24 @@
 '''g of f'''
-project = 'g'
+project = 'f'
 
 '''log config'''
 status = ""
 basic_log_dir = project+"_1"
-log_dir = "5"
+log_dir = "12"
+final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
+
+# '''restore model config'''
+# if_restore_model = False
+# if if_restore_model is True:
+#     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
 
 '''cluster config'''
 cluster_current = 0
 cluster_main = 0
 
-'''restore model config''' # currently not support
-if_restore_model = False
-if if_restore_model is True:
-    model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
+'''worker config'''
+num_workers_global = 16
+num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 '''model structure'''
 if project is 'g':
@@ -26,14 +31,24 @@ lstm_size = [288,128,32] # consi first is to large
 
 '''behaviour config'''
 update_step = 20
-if_mix_exp = False # currently not support
-if_reward_auto_normalize = False # currently not support
+# if_mix_exp = False
+# if_reward_auto_normalize = False
 if project is 'f':
     direction_num = 8
 
-'''worker config'''
-num_workers_global = 16
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+if project is 'f':
+    '''for env config'''
+    data_tensity = 10
+    view_range_lon = 110
+    view_range_lat = 113
+    final_discount_to = 10**(-4)
+    from numpy import zeros
+    observation_space = zeros((42, 42, 1))
+    '''for env behaivour'''
+    if_log_scan_path = False
+    if_log_cc = True
+    relative_predicted_fixation_num = 1.0
+    relative_log_cc_interval = 3.0/40.0
 
 def get_env_dic(env_seq_id):
     import copy
@@ -68,6 +83,7 @@ elif project is 'f':
         'Pokemon',
     ]
 
+'''env config'''
 if project is 'g':
     game_dic = game_dic_test_multi_pong # specific game dic
 elif project is 'f':

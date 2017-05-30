@@ -113,7 +113,7 @@ class RunnerThread(threading.Thread):
             # won't die with it, unless the timeout is set to some large number.  This is an empirical
             # observation.
 
-            self.queue.put(next(rollout_provider), timeout=600.0)
+            self.queue.put(next(rollout_provider), timeout=None)
 
 def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread):
     """
@@ -156,17 +156,25 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 summary_writer.add_summary(summary, policy.global_step.eval())
                 summary_writer.flush()
 
-            timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
-            # print(env.spec.tags.get('wrapper_config.reward_range'))
-            if terminal or length >= timestep_limit:
-                terminal_end = True
-                if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
-                    last_state = env.reset()
-                last_features = policy.get_initial_features()
-                print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
-                length = 0
-                rewards = 0.0
-                break
+            if config.project is 'g':
+                timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
+                if terminal or length >= timestep_limit:
+                    terminal_end = True
+                    if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
+                        last_state = env.reset()
+                    last_features = policy.get_initial_features()
+                    print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
+                    length = 0
+                    rewards = 0.0
+                    break
+            elif config.project is 'f':
+                if terminal:
+                    terminal_end = True
+                    last_features = policy.get_initial_features()
+                    print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
+                    length = 0
+                    rewards = 0.0
+                    break
 
         if not terminal_end:
             rollout.r = policy.value(last_state, last_features)
@@ -277,7 +285,7 @@ class A3C(object):
         """
         self explanatory:  take a rollout from the queue of the thread runner.
         """
-        rollout = self.runner.queue.get(timeout=600.0)
+        rollout = self.runner.queue.get(timeout=None)
         while not rollout.terminal:
             try:
                 rollout.extend(self.runner.queue.get_nowait())

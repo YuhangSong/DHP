@@ -76,7 +76,7 @@ class env_f():
 
     def step(self, action):
 
-        observation, reward, done, cur_cc = self.env_li.step(action)
+        observation, reward, done, cur_cc, max_cc = self.env_li.step(action)
 
         to_log = {}
 
@@ -86,6 +86,7 @@ class env_f():
 
             to_log["global/episode_reward"] = self._episode_reward
             to_log["global/cur_cc"] = cur_cc
+            to_log["global/max_cc"] = max_cc
             # to_log["global/episode_length"] = self._episode_length
 
             self._episode_reward = 0

@@ -3,8 +3,8 @@ project = 'f'
 
 '''log config'''
 status = ""
-basic_log_dir = project+"_1"
-log_dir = "12"
+basic_log_dir = project+"_2"
+log_dir = "1"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -44,6 +44,7 @@ if project is 'f':
     final_discount_to = 10**(-4)
     from numpy import zeros
     observation_space = zeros((42, 42, 1))
+    reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True

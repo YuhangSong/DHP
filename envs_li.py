@@ -28,10 +28,16 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
+from move_view_lib_new import view_mover
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 universe.configure_logging()
+
+'''
+Warning: all degree in du
+         lon from -180 to 180
+'''
 
 class env_li():
 
@@ -51,6 +57,9 @@ class env_li():
 
         '''load config'''
         self.config()
+
+        '''create view_mover'''
+        self.view_mover = view_mover()
 
         '''reset'''
         self.observation = self.reset()
@@ -196,6 +205,10 @@ class env_li():
         self.cur_lon = self.subjects[subject_code].data_frame[0].p[0]
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
 
+        '''reset view_mover'''
+        self.view_mover.init_position(Latitude=self.cur_lat,
+                                      Longitude=self.cur_lon)
+
         '''set observation_now to the first frame'''
         self.get_observation()
 
@@ -298,11 +311,11 @@ class env_li():
 
             '''get reward and v from last state'''
             last_prob, distance_per_data = get_prob(lon=self.last_lon,
-                                              lat=self.last_lat,
-                                              theta=action * 45.0,
-                                              subjects=self.subjects,
-                                              subjects_total=self.subjects_total,
-                                              cur_data=self.last_data)
+                                                    lat=self.last_lat,
+                                                    theta=action * 45.0,
+                                                    subjects=self.subjects,
+                                                    subjects_total=self.subjects_total,
+                                                    cur_data=self.last_data)
 
             '''rescale'''
             distance_per_step = distance_per_data * self.data_per_step
@@ -311,16 +324,23 @@ class env_li():
             degree_per_step = distance_per_step / math.pi * 180.0
 
             '''move view, update cur_lon and cur_lat'''
-            self.cur_lon, self.cur_lat = move_view(cur_lon=self.last_lon,
-                                                   cur_lat=self.last_lat,
-                                                   direction=action,
-                                                   degree_per_step=degree_per_step)
+            self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+            if self.cur_lon < -180.0 or self.cur_lon > 180.0:
+                print(r)
 
             '''update observation_now'''
             self.get_observation()
 
             '''produce output'''
-            reward = last_prob
+            from config import reward_estimator
+            if reward_estimator is 'trustworthy_transfer':
+                reward = last_prob
+            elif reward_estimator is 'cc':
+                cur_heatmap = fixation2salmap(fixation=[[self.cur_lon, self.cur_lat]],
+                                              mapwidth=self.heatmap_width,
+                                              mapheight=self.heatmap_height)
+                from cc import calc_score
+                reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
             done = False
 
         if self.log_thread:

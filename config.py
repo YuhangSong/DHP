@@ -4,7 +4,7 @@ project = 'f'
 '''log config'''
 status = ""
 basic_log_dir = project+"_2"
-log_dir = "2"
+log_dir = "3"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -45,7 +45,7 @@ if project is 'f':
     from numpy import zeros
     observation_space = zeros((42, 42, 1))
     reward_estimator = 'cc' # availible: trustworthy_transfer, cc
-    heatmap_sigma = 'my_sigma' # availible: my_sigma, sigma_half_fov
+    heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True
@@ -92,8 +92,10 @@ elif project is 'f':
     game_dic = game_dic_test_pokemon # specific game dic
 
 '''default config'''
+
 num_games_global = len(game_dic)
 num_workers_total_global = num_games_global * num_workers_global
+
 if project is 'g':
     game_dic_all = get_env_dic([
         'alien', 'amidar', 'bank_heist', 'ms_pacman', 'tutankham', 'venture', 'wizard_of_wor', # maze >> g7s0
@@ -108,11 +110,16 @@ if project is 'g':
         'kung_fu_master', # fight >> g1s56
     ])
     game_dic_all_ac_space = get_env_dic_ac_space(game_dic_all)
+
 games_start_global = 0
+
 cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
+
 task_plus = cluster_current * num_workers_total_global
 task_chief = cluster_main * num_workers_total_global
+
 my_sigma = (11.75+13.78)/2
+import math
 sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))

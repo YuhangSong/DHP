@@ -55,6 +55,9 @@ class env_li():
         '''get id contains only name of the video'''
         self.env_id = env_id
 
+        from config import reward_estimator
+        self.reward_estimator = reward_estimator
+
         '''load config'''
         self.config()
 
@@ -144,6 +147,15 @@ class env_li():
 
         self.episode = 0
 
+        '''salmap'''
+        self.heatmap_height = 180
+        self.heatmap_width = 360
+
+        '''load ground-truth heat map'''
+        from config import heatmap_sigma
+        gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
+        self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
+
         from config import num_workers_global,cluster_current,cluster_main
         if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
             print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
@@ -167,13 +179,6 @@ class env_li():
             '''cc record'''
             self.agent_result_saver = []
             self.agent_result_stack = []
-
-            '''salmap'''
-            self.heatmap_height = 180
-            self.heatmap_width = 360
-
-            '''load ground-truth heat map'''
-            self.gt_heatmaps = self.load_heatmaps('gt_heatmap_sp_my_sigma')
 
             self.max_cc = 0.0
             self.cur_cc = 0.0
@@ -325,17 +330,14 @@ class env_li():
 
             '''move view, update cur_lon and cur_lat'''
             self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
-            if self.cur_lon < -180.0 or self.cur_lon > 180.0:
-                print(r)
 
             '''update observation_now'''
             self.get_observation()
 
             '''produce output'''
-            from config import reward_estimator
-            if reward_estimator is 'trustworthy_transfer':
+            if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
-            elif reward_estimator is 'cc':
+            elif self.reward_estimator is 'cc':
                 cur_heatmap = fixation2salmap(fixation=[[self.cur_lon, self.cur_lat]],
                                               mapwidth=self.heatmap_width,
                                               mapheight=self.heatmap_height)

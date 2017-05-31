@@ -9,6 +9,7 @@ class view_mover():
     def init_position(self, Longitude, Latitude):
         self.Latitude = Latitude*math.pi/180.0
         self.Longitude = Longitude*math.pi/180.0
+        self.constrain_lon()
         self.update_Rn_Re()
 
     def update_Rn_Re(self):
@@ -20,11 +21,17 @@ class view_mover():
         Vn = degree_per_step / 180.0 * math.pi * math.cos(direction / 180.0 * math.pi)
         Ve = degree_per_step / 180.0 * math.pi * math.sin(direction / 180.0 * math.pi)
 
-        self.Latitude=self.Latitude+Vn/self.Rn;
-        self.Longitude=self.Longitude+Ve/(self.Re*math.cos(self.Latitude));
+        self.Latitude=self.Latitude+Vn/self.Rn
+        self.Longitude=self.Longitude+Ve/(self.Re*math.cos(self.Latitude))
+
+        self.constrain_lon()
+
         self.update_Rn_Re()
+
+        return self.Longitude,self.Latitude
+
+    def constrain_lon(self):
         if self.Longitude < -180.0:
             self.Longitude += 360.0
         if self.Longitude > 180.0:
             self.Longitude -= 360.0
-        return self.Longitude,self.Latitude

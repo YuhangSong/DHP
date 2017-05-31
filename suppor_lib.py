@@ -190,6 +190,14 @@ def lonlat2Mercator(lon, lat):
 
 
 def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+13.78)/2, sp = True):
+
+    from config import heatmap_sigma
+    if heatmap_sigma is 'my_sigma':
+        from config import my_sigma
+        my_sigma_in_degree = my_sigma
+    elif heatmap_sigma is 'sigma_half_fov':
+        from config import sigma_half_fov
+        my_sigma_in_degree = sigma_half_fov
     fixation_total = np.shape(fixation)[0]
     x_degree_per_pixel = 360.0 / mapwidth
     y_degree_per_pixel = 180.0 / mapheight

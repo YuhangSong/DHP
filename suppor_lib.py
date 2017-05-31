@@ -80,6 +80,8 @@ def get_subjects(data, subject_id):
 
             subjects[subject_i].data_frame[data_frame_i].p[0] = data[data_frame_i, subject_i*2 + 1] #lon
             subjects[subject_i].data_frame[data_frame_i].p[1] = data[data_frame_i, subject_i*2] #lat
+            if subjects[subject_i].data_frame[data_frame_i].p[0] < -180.0 or subjects[subject_i].data_frame[data_frame_i].p[0] > 180.0:
+                print(j)
 
         for data_frame_i in range(1, num_data_frame - 1):
 

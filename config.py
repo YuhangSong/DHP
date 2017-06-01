@@ -4,7 +4,7 @@ project = 'f'
 '''log config'''
 status = ""
 basic_log_dir = project+"_2"
-log_dir = "3"
+log_dir = "4"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -18,7 +18,7 @@ cluster_main = 0
 
 '''worker config'''
 num_workers_global = 16
-num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 '''model structure'''
 if project is 'g':
@@ -44,7 +44,7 @@ if project is 'f':
     final_discount_to = 10**(-4)
     from numpy import zeros
     observation_space = zeros((42, 42, 1))
-    reward_estimator = 'cc' # availible: trustworthy_transfer, cc
+    reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
     '''for env behaivour'''
     if_log_scan_path = False

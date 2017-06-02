@@ -125,11 +125,6 @@ class env_li():
         '''get subjects'''
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
 
-        from config import mode
-        self.mode = mode
-        if self.mode is 'data_processor':
-            self.data_processor()
-
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
         self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
@@ -158,6 +153,11 @@ class env_li():
         '''salmap'''
         self.heatmap_height = 180
         self.heatmap_width = 360
+
+        from config import mode
+        self.mode = mode
+        if self.mode is 'data_processor':
+            self.data_processor()
 
         '''load ground-truth heat map'''
         from config import heatmap_sigma

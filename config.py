@@ -1,12 +1,12 @@
-'''g of f'''
-project = 'f'
+project = 'f' #availible: g, f
 
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr' #availible: vr, vr_new
+    data_base = 'vr_new' #availible: vr, vr_new
     mode = 'data_processor' #availible: off-line, on-line, data_processor
     if mode is 'data_processor':
+        if_data_provessor_debug = True
         data_processor_id = 'minglang_mp4_to_yuv'
 
 '''log config'''
@@ -16,7 +16,7 @@ else:
     '''default setting'''
     status = "data_processor_temp_run"
 basic_log_dir = project+"_2"
-log_dir = "8_test_reward_smooth_8"
+log_dir = "9"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -61,7 +61,7 @@ if project is 'f':
     observation_space = zeros((42, 42, 1))
     reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
-    reward_smooth_discount_to = 0.8 # set to 1.0 to disable reward smooth
+    reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True
@@ -195,6 +195,8 @@ elif project is 'f':
             game_dic = game_dic_all
         elif data_base is 'vr_new':
             game_dic = game_dic_new_all
+        if if_data_provessor_debug is True:
+            game_dic = game_dic[:1]
 
 '''default config'''
 

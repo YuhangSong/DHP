@@ -5,12 +5,16 @@ if project is 'g':
     model = None
 elif project is 'f':
     data_base = 'vr' #availible: vr, vr_new
-    mode = 'off-line' #availible: off-line, on-line, data_processor
+    mode = 'data_processor' #availible: off-line, on-line, data_processor
     if mode is 'data_processor':
         data_processor_id = 'minglang_mp4_to_yuv'
 
 '''log config'''
-status = ""
+if mode is not 'data_processor':
+    status = ""
+else:
+    '''default setting'''
+    status = "data_processor_temp_run"
 basic_log_dir = project+"_2"
 log_dir = "8_test_reward_smooth_8"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
@@ -25,7 +29,6 @@ cluster_current = 0
 cluster_main = 0
 
 '''worker config'''
-num_workers_global = 16
 if mode is not 'data_processor':
     num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
 else:
@@ -187,7 +190,7 @@ elif project is 'f':
     if mode is not 'data_processor':
         game_dic = game_dic_test_pokemon # specific game dic
     else:
-        ''''''
+        '''default setting'''
         if data_base is 'vr':
             game_dic = game_dic_all
         elif data_base is 'vr_new':
@@ -196,6 +199,7 @@ elif project is 'f':
 '''default config'''
 
 num_games_global = len(game_dic)
+num_workers_global = 16
 num_workers_total_global = num_games_global * num_workers_global
 
 if project is 'g':

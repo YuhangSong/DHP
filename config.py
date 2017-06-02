@@ -1,10 +1,18 @@
 '''g of f'''
 project = 'f'
 
+if project is 'g':
+    model = None
+elif project is 'f':
+    data_base = 'vr_new' #availible: vr, vr_new
+    mode = 'data_processor' #availible: off-line, on-line, data_processor
+    if mode is 'data_processor':
+        data_processor_id = 'minglang_mp4_to_yuv'
+
 '''log config'''
-status = ""
+status = "coding"
 basic_log_dir = project+"_2"
-log_dir = "4"
+log_dir = "8_test_reward_smooth_8"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -18,7 +26,11 @@ cluster_main = 0
 
 '''worker config'''
 num_workers_global = 16
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+if mode is not 'data_processor':
+    num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
+else:
+    '''default settings'''
+    num_workers_local = 1
 
 '''model structure'''
 if project is 'g':
@@ -46,6 +58,7 @@ if project is 'f':
     observation_space = zeros((42, 42, 1))
     reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
+    reward_smooth_discount_to = 0.8 # set to 1.0 to disable reward smooth
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True
@@ -84,12 +97,93 @@ elif project is 'f':
     game_dic_test_pokemon=[
         'Pokemon',
     ]
+    game_dic_new_all=[
+        'A380',
+        'AcerEngine',
+        'AcerPredator',
+        'AirShow',
+        'BFG',
+        'Bicycle',
+        'BlueWorld',
+        'BTSRun',
+        'Camping',
+        'CandyCarnival',
+        'Castle',
+        'Catwalks',
+        'CMLauncher',
+        'CMLauncher2',
+        'CS',
+        'DanceInTurn',
+        'Dancing',
+        'DrivingInAlps',
+        'Egypt',
+        'F5Fighter',
+        'Flight',
+        'GalaxyOnFire',
+        'Graffiti',
+        'GTA',
+        'Guitar',
+        'HondaF1',
+        'InsideCar',
+        'IRobot',
+        'KasabianLive',
+        'KingKong',
+        'Lion',
+        'LoopUniverse',
+        'Manhattan',
+        'MC',
+        'MercedesBenz',
+        'Motorbike',
+        'Murder',
+        'NotBeAloneTonight',
+        'Orion',
+        'Parachuting',
+        'Parasailing',
+        'Pearl',
+        'Predator',
+        'ProjectSoul',
+        'Rally',
+        'RingMan',
+        'RioOlympics',
+        'Roma',
+        'Shark',
+        'Skiing',
+        'Snowfield',
+        'SnowRopeway',
+        'SpaceWar',
+        'SpaceWar2',
+        'Square',
+        'StarryPolar',
+        'StarWars',
+        'StarWars2',
+        'Stratosphere',
+        'StreetFighter',
+        'Sunset',
+        'Supercar',
+        'SuperMario64',
+        'Surfing',
+        'SurfingArctic',
+        'Symphony',
+        'TalkingInCar',
+        'Terminator',
+        'TheInvisible',
+        'Village',
+        'VRBasketball',
+        'WaitingForLove',
+        'Waterfall',
+        'Waterskiing',
+        'WesternSichuan',
+        'Yacht',
+    ]
 
 '''env config'''
 if project is 'g':
     game_dic = game_dic_test_multi_pong # specific game dic
 elif project is 'f':
-    game_dic = game_dic_test_pokemon # specific game dic
+    if mode is not 'data_processor':
+        game_dic = game_dic_test_pokemon # specific game dic
+    else:
+        game_dic = game_dic_new_all
 
 '''default config'''
 

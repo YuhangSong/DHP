@@ -81,12 +81,15 @@ class env_li():
                                         view_center_lon=self.cur_lon,
                                         view_center_lat=self.cur_lat,
                                         temp_dir=self.temp_dir,
-                                        file_='../../vr/' + self.env_id + '.yuv')
+                                        file_='../../'+self.data_base+'/' + self.env_id + '.yuv')
 
     def config(self):
 
         '''function to load config'''
         print("=================config=================")
+
+        from config import data_base
+        self.data_base = data_base
 
         '''observation_space'''
         from config import observation_space
@@ -101,7 +104,7 @@ class env_li():
         subprocess.call(["mkdir", "-p", self.temp_dir])
 
         '''load in mat data of head movement'''
-        matfn = '../../vr/FULLdata_per_video_frame.mat'
+        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
         data_all = sio.loadmat(matfn)
         data = data_all[self.env_id]
         self.subjects_total = get_num_subjects(data=data)
@@ -122,8 +125,13 @@ class env_li():
         '''get subjects'''
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
 
+        from config import mode
+        self.mode = mode
+        if self.mode is 'data_processor':
+            self.data_processor()
+
         '''init video and get paramters'''
-        video = cv2.VideoCapture('../../vr/' + self.env_id + '.mp4')
+        video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
         self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
         self.frame_total = video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
         self.video_size_width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
@@ -167,6 +175,16 @@ class env_li():
         if self.log_thread:
             self.log_thread_config()
 
+    def data_processor(self):
+        from config import data_processor_id
+        print('==========================data process start: '+data_processor_id+'================================')
+        if data_processor_id is 'minglang_mp4_to_yuv':
+            print('sssss')
+        if data_processor_id is 'minglang_mp4_to_jpg':
+            print('fffff')
+        print('=============================data process end, programe terminate=============================')
+        print(t)
+
     def log_thread_config(self):
 
         from config import if_log_scan_path
@@ -201,6 +219,9 @@ class env_li():
 
         '''reset cur_frame'''
         self.cur_frame = 0
+
+        '''reset last action'''
+        self.last_action = None
 
         '''reset cur_lon and cur_lat to one of the subjects start point'''
         subject_dic_code = []
@@ -334,7 +355,7 @@ class env_li():
             '''update observation_now'''
             self.get_observation()
 
-            '''produce output'''
+            '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
             elif self.reward_estimator is 'cc':
@@ -343,6 +364,18 @@ class env_li():
                                               mapheight=self.heatmap_height)
                 from cc import calc_score
                 reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
+
+            '''smooth reward'''
+            if self.last_action is not None:
+                action_difference = abs(action-self.last_action)
+                from config import direction_num
+                if action_difference > (direction_num/2):
+                    action_difference -= (direction_num/2)
+                from config import reward_smooth_discount_to
+                reward *= (1.0-(action_difference*(1.0-reward_smooth_discount_to)/(direction_num/2)))
+
+            self.last_action = action
+
             done = False
 
         if self.log_thread:
@@ -372,7 +405,7 @@ class env_li():
         for step in range(self.step_total):
 
             try:
-                file_name = '../../vr/'+name+'/'+self.env_id+'_'+str(step)+'.jpg'
+                file_name = '../../'+self.data_base+'/'+name+'/'+self.env_id+'_'+str(step)+'.jpg'
                 temp = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
                 temp = cv2.resize(temp,(self.heatmap_width, self.heatmap_height))
                 temp = temp / 255.0

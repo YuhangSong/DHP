@@ -4,7 +4,7 @@ project = 'f'
 '''log config'''
 status = ""
 basic_log_dir = project+"_2"
-log_dir = "4"
+log_dir = "6_test_field_discount_to_1"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 # '''restore model config'''
@@ -18,7 +18,7 @@ cluster_main = 0
 
 '''worker config'''
 num_workers_global = 16
-num_workers_local = 1 # how many workers can this cluster run, DO NOT exceed num_workers_global
+num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
 
 '''model structure'''
 if project is 'g':
@@ -41,11 +41,12 @@ if project is 'f':
     data_tensity = 10
     view_range_lon = 110
     view_range_lat = 113
-    final_discount_to = 10**(-4)
+    final_discount_to = 10**(-1)
     from numpy import zeros
     observation_space = zeros((42, 42, 1))
     reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
+    reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True
@@ -83,6 +84,10 @@ if project is 'g':
 elif project is 'f':
     game_dic_test_pokemon=[
         'Pokemon',
+    ]
+    game_dic_new_all=[
+        'Pokemon',
+        'Blue',
     ]
 
 '''env config'''

@@ -202,6 +202,9 @@ class env_li():
         '''reset cur_frame'''
         self.cur_frame = 0
 
+        '''reset last action'''
+        self.last_action = None
+
         '''reset cur_lon and cur_lat to one of the subjects start point'''
         subject_dic_code = []
         for i in range(self.subjects_total):
@@ -334,7 +337,7 @@ class env_li():
             '''update observation_now'''
             self.get_observation()
 
-            '''produce output'''
+            '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
             elif self.reward_estimator is 'cc':
@@ -343,6 +346,18 @@ class env_li():
                                               mapheight=self.heatmap_height)
                 from cc import calc_score
                 reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
+
+            '''smooth reward'''
+            if self.last_action is not None:
+                action_difference = abs(action-self.last_action)
+                from config import direction_num
+                if action_difference > (direction_num/2):
+                    action_difference -= (direction_num/2)
+                from config import reward_smooth_discount_to
+                reward *= (1.0-(action_difference*(1.0-reward_smooth_discount_to)/(direction_num/2)))
+
+            self.last_action = action
+
             done = False
 
         if self.log_thread:

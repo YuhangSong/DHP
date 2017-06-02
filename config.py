@@ -4,13 +4,13 @@ project = 'f'
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr_new' #availible: vr, vr_new
-    mode = 'data_processor' #availible: off-line, on-line, data_processor
+    data_base = 'vr' #availible: vr, vr_new
+    mode = 'off-line' #availible: off-line, on-line, data_processor
     if mode is 'data_processor':
         data_processor_id = 'minglang_mp4_to_yuv'
 
 '''log config'''
-status = "coding"
+status = ""
 basic_log_dir = project+"_2"
 log_dir = "8_test_reward_smooth_8"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
@@ -96,6 +96,10 @@ if project is 'g':
 elif project is 'f':
     game_dic_test_pokemon=[
         'Pokemon',
+    ]
+    game_dic_all=[
+        'A380',
+        'AcerPredator',
     ]
     game_dic_new_all=[
         'A380',
@@ -183,7 +187,11 @@ elif project is 'f':
     if mode is not 'data_processor':
         game_dic = game_dic_test_pokemon # specific game dic
     else:
-        game_dic = game_dic_new_all
+        ''''''
+        if data_base is 'vr':
+            game_dic = game_dic_all
+        elif data_base is 'vr_new':
+            game_dic = game_dic_new_all
 
 '''default config'''
 

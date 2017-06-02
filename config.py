@@ -3,21 +3,33 @@ project = 'f' #availible: g, f
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr_new' #availible: vr, vr_new
-    mode = 'data_processor' #availible: off-line, on-line, data_processor
-    if mode is 'data_processor':
+    data_base = 'vr' #availible: vr, vr_new
+    mode = 'off_line' #availible: off_line, on_line, data_processor
+    if_learning_v = True
+    if mode is 'off_line':
+        if_off_line_debug = False
+    elif mode is 'data_processor':
         if_data_provessor_debug = True
         data_processor_id = 'minglang_mp4_to_yuv'
 
 '''log config'''
-if mode is not 'data_processor':
-    status = ""
-else:
+if mode is 'off_line':
+    if if_off_line_debug is True:
+        '''default setting'''
+        status = "temp_run"
+    else:
+        status = ""
+elif mode is 'data_processor':
     '''default setting'''
-    status = "data_processor_temp_run"
+    status = "temp_run"
+
 basic_log_dir = project+"_2"
-log_dir = "9"
+log_dir = "9_test_learning_v"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
+
+if status is "temp_run":
+    import subprocess
+    subprocess.call(["rm", "-r", final_log_dir])
 
 # '''restore model config'''
 # if_restore_model = False
@@ -29,9 +41,13 @@ cluster_current = 0
 cluster_main = 0
 
 '''worker config'''
-if mode is not 'data_processor':
-    num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
-else:
+if mode is 'off_line':
+    if if_off_line_debug is True:
+        '''default settings'''
+        num_workers_local = 1
+    else:
+        num_workers_local = 16 # how many workers can this cluster run, DO NOT exceed num_workers_global
+elif mode is 'data_processor':
     '''default settings'''
     num_workers_local = 1
 
@@ -187,9 +203,13 @@ elif project is 'f':
 if project is 'g':
     game_dic = game_dic_test_multi_pong # specific game dic
 elif project is 'f':
-    if mode is not 'data_processor':
-        game_dic = game_dic_test_pokemon # specific game dic
-    else:
+    if mode is 'off_line':
+        if if_off_line_debug is True:
+            '''default setting'''
+            game_dic = game_dic_test_pokemon # specific game dic
+        else:
+            game_dic = game_dic_test_pokemon # specific game dic
+    elif mode is 'data_processor':
         '''default setting'''
         if data_base is 'vr':
             game_dic = game_dic_all

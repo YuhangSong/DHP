@@ -91,6 +91,9 @@ class env_li():
         from config import data_base
         self.data_base = data_base
 
+        from config import if_learning_v
+        self.if_learning_v = if_learning_v
+
         '''observation_space'''
         from config import observation_space
         self.observation_space = observation_space
@@ -294,7 +297,7 @@ class env_li():
                                               path=record_dir,
                                               name=str(step_i))
 
-    def step(self, action):
+    def step(self, action, v):
 
         '''these will be returned, but not sure to updated'''
         if self.log_thread:
@@ -325,6 +328,8 @@ class env_li():
         else:
             update_frame_success = True
 
+        v_lable = 0.0
+
         '''if any of update frame or update data is failed'''
         if(update_frame_success==False)or(update_data_success==False):
 
@@ -332,6 +337,8 @@ class env_li():
             self.reset()
             reward = 0.0
             done = True
+            if self.if_learning_v:
+                v_lable = 0.0
 
         else:
 
@@ -350,7 +357,11 @@ class env_li():
             degree_per_step = distance_per_step / math.pi * 180.0
 
             '''move view, update cur_lon and cur_lat'''
-            self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+            if self.if_learning_v:
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
+                v_lable = degree_per_step
+            else:
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
 
             '''update observation_now'''
             self.get_observation()
@@ -380,8 +391,9 @@ class env_li():
 
         if self.log_thread:
             if self.if_log_cc:
-                return self.cur_observation, reward, done, self.cur_cc, self.max_cc
-        return self.cur_observation, reward, done, 0.0, 0.0
+                return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
+
+        return self.cur_observation, reward, done, 0.0, 0.0, v_lable
 
     def log_thread_step(self):
         '''log_scan_path'''

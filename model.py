@@ -220,6 +220,10 @@ class LSTMPolicy(object):
                 self.logits = linear(consi_output, ac_space, "action", normalized_columns_initializer(0.01))
                 self.sample = categorical_sample(self.logits, ac_space)[0, :]
                 self.vf = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
+                from config import if_learning_v
+                self.if_learning_v = if_learning_v
+                if self.if_learning_v is True:
+                    self.v = tf.reshape(tf.nn.softplus(linear(consi_output, 1, "v", normalized_columns_initializer(1.0))), [-1])
 
             self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
@@ -232,7 +236,10 @@ class LSTMPolicy(object):
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
-        return sess.run([self.sample, self.vf, self.state_out], feed_dict)
+        fetch_dic = [self.sample, self.vf, self.state_out]
+        if self.if_learning_v is True:
+            fetch_dic += [self.v]
+        return sess.run(fetch_dic, feed_dict)
 
     def value(self, ob, state_in):
         sess = tf.get_default_session()
@@ -240,4 +247,7 @@ class LSTMPolicy(object):
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
-        return sess.run(self.vf, feed_dict)[0]
+        fetch_dic = [self.vf]
+        if self.if_learning_v is True:
+            fetch_dic += [self.v]
+        return sess.run(fetch_dic, feed_dict)

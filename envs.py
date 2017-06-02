@@ -74,9 +74,9 @@ class env_f():
     def reset(self):
         return self.env_li.reset()
 
-    def step(self, action):
+    def step(self, action, v):
 
-        observation, reward, done, cur_cc, max_cc = self.env_li.step(action)
+        observation, reward, done, cur_cc, max_cc, v_lable = self.env_li.step(action, v)
 
         to_log = {}
 
@@ -97,7 +97,7 @@ class env_f():
             self._episode_reward += reward
             self._episode_length += 1
 
-        return observation, reward, done, to_log
+        return observation, reward, done, to_log, v_lable
 
 
 def create_env(env_id, client_id, remotes, id_ff = 'Movie/Help', task=0, **kwargs):

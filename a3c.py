@@ -42,9 +42,11 @@ def process_rollout(rollout, gamma, lambda_=1.0):
     for i in range(len(batch_r)):
         batch_adv_out[i] = batch_adv[i]
 
-    return Batch(batch_si, batch_a, batch_adv_out, batch_r, rollout.terminal, features)
+    v_lable = np.asarray(rollout.v_lables)
 
-Batch = namedtuple("Batch", ["si", "a", "adv", "r", "terminal", "features"])
+    return Batch(batch_si, batch_a, batch_adv_out, batch_r, rollout.terminal, features, v_lable)
+
+Batch = namedtuple("Batch", ["si", "a", "adv", "r", "terminal", "features", "v_lable"])
 
 class PartialRollout(object):
     """
@@ -59,14 +61,16 @@ class PartialRollout(object):
         self.r = 0.0
         self.terminal = False
         self.features = []
+        self.v_lables = []
 
-    def add(self, state, action, reward, value, terminal, features):
+    def add(self, state, action, reward, value, terminal, features, v_lable):
         self.states += [state]
         self.actions += [action]
         self.rewards += [reward]
         self.values += [value]
         self.terminal = terminal
         self.features += [features]
+        self.v_lables += [v_lable]
 
     def extend(self, other):
         assert not self.terminal
@@ -77,6 +81,7 @@ class PartialRollout(object):
         self.r = other.r
         self.terminal = other.terminal
         self.features.extend(other.features)
+        self.v_lables.extend(other.v_lables)
 
 class RunnerThread(threading.Thread):
     """
@@ -125,6 +130,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0.0
+    from config import project, if_learning_v
 
     while True:
 
@@ -136,11 +142,20 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
 
             action, value_, features = fetched[0], fetched[1], fetched[2]
 
+            if if_learning_v:
+                v = fetched[3][0]
+            else:
+                v = 0.0
+
             # argmax to convert from one-hot
-            state, reward, terminal, info = env.step(action.argmax())
+            if project is 'g':
+                state, reward, terminal, info = env.step(action.argmax())
+            elif project is 'f':
+                state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
 
             # collect the experience
-            rollout.add(last_state, action, reward, value_, terminal, last_features)
+            rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)
+
             length += 1
             rewards += reward
 
@@ -156,7 +171,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 summary_writer.add_summary(summary, policy.global_step.eval())
                 summary_writer.flush()
 
-            if config.project is 'g':
+            if project is 'g':
                 timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
                 if terminal or length >= timestep_limit:
                     terminal_end = True
@@ -167,7 +182,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                     length = 0
                     rewards = 0.0
                     break
-            elif config.project is 'f':
+            elif project is 'f':
                 if terminal:
                     terminal_end = True
                     last_features = policy.get_initial_features()
@@ -177,7 +192,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                     break
 
         if not terminal_end:
-            rollout.r = policy.value(last_state, last_features)
+            rollout.r = policy.value(last_state, last_features)[0][0]
 
         '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
         yield rollout
@@ -194,6 +209,8 @@ class A3C(object):
         self.env = env
         self.task = task
         self.env_id = env_id
+        from config import if_learning_v
+        self.if_learning_v = if_learning_v
 
         '''only log if the task is on zero and cluster is the main cluster'''
         if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
@@ -218,6 +235,8 @@ class A3C(object):
             self.adv = tf.placeholder(tf.float32, [None], name="adv")
             self.r = tf.placeholder(tf.float32, [None], name="r")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
+            if self.if_learning_v:
+                self.v_lable = tf.placeholder(tf.float32, [None], name="v_lable")
 
             log_prob_tf = tf.nn.log_softmax(pi.logits)
             prob_tf = tf.nn.softmax(pi.logits)
@@ -229,10 +248,20 @@ class A3C(object):
 
             # loss of value function
             vf_loss = 0.5 * tf.reduce_sum(tf.square(pi.vf - self.r))
+
+            # -entropy loss
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
+            # v loss
+            if self.if_learning_v:
+                v_loss = 0.5 * tf.reduce_sum(tf.square(pi.v - self.v_lable))
+
             bs = tf.to_float(tf.shape(pi.x)[0])
-            self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
+
+            if self.if_learning_v:
+                self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01 + 0.5 * v_loss
+            else:
+                self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
 
             # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
@@ -250,6 +279,8 @@ class A3C(object):
             tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
             tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
             tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
+            if self.if_learning_v:
+                tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
 
             self.summary_op = tf.summary.merge_all()
             grads, _ = tf.clip_by_global_norm(grads, 40.0)
@@ -320,6 +351,7 @@ class A3C(object):
         batch_adv=batch.adv
         batch_r=batch.r
         batch_features=batch.features
+        batch_v_lable=batch.v_lable
 
         # print('\tload ok for task:\t'+str(self.task)+'\tsized:\t'+str(np.shape(batch.si)[0]))
         #
@@ -398,6 +430,9 @@ class A3C(object):
             self.local_network.step_size: [1]*batch_size,
             self.step_forward: [1]*batch_size,
         }
+
+        if self.if_learning_v:
+            feed_dict[self.v_lable] = batch_v_lable
 
         '''remap state'''
         for consi_layer_id in range(config.consi_depth):

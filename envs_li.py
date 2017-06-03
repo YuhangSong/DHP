@@ -185,6 +185,8 @@ class env_li():
             print('sssss')
         if data_processor_id is 'minglang_mp4_to_jpg':
             print('fffff')
+        if data_processor_id is 'w_1':
+            print('ttt')
         print('=============================data process end, programe terminate=============================')
         print(t)
 

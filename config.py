@@ -4,13 +4,13 @@ if project is 'g':
     model = None
 elif project is 'f':
     data_base = 'vr' #availible: vr, vr_new
-    mode = 'off_line' #availible: off_line, on_line, data_processor
+    mode = 'data_processor' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
-        if_off_line_debug = True
+        if_off_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
-        data_processor_id = 'minglang_mp4_to_yuv'
+        data_processor_id = 'w_1' # availible: minglang_mp4_to_yuv, w_1
 
 '''log config'''
 if mode is 'off_line':

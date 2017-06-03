@@ -151,8 +151,12 @@ def get_prob(lon, lat, theta, subjects, subjects_total, cur_data):
     prob_dic_normalized = prob_dic / prob_sum
 
     distance_per_data = 0.0
+    from config import if_normalize_v_lable
     for i in range(subjects_total):
-        distance_per_data += prob_dic_normalized[i] * subjects[i].data_frame[cur_data].v
+        if if_normalize_v_lable:
+            distance_per_data += prob_dic_normalized[i] * subjects[i].data_frame[cur_data].v
+        else:
+            distance_per_data += prob_dic[i] * subjects[i].data_frame[cur_data].v
 
     if(distance_per_data<=0):
         print("!!!! v too small !!!!")

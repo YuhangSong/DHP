@@ -7,7 +7,7 @@ elif project is 'f':
     mode = 'off_line' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
-        if_off_line_debug = False
+        if_off_line_debug = True
     elif mode is 'data_processor':
         if_data_provessor_debug = True
         data_processor_id = 'minglang_mp4_to_yuv'
@@ -24,7 +24,7 @@ elif mode is 'data_processor':
     status = "temp_run"
 
 basic_log_dir = project+"_2"
-log_dir = "9_test_learning_v"
+log_dir = "10_test_unormolized_v_lable"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -78,6 +78,7 @@ if project is 'f':
     reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
     reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
+    if_normalize_v_lable = False
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True
@@ -113,9 +114,6 @@ if project is 'g':
         'assault', 'asteroids', 'beam_rider', 'centipede', 'chopper_command', 'crazy_climber', 'demon_attack', 'atlantis', 'gravitar', 'phoenix', 'pooyan', 'riverraid', 'seaquest', 'space_invaders', 'star_gunner', 'time_pilot', 'zaxxon', 'yars_revenge',
     ])
 elif project is 'f':
-    game_dic_test_pokemon=[
-        'Pokemon',
-    ]
     game_dic_all=[
         'A380',
         'AcerPredator',
@@ -206,9 +204,9 @@ elif project is 'f':
     if mode is 'off_line':
         if if_off_line_debug is True:
             '''default setting'''
-            game_dic = game_dic_test_pokemon # specific game dic
+            game_dic = ['Pokemon'] # specific game dic
         else:
-            game_dic = game_dic_test_pokemon # specific game dic
+            game_dic = ['Pokemon'] # specific game dic
     elif mode is 'data_processor':
         '''default setting'''
         if data_base is 'vr':

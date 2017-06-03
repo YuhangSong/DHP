@@ -430,7 +430,7 @@ class A3C(object):
             self.local_network.step_size: [1]*batch_size,
             self.step_forward: [1]*batch_size,
         }
-
+        
         if self.if_learning_v:
             feed_dict[self.v_lable] = batch_v_lable
 

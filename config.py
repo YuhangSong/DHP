@@ -3,7 +3,7 @@ project = 'f' #availible: g, f
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr' #availible: vr, vr_new
+    data_base = 'vr_new_111' #availible: vr, vr_new
     mode = 'data_processor' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':

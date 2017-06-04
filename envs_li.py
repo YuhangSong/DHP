@@ -185,10 +185,10 @@ class env_li():
             print('sssss')
         if data_processor_id is 'minglang_mp4_to_jpg':
             print('fffff')
-        if data_processor_id is 'w_1':
-            print('ttt')
+        if data_processor_id is 'compute_consi':
+            compute_consi()
+            print('compute_consi')
         print('=============================data process end, programe terminate=============================')
-        print(t)
 
     def log_thread_config(self):
 

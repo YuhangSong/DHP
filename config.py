@@ -3,14 +3,14 @@ project = 'f' #availible: g, f
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr_new_111' #availible: vr, vr_new
+    data_base = 'vr_new' #availible: vr, vr_new
     mode = 'data_processor' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
         if_off_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
-        data_processor_id = 'w_1' # availible: minglang_mp4_to_yuv, w_1
+        data_processor_id = 'compute_consi' # availible: minglang_mp4_to_yuv, compute_consi
 
 '''log config'''
 if mode is 'off_line':

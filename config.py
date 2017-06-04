@@ -3,8 +3,8 @@ project = 'f' #availible: g, f
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr' #availible: vr, vr_new
-    mode = 'off_line' #availible: off_line, on_line, data_processor
+    data_base = 'vr_new' #availible: vr, vr_new
+    mode = 'data_processor' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
         if_off_line_debug = True
@@ -249,3 +249,13 @@ task_chief = cluster_main * num_workers_total_global
 my_sigma = (11.75+13.78)/2
 import math
 sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
+'''compute_consi config'''
+if project is 'f':
+    fov_degree = 6
+    no_moving_gate = 0.0001
+    compute_lon_inter = fov_degree / 2
+    compute_lat_inter = fov_degree / 2
+    frame_gate = 20
+    MaxCenterNum = 4
+    NumDirectionForCluster = 8
+    DirectionInter = 360 / NumDirectionForCluster

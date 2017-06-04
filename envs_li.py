@@ -187,7 +187,7 @@ class env_li():
             print('fffff')
         if data_processor_id is 'compute_consi':
             print('compute_consi')
-            compute_consi(subjects=self.subjects)
+            compute_consi(subjects=self.subjects,num_data_frame=self.data_total)
         print('=============================data process end, programe terminate=============================')
 
     def log_thread_config(self):
@@ -435,8 +435,14 @@ class env_li():
     def save_heatmap(self,heatmap,path,name):
         heatmap = heatmap * 255.0
         cv2.imwrite(path+'/'+name+'.jpg',heatmap)
-def compute_consi(subjects):
-    from config import NumDirectionForCluster
-    print NumDirectionForCluster
+def compute_consi(subjects,num_data_frame):
+    '''config'''
+    from config import NumDirectionForCluster,frame_gate
+    ''''''
+    sum_on_video = np.zeros((NumDirectionForCluster))
+    count_on_video = 0
+    valid_circle_count = 0
+    ''''''
+    for data_frame_i in range(0 + frame_gate, num_data_frame - frame_gate - 1):
+        print NumDirectionForCluster
     print ttt
-    return cov_on_video, valid_circle_exp_per_frame

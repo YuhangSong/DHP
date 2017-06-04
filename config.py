@@ -10,7 +10,7 @@ elif project is 'f':
         if_off_line_debug = True
     elif mode is 'data_processor':
         if_data_provessor_debug = True
-        data_processor_id = 'minglang_mp4_to_yuv'
+        data_processor_id = 'compute_consi'# #availible: compute_consi,
 
 '''log config'''
 if mode is 'off_line':

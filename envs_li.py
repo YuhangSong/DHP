@@ -185,6 +185,9 @@ class env_li():
             print('sssss')
         if data_processor_id is 'minglang_mp4_to_jpg':
             print('fffff')
+        if data_processor_id is 'compute_consi':
+            print('compute_consi')
+            compute_consi()
         print('=============================data process end, programe terminate=============================')
         print(t)
 
@@ -433,3 +436,5 @@ class env_li():
     def save_heatmap(self,heatmap,path,name):
         heatmap = heatmap * 255.0
         cv2.imwrite(path+'/'+name+'.jpg',heatmap)
+def compute_consi():
+    return

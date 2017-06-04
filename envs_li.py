@@ -442,7 +442,9 @@ def compute_consi(subjects,num_data_frame):
     sum_on_video = np.zeros((NumDirectionForCluster))
     count_on_video = 0
     valid_circle_count = 0
+    print num_data_frame,NumDirectionForCluster,frame_gate
     ''''''
     for data_frame_i in range(0 + frame_gate, num_data_frame - frame_gate - 1):
-        print NumDirectionForCluster
+
+        print num_data_frame
     print ttt

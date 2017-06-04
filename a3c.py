@@ -212,11 +212,15 @@ class A3C(object):
         from config import if_learning_v
         self.if_learning_v = if_learning_v
 
-        '''only log if the task is on zero and cluster is the main cluster'''
-        if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+        from config import project, mode
+        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+            '''only log if the task is on zero and cluster is the main cluster'''
+            if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+                self.log_thread = True
+            else:
+                self.log_thread = False
+        elif (project is 'f') and (mode is 'on_line'):
             self.log_thread = True
-        else:
-            self.log_thread = False
 
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
@@ -299,15 +303,16 @@ class A3C(object):
 
     def start(self, sess, summary_writer):
 
-        if(self.task!=config.task_chief):
-            print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
-            time.sleep(5)
-            sess.run(self.sync)  # copy weights from shared to local
-
-        if(self.task==config.task_plus):
-            print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
-            subprocess.call(["rm", "-r", 'temp/mix_exp/'])
-            subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
+        from config import project, mode
+        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+            if(self.task!=config.task_chief):
+                print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
+                time.sleep(5)
+                sess.run(self.sync)  # copy weights from shared to local
+            if(self.task==config.task_plus):
+                print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
+                subprocess.call(["rm", "-r", 'temp/mix_exp/'])
+                subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
@@ -430,7 +435,7 @@ class A3C(object):
             self.local_network.step_size: [1]*batch_size,
             self.step_forward: [1]*batch_size,
         }
-        
+
         if self.if_learning_v:
             feed_dict[self.v_lable] = batch_v_lable
 

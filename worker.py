@@ -27,7 +27,8 @@ def run(args, server):
     env = create_env(args.env_id,
                      client_id=str(args.task),
                      remotes=args.remotes,
-                     task=args.task)
+                     task=args.task,
+                     subject=args.subject)
 
     trainer = A3C(env, args.env_id, args.task)
 
@@ -42,26 +43,44 @@ def run(args, server):
         ses.run(init_all_op)
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
-    logdir = os.path.join(args.log_dir, 'train')
-    summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
-    logger.info("Events directory: %s_%s", logdir, args.task)
-    if args.task is not config.task_chief:
-        if config.project is 'g':
-            print('this is g project, bug on ver init, since the graph is different across threads')
-            tf.Session(server.target, config=config_tf).run(init_all_op)
-        elif config.project is 'f':
-            print('this is f project, no bug on ver init, since the praph is exactly same across threads')
-    sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
-                             logdir=logdir,
-                             saver=saver,
-                             summary_op=None,
-                             init_op=init_op,
-                             init_fn=init_fn,
-                             summary_writer=summary_writer,
-                             ready_op=tf.report_uninitialized_variables(variables_to_save),
-                             global_step=trainer.global_step,
-                             save_model_secs=30,
-                             save_summaries_secs=30)
+
+    from config import project, mode
+    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+        logdir = os.path.join(args.log_dir, 'train')
+        summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
+        logger.info("Events directory: %s_%s", logdir, args.task)
+        if args.task is not config.task_chief:
+            if config.project is 'g':
+                print('this is g project, bug on ver init, since the graph is different across threads')
+                tf.Session(server.target, config=config_tf).run(init_all_op)
+            elif config.project is 'f':
+                print('this is f project, no bug on ver init, since the praph is exactly same across threads')
+        sv = tf.train.Supervisor(is_chief=(args.task == config.task_chief),
+                                 logdir=logdir,
+                                 saver=saver,
+                                 summary_op=None,
+                                 init_op=init_op,
+                                 init_fn=init_fn,
+                                 summary_writer=summary_writer,
+                                 ready_op=tf.report_uninitialized_variables(variables_to_save),
+                                 global_step=trainer.global_step,
+                                 save_model_secs=30,
+                                 save_summaries_secs=30)
+    elif (project is 'f') and (mode is 'on_line'):
+        logdir = os.path.join(args.log_dir, 'train_g_'+str(args.env_id)+'_s_'+str(args.subject))
+        summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
+        logger.info("Events directory: %s_%s", logdir, args.task)
+        sv = tf.train.Supervisor(is_chief=True,
+                                 logdir=logdir,
+                                 saver=saver,
+                                 summary_op=None,
+                                 init_op=init_op,
+                                 init_fn=init_fn,
+                                 summary_writer=summary_writer,
+                                 ready_op=tf.report_uninitialized_variables(variables_to_save),
+                                 global_step=trainer.global_step,
+                                 save_model_secs=30,
+                                 save_summaries_secs=30)
 
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
@@ -78,29 +97,39 @@ def run(args, server):
     sv.stop()
     logger.info('reached %s steps. worker stopped.', global_step)
 
-def cluster_spec(num_workers, num_ps):
+def cluster_spec(num_workers, num_ps, env_id=None, subject=None):
     """
     More tensorflow setup for data parallelism
     """
-    cluster = {}
-    port = 12222
+    from config import project, mode
+    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+        cluster = {}
+        port = 12222
 
-    all_ps = []
+        all_ps = []
 
-    host = config.cluster_host[config.cluster_main]
-    for _ in range(num_ps):
-        all_ps.append('{}:{}'.format(host, port))
-        port += 1
-    cluster['ps'] = all_ps
-
-    all_workers = []
-    for host in config.cluster_host:
-        for _ in range(num_workers):
-            all_workers.append('{}:{}'.format(host, port))
+        host = config.cluster_host[config.cluster_main]
+        for _ in range(num_ps):
+            all_ps.append('{}:{}'.format(host, port))
             port += 1
-    cluster['worker'] = all_workers
+        cluster['ps'] = all_ps
 
-    return cluster
+        all_workers = []
+        for host in config.cluster_host:
+            for _ in range(num_workers):
+                all_workers.append('{}:{}'.format(host, port))
+                port += 1
+        cluster['worker'] = all_workers
+
+        return cluster
+    elif (project is 'f') and (mode is 'on_line'):
+        env_id_num = config.game_dic.index(env_id)
+        position_offset = 12222
+        position = (env_id_num * config.num_subjects + subject) * 2 + position_offset
+        cluster = {}
+        cluster['ps'] = ['127.0.0.1:'+str(position)]
+        cluster['worker'] = ['127.0.0.1:'+str(position+1)]
+        return cluster
 
 def main(_):
     """
@@ -110,17 +139,22 @@ Setting up Tensorflow for data parallel work
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-v', '--verbose', action='count', dest='verbosity', default=0, help='Set verbosity.')
     parser.add_argument('--task', default=0, type=int, help='Task index')
+    parser.add_argument('--subject', default=None, type=int, help='subject index')
     parser.add_argument('--job-name', default="worker", help='worker or ps')
     parser.add_argument('--num-workers', default=1, type=int, help='Number of workers')
     parser.add_argument('--log-dir', default="/tmp/pong", help='Log directory path')
     parser.add_argument('--env-id', default="PongDeterministic-v3", help='Environment id')
-    parser.add_argument('-r', '--remotes', default=None,
+    parser.add_argument('-r', '--remotes', default="1",
                         help='References to environments to create (e.g. -r 20), '
                              'or the address of pre-existing VNC servers and '
                              'rewarders to use (e.g. -r vnc://localhost:5900+15900,vnc://localhost:5901+15901)')
 
     args = parser.parse_args()
-    spec = cluster_spec(args.num_workers, 1)
+    from config import project, mode
+    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+        spec = cluster_spec(args.num_workers, 1)
+    elif (project is 'f') and (mode is 'on_line'):
+        spec = cluster_spec(args.num_workers, 1, args.env_id, args.subject)
     cluster = tf.train.ClusterSpec(spec).as_cluster_def()
 
 

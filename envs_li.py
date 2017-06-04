@@ -47,7 +47,7 @@ class env_li():
     Status: checking
     '''
 
-    def __init__(self, env_id, task):
+    def __init__(self, env_id, task, subject=None):
 
         '''only log if the task is on zero and cluster is the main cluster'''
         self.task = task
@@ -57,6 +57,11 @@ class env_li():
 
         from config import reward_estimator
         self.reward_estimator = reward_estimator
+
+        from config import mode
+        self.mode = mode
+
+        self.subject = subject
 
         '''load config'''
         self.config()
@@ -99,18 +104,15 @@ class env_li():
         self.observation_space = observation_space
 
         '''set all temp dir for this worker'''
-        self.temp_dir = "temp/get_view/w_" + str(self.task) + '/'
+        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
+            self.temp_dir = "temp/get_view/w_" + str(self.task) + '/'
+        elif self.mode is 'on_line':
+            self.temp_dir = "temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
         print(self.task)
         print(self.temp_dir)
         '''clear temp dir for this worker'''
         subprocess.call(["rm", "-r", self.temp_dir])
         subprocess.call(["mkdir", "-p", self.temp_dir])
-
-        '''load in mat data of head movement'''
-        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
-        data_all = sio.loadmat(matfn)
-        data = data_all[self.env_id]
-        self.subjects_total = get_num_subjects(data=data)
 
         print("env set to: "+str(self.env_id))
 
@@ -126,7 +128,15 @@ class env_li():
             self.frame_bug_offset = 0
 
         '''get subjects'''
+        '''load in mat data of head movement'''
+        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
+        data_all = sio.loadmat(matfn)
+        data = data_all[self.env_id]
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
+
+        if self.mode is 'on_line':
+            self.subjects_total = 1
+            self.subjects = self.subjects[self.subject:self.subject+1]
 
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
@@ -157,8 +167,6 @@ class env_li():
         self.heatmap_height = 180
         self.heatmap_width = 360
 
-        from config import mode
-        self.mode = mode
         if self.mode is 'data_processor':
             self.data_processor()
 
@@ -167,12 +175,16 @@ class env_li():
         gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
-        from config import num_workers_global,cluster_current,cluster_main
-        if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
+            from config import num_workers_global,cluster_current,cluster_main
+            if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+                print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                self.log_thread = True
+            else:
+                self.log_thread = False
+        elif self.mode is 'on_line':
             print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
             self.log_thread = True
-        else:
-            self.log_thread = False
 
         '''update settings for log_thread'''
         if self.log_thread:
@@ -206,12 +218,13 @@ class env_li():
             self.max_cc = 0.0
             self.cur_cc = 0.0
 
-            from config import relative_predicted_fixation_num
-            self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
-            print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
-            from config import relative_log_cc_interval
-            self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
-            print('log_cc_interval is '+str(self.if_log_cc_interval))
+            if self.mode is 'off_line': # yuhangsong here
+                from config import relative_predicted_fixation_num
+                self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
+                print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
+                from config import relative_log_cc_interval
+                self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
+                print('log_cc_interval is '+str(self.if_log_cc_interval))
 
     def reset(self):
 

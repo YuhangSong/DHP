@@ -137,6 +137,12 @@ class env_li():
         if self.mode is 'on_line':
             self.subjects_total = 1
             self.subjects = self.subjects[self.subject:self.subject+1]
+            self.cur_training_step = 0
+            self.cur_predicting_step = self.cur_training_step + 1
+            self.has_been_trained_episode = 0
+            from config import train_to_reward
+            self.train_to_reward = train_to_reward
+
 
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
@@ -162,6 +168,7 @@ class env_li():
         self.view_range_lat = view_range_lat
 
         self.episode = 0
+
 
         '''salmap'''
         self.heatmap_height = 180
@@ -211,20 +218,24 @@ class env_li():
         self.if_log_cc = if_log_cc
 
         if self.if_log_cc:
-            '''cc record'''
-            self.agent_result_saver = []
-            self.agent_result_stack = []
 
-            self.max_cc = 0.0
             self.cur_cc = 0.0
 
-            if self.mode is 'off_line': # yuhangsong here
-                from config import relative_predicted_fixation_num
-                self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
-                print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
-                from config import relative_log_cc_interval
-                self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
-                print('log_cc_interval is '+str(self.if_log_cc_interval))
+            if self.mode is 'off_line':
+                '''cc record'''
+                self.agent_result_saver = []
+                self.agent_result_stack = []
+
+                self.max_cc = 0.0
+
+
+                if self.mode is 'off_line': # yuhangsong here
+                    from config import relative_predicted_fixation_num
+                    self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
+                    print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
+                    from config import relative_log_cc_interval
+                    self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
+                    print('log_cc_interval is '+str(self.if_log_cc_interval))
 
     def reset(self):
 
@@ -245,7 +256,10 @@ class env_li():
         subject_dic_code = []
         for i in range(self.subjects_total):
             subject_dic_code += [i]
-        subject_code = np.random.choice(a=subject_dic_code)
+        if self.mode is 'off_line':
+            subject_code = np.random.choice(a=subject_dic_code)
+        elif self.mode is 'on_line':
+            subject_code = 0
         self.cur_lon = self.subjects[subject_code].data_frame[0].p[0]
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
 
@@ -261,6 +275,9 @@ class env_li():
         if self.log_thread:
             self.log_thread_reset()
 
+        if self.mode is 'on_line':
+            self.has_been_trained_episode += 1
+
         return self.cur_observation
 
     def log_thread_reset(self):
@@ -271,46 +288,48 @@ class env_li():
 
         if self.if_log_cc:
 
-            self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
-            self.agent_result_saver = []
+            if self.mode is 'off_line':
 
-            if len(self.agent_result_stack) > self.predicted_fixtions_num:
+                self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
+                self.agent_result_saver = []
 
-                '''if stack full, pop out the oldest data'''
-                self.agent_result_stack.pop(0)
+                if len(self.agent_result_stack) > self.predicted_fixtions_num:
 
-                if self.episode%self.if_log_cc_interval is 0:
+                    '''if stack full, pop out the oldest data'''
+                    self.agent_result_stack.pop(0)
 
-                    print('compute cc..................')
+                    if self.episode%self.if_log_cc_interval is 0:
 
-                    ccs_on_step_i = []
-                    heatmaps_on_step_i = []
-                    for step_i in range(self.step_total):
+                        print('compute cc..................')
 
-                        '''generate predicted salmap'''
-                        temp = np.asarray(self.agent_result_stack)[:,step_i]
-                        temp = np.sum(temp,axis=0)
-                        temp = temp / np.max(temp)
-                        heatmaps_on_step_i += [copy.deepcopy(temp)]
-                        from cc import calc_score
-                        ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
-                        print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
-
-                    self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
-                    print('cur_cc is '+str(self.cur_cc))
-                    if self.cur_cc > self.max_cc:
-                        print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
-                        self.max_cc = self.cur_cc
-                        self.heatmaps_of_max_cc = heatmaps_on_step_i
-
-                        from config import final_log_dir
-                        record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
-                        subprocess.call(["rm", "-r", record_dir])
-                        subprocess.call(["mkdir", "-p", record_dir])
+                        ccs_on_step_i = []
+                        heatmaps_on_step_i = []
                         for step_i in range(self.step_total):
-                            self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
-                                              path=record_dir,
-                                              name=str(step_i))
+
+                            '''generate predicted salmap'''
+                            temp = np.asarray(self.agent_result_stack)[:,step_i]
+                            temp = np.sum(temp,axis=0)
+                            temp = temp / np.max(temp)
+                            heatmaps_on_step_i += [copy.deepcopy(temp)]
+                            from cc import calc_score
+                            ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
+                            print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
+
+                        self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
+                        print('cur_cc is '+str(self.cur_cc))
+                        if self.cur_cc > self.max_cc:
+                            print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
+                            self.max_cc = self.cur_cc
+                            self.heatmaps_of_max_cc = heatmaps_on_step_i
+
+                            from config import final_log_dir
+                            record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
+                            subprocess.call(["rm", "-r", record_dir])
+                            subprocess.call(["mkdir", "-p", record_dir])
+                            for step_i in range(self.step_total):
+                                self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
+                                                  path=record_dir,
+                                                  name=str(step_i))
 
     def step(self, action, v):
 
@@ -404,6 +423,13 @@ class env_li():
 
             done = False
 
+            if self.mode is 'on_line':
+                if reward >= self.train_to_reward:
+                    done = True
+                    self.cur_training_step += 1
+                    self.cur_predicting_step += 1
+                    self.has_been_trained_episode = 0
+
         if self.log_thread:
             if self.if_log_cc:
                 return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
@@ -422,10 +448,14 @@ class env_li():
             plt.pause(0.00001)
 
         if self.if_log_cc:
-            self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
-                                                                      mapwidth=self.heatmap_width,
-                                                                      mapheight=self.heatmap_height))]
-
+            if self.mode is 'off_line':
+                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
+                                                                          mapwidth=self.heatmap_width,
+                                                                          mapheight=self.heatmap_height))]
+            elif self.mode is 'on_line':
+                print('not implement')
+                import sys
+                sys.exit(0)
     def load_heatmaps(self, name):
 
         heatmaps = []

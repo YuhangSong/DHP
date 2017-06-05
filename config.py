@@ -107,8 +107,13 @@ if project is 'f':
     reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
     if_normalize_v_lable = True
     '''for env behaivour'''
-    if_log_scan_path = False
-    if_log_cc = True
+    if mode is 'off_line':
+        if_log_scan_path = False
+        if_log_cc = True
+    elif mode is 'on_line':
+        if_log_scan_path = False
+        if_log_cc = False
+        train_to_reward = 0.7
     relative_predicted_fixation_num = 1.0
     relative_log_cc_interval = 3.0/40.0
 

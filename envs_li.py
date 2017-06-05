@@ -186,25 +186,8 @@ class env_li():
         if data_processor_id is 'minglang_mp4_to_jpg':
             print('fffff')
         if data_processor_id is 'compute_consi':
-            '''config'''
-            from config import fov_degree,no_moving_gate,compute_lon_inter,compute_lat_inter
-            from config import frame_gate,MaxCenterNum
-            '''compute_consi'''
-            print('compute_consi')
-            compute_consi(subjects=self.subjects,num_data_frame=self.data_total,num_subject=self.subjects_total)
-            print("compute_over")
-            '''print result to file'''
-            print_string='\n'
-            print_string += '\tvideo\t'+str(data_per_video)+'\tfov_degree\t'+str(fov_degree)+'\tno_moving_gate\t'+str(no_moving_gate)+'\tcompute_lon_inter\t'+str(compute_lon_inter)+'\tcompute_lat_inter\t'+str(compute_lat_inter)
-            print_string += '\tframe_gate\t'+str(frame_gate)+'\tMaxCenterNum\t'+str(MaxCenterNum)+'\tvalid_circle_exp_per_frame\t'+str(valid_circle_exp_per_frame)
-            display_string = ''
-            for print_i in range(NumDirectionForCluster):
-                print_string += ('\t' + str(consi[print_i]))
-                display_string += ('\t' + str(consi[print_i]))
-            print(display_string)
-            f = open('consistence_result.txt','a')
-            f.write(print_string)
-            f.close()
+            cov_on_video,valid_circle_exp_per_frame=compute_consi(self.subjects,self.data_total,self.subjects_total)
+            store_consi(cov_on_video,valid_circle_exp_per_frame)
         print('=============================data process end, programe terminate=============================')
 
     def log_thread_config(self):
@@ -453,6 +436,7 @@ class env_li():
         heatmap = heatmap * 255.0
         cv2.imwrite(path+'/'+name+'.jpg',heatmap)
 def compute_consi(subjects,num_data_frame,num_subject):
+    print('compute_consi')
     '''config'''
     from config import NumDirectionForCluster,frame_gate,fov_degree
     from config import compute_lat_inter,compute_lon_inter
@@ -515,4 +499,23 @@ def compute_consi(subjects,num_data_frame,num_subject):
             display_string += ('\t\t' + str(cov_on_frame[print_i]))
         print(display_string)
     cov_on_video = sum_on_video / count_on_video
-    valid_circle_exp_per_frame = valid_circle_count * 1.0 / count_on_frame
+    valid_circle_exp_per_frame = valid_circle_count * 1.0 / count_on_video
+    print('compute_over')
+    return cov_on_video,valid_circle_exp_per_frame
+def store_consi(cov_on_video,valid_circle_exp_per_frame):
+    print("store_consi_result")
+    '''config'''
+    from config import fov_degree,no_moving_gate,compute_lon_inter,compute_lat_inter
+    from config import frame_gate,MaxCenterNum,NumDirectionForCluster
+    print_string='\n'
+    print_string += '\tfov_degree\t'+str(fov_degree)+'\tno_moving_gate\t'+str(no_moving_gate)+'\tcompute_lon_inter\t'+str(compute_lon_inter)+'\tcompute_lat_inter\t'+str(compute_lat_inter)
+    print_string += '\tframe_gate\t'+str(frame_gate)+'\tMaxCenterNum\t'+str(MaxCenterNum)+'\tvalid_circle_exp_per_frame\t'+str(valid_circle_exp_per_frame)
+    display_string = ''
+    for print_i in range(NumDirectionForCluster):
+        print_string += ('\t' + str(cov_on_video[print_i]))
+        display_string += ('\t' + str(cov_on_video[print_i]))
+    print(display_string)
+    f = open('consistence_result.txt','a')
+    f.write(print_string)
+    f.close()
+    print('store_over')

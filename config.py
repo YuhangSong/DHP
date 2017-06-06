@@ -7,9 +7,9 @@ elif project is 'f':
     mode = 'data_processor' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
-        if_off_line_debug = True
+        if_off_line_debug = False
     elif mode is 'data_processor':
-        if_data_provessor_debug = False
+        if_data_provessor_debug = True
         data_processor_id = 'compute_consi'# #availible: compute_consi,
 
 '''log config'''
@@ -24,7 +24,7 @@ elif mode is 'data_processor':
     status = "temp_run"
 
 basic_log_dir = project+"_2"
-log_dir = "10_test_unormolized_v_lable"
+log_dir = "11_works_fine"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -78,7 +78,7 @@ if project is 'f':
     reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
     heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
     reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
-    if_normalize_v_lable = False
+    if_normalize_v_lable = True
     '''for env behaivour'''
     if_log_scan_path = False
     if_log_cc = True

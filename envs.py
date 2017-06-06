@@ -34,7 +34,7 @@ logger.setLevel(logging.INFO)
 universe.configure_logging()
 
 class env_f():
-    def __init__(self, env_id, task, subject=None):
+    def __init__(self, env_id, task, subject=None, summary_writer=None):
 
         self._episode_reward = 0
         self._episode_length = 0
@@ -49,7 +49,8 @@ class env_f():
         import envs_li
         self.env_li = envs_li.env_li(env_id=env_id,
                                      task=task,
-                                     subject=subject)
+                                     subject=subject,
+                                     summary_writer=summary_writer)
 
         '''observation_space'''
         from config import observation_space
@@ -109,7 +110,7 @@ class env_f():
             return observation, reward, done, to_log, v_lable, predicting
 
 
-def create_env(env_id, client_id, remotes, task=0, subject=None, **kwargs):
+def create_env(env_id, client_id, remotes, task=0, subject=None, summary_writer=None, **kwargs):
     import config
     if config.project is 'g':
         spec = gym.spec(env_id)
@@ -124,7 +125,8 @@ def create_env(env_id, client_id, remotes, task=0, subject=None, **kwargs):
     elif config.project is 'f':
         return env_f(env_id = env_id,
                      task = task,
-                     subject = subject)
+                     subject = subject,
+                     summary_writer=summary_writer)
 
 def create_flash_env(env_id, client_id, remotes, **_):
     env = gym.make(env_id)

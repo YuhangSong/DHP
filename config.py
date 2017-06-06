@@ -9,7 +9,7 @@ elif project is 'f':
     if mode is 'off_line':
         if_off_line_debug = True
     if mode is 'on_line':
-        if_on_line_debug = True
+        if_on_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
         data_processor_id = 'w_1' # availible: minglang_mp4_to_yuv, w_1
@@ -31,8 +31,8 @@ elif mode is 'data_processor':
     '''default setting'''
     status = "temp_run"
 
-basic_log_dir = project+"_2"
-log_dir = "12_coding_on_line"
+basic_log_dir = project+"_3"
+log_dir = "1_testing_on_line"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -71,7 +71,7 @@ elif mode is 'on_line':
     else:
         '''default settings'''
         if cluster_current is 0:
-            num_workers_one_run = 16
+            num_workers_one_run = 4
         elif cluster_current is 1:
             num_workers_one_run = 32
         elif cluster_current is 2:

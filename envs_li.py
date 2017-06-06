@@ -48,10 +48,13 @@ class env_li():
     Status: checking
     '''
 
-    def __init__(self, env_id, task, subject=None):
+    def __init__(self, env_id, task, subject=None, summary_writer=None):
 
         '''only log if the task is on zero and cluster is the main cluster'''
         self.task = task
+
+        ''''''
+        self.summary_writer = summary_writer
 
         '''get id contains only name of the video'''
         self.env_id = env_id
@@ -135,15 +138,18 @@ class env_li():
         data = data_all[self.env_id]
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
 
+        self.reward_dic_on_cur_episode = []
         if self.mode is 'on_line':
             self.subjects_total = 1
             self.subjects = self.subjects[self.subject:self.subject+1]
             self.cur_training_step = 0
             self.cur_predicting_step = self.cur_training_step + 1
             self.predicting = False
-            self.has_been_trained_episode = 0
             from config import train_to_reward
             self.train_to_reward = train_to_reward
+            self.sum_reward_dic_on_cur_train = []
+            self.average_reward_dic_on_cur_train = []
+
 
 
         '''init video and get paramters'''
@@ -243,8 +249,7 @@ class env_li():
         self.cur_step = 0
         self.cur_data = 0
 
-        self.average_reward_per_step = 0.0
-        self.sum_reward_on_step = 0.0
+        self.reward_dic_on_cur_episode = []
 
         '''episode add'''
         self.episode +=1
@@ -419,6 +424,10 @@ class env_li():
 
             '''smooth reward'''
             if self.last_action is not None:
+
+                '''if we have last_action'''
+
+                '''compute smooth reward'''
                 action_difference = abs(action-self.last_action)
                 from config import direction_num
                 if action_difference > (direction_num/2):
@@ -426,42 +435,93 @@ class env_li():
                 from config import reward_smooth_discount_to
                 reward *= (1.0-(action_difference*(1.0-reward_smooth_discount_to)/(direction_num/2)))
 
+            '''record'''
             self.last_action = action
+            self.reward_dic_on_cur_episode += [reward]
 
+            '''normally, we donot judge done when we in this'''
             done = False
 
-            self.sum_reward_on_step += reward
-            self.average_reward_per_step = self.sum_reward_on_step / self.cur_step
-
             if self.mode is 'on_line':
+
                 if self.predicting is False:
+
                     '''if is training'''
                     if self.cur_step > self.cur_training_step:
+
                         '''if step is out of training range'''
-                        print(self.average_reward_per_step)
-                        if self.average_reward_per_step > self.train_to_reward:
+
+                        if np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward:
+
                             '''if reward is trained to a acceptable range'''
+
+                            '''summary'''
+                            summary = tf.Summary()
+                            summary.value.add(tag=self.env_id+'on_cur_train/number_of_episodes',
+                                              simple_value=float(len(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            self.summary_writer.add_summary(summary, self.cur_training_step)
+                            self.summary_writer.flush()
+
+                            '''reset'''
+                            self.sum_reward_dic_on_cur_train = []
+                            self.average_reward_dic_on_cur_train = []
+
+                            '''tell outside: we are going to predict on the next run'''
                             self.predicting = True
+
+                            '''update'''
                             self.cur_training_step += 1
                             self.cur_predicting_step += 1
-                            self.has_been_trained_episode = 0
+
                             if self.cur_predicting_step >= self.step_total:
+
+                                '''on line terminating'''
                                 print('on line run meet end, terminating..')
                                 import sys
                                 sys.exit(0)
+
                         else:
+
                             '''is reward has not been trained to a acceptable range'''
+
+                            '''record this episode run before reset to start point'''
+                            self.average_reward_dic_on_cur_train += [np.mean(self.reward_dic_on_cur_episode)]
+                            self.sum_reward_dic_on_cur_train += [np.sum(self.reward_dic_on_cur_episode)]
+
+                            '''tell out side: we are not going to predict'''
                             self.predicting = False
-                            self.has_been_trained_episode += 1
-                        '''terminating'''
+
+                        '''reset anyway since cur_step beyond cur_training_step'''
                         self.reset()
                         done = True
+
                 else:
+
                     '''if is predicting'''
+
                     if self.cur_step > self.cur_predicting_step:
-                        print('this predicting run has the reward of: '+str(reward))
+
+                        '''if cur_step run beyond cur_predicting_step, means already make a prediction on this step'''
+
+                        '''summary'''
+                        summary = tf.Summary()
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@sum_reward_per_step@',
+                                          simple_value=float(np.sum(self.reward_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@average_reward_per_step@',
+                                          simple_value=float(np.mean(self.reward_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@reward_for_predicting_step@',
+                                          simple_value=float(self.reward_dic_on_cur_episode[-1]))
+                        self.summary_writer.add_summary(summary, self.cur_predicting_step)
+                        self.summary_writer.flush()
+
+                        '''tell out side: we are not going to predict'''
                         self.predicting = False
-                        '''terminating'''
+
+                        '''reset'''
                         self.reset()
                         done = True
 

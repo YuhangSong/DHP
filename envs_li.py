@@ -139,6 +139,7 @@ class env_li():
             self.subjects = self.subjects[self.subject:self.subject+1]
             self.cur_training_step = 0
             self.cur_predicting_step = self.cur_training_step + 1
+            self.predicting = False
             self.has_been_trained_episode = 0
             from config import train_to_reward
             self.train_to_reward = train_to_reward
@@ -169,6 +170,8 @@ class env_li():
 
         self.episode = 0
 
+        self.max_cc = 0.0
+        self.cur_cc = 0.0
 
         '''salmap'''
         self.heatmap_height = 180
@@ -219,14 +222,10 @@ class env_li():
 
         if self.if_log_cc:
 
-            self.cur_cc = 0.0
-
             if self.mode is 'off_line':
                 '''cc record'''
                 self.agent_result_saver = []
                 self.agent_result_stack = []
-
-                self.max_cc = 0.0
 
 
                 if self.mode is 'off_line': # yuhangsong here
@@ -242,6 +241,9 @@ class env_li():
         '''reset cur_step and cur_data'''
         self.cur_step = 0
         self.cur_data = 0
+
+        self.average_reward_per_step = 0.0
+        self.sum_reward_on_step = 0.0
 
         '''episode add'''
         self.episode +=1
@@ -274,9 +276,6 @@ class env_li():
 
         if self.log_thread:
             self.log_thread_reset()
-
-        if self.mode is 'on_line':
-            self.has_been_trained_episode += 1
 
         return self.cur_observation
 
@@ -390,12 +389,19 @@ class env_li():
             '''convert v to degree'''
             degree_per_step = distance_per_step / math.pi * 180.0
 
-            '''move view, update cur_lon and cur_lat'''
-            if self.if_learning_v:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
-                v_lable = degree_per_step
+            if (self.mode is 'on_line') and (self.predicting is True):
+                '''online and predicting, lon and lat is updated as subjects' ground-truth'''
+                '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
+                print('predicting run')
+                self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
+                self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
             else:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+                '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
+                if self.if_learning_v:
+                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
+                    v_lable = degree_per_step
+                else:
+                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
 
             '''update observation_now'''
             self.get_observation()
@@ -423,18 +429,45 @@ class env_li():
 
             done = False
 
+            self.sum_reward_on_step += reward
+            self.average_reward_per_step = self.sum_reward_on_step / self.cur_step
+
             if self.mode is 'on_line':
-                if reward >= self.train_to_reward:
-                    done = True
-                    self.cur_training_step += 1
-                    self.cur_predicting_step += 1
-                    self.has_been_trained_episode = 0
+                if self.predicting is False:
+                    '''if is training'''
+                    if self.cur_step > self.cur_training_step:
+                        '''if step is out of training range'''
+                        print(self.average_reward_per_step)
+                        if self.average_reward_per_step > self.train_to_reward:
+                            '''if reward is trained to a acceptable range'''
+                            self.predicting = True
+                            self.cur_training_step += 1
+                            self.cur_predicting_step += 1
+                            self.has_been_trained_episode = 0
+                            if self.cur_predicting_step >= self.step_total:
+                                print('on line run meet end, terminating..')
+                                import sys
+                                sys.exit(0)
+                        else:
+                            '''is reward has not been trained to a acceptable range'''
+                            self.predicting = False
+                            self.has_been_trained_episode += 1
+                        '''terminating'''
+                        self.reset()
+                        done = True
+                else:
+                    '''if is predicting'''
+                    if self.cur_step > self.cur_predicting_step:
+                        print('this predicting run has the reward of: '+str(reward))
+                        self.predicting = False
+                        '''terminating'''
+                        self.reset()
+                        done = True
 
-        if self.log_thread:
-            if self.if_log_cc:
-                return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
-
-        return self.cur_observation, reward, done, 0.0, 0.0, v_lable
+        if self.mode is 'off_line':
+            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
+        elif self.mode is 'on_line':
+            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable, self.predicting
 
     def log_thread_step(self):
         '''log_scan_path'''

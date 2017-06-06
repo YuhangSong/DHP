@@ -130,7 +130,8 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0.0
-    from config import project, if_learning_v
+    predicting = False
+    from config import project, if_learning_v, mode
 
     while True:
 
@@ -138,7 +139,11 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
         rollout = PartialRollout()
 
         for _ in range(num_local_steps):
-            fetched = policy.act(last_state, last_features)
+
+            if (project is 'f') and (mode is 'on_line'):
+                fetched = policy.act(last_state, last_features, exploration=False)
+            else:
+                fetched = policy.act(last_state, last_features, exploration=True)
 
             action, value_, features = fetched[0], fetched[1], fetched[2]
 
@@ -151,7 +156,10 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             if project is 'g':
                 state, reward, terminal, info = env.step(action.argmax())
             elif project is 'f':
-                state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+                if mode is 'off_line':
+                    state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+                elif mode is 'on_line':
+                    state, reward, terminal, info, v_lable, predicting = env.step(action.argmax(), v)
 
             # collect the experience
             rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)
@@ -195,7 +203,8 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             rollout.r = policy.value(last_state, last_features)[0][0]
 
         '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
-        yield rollout
+        if predicting is False:
+            yield rollout
 
 class A3C(object):
     def __init__(self, env, env_id, task):

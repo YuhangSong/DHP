@@ -113,7 +113,7 @@ if project is 'f':
     elif mode is 'on_line':
         if_log_scan_path = False
         if_log_cc = False
-        train_to_reward = 0.5
+        train_to_reward = 0.2
     relative_predicted_fixation_num = 1.0
     relative_log_cc_interval = 3.0/40.0
 

@@ -130,7 +130,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0.0
-    predicting = False
+    next_predicting = False
     from config import project, if_learning_v, mode
 
     while True:
@@ -139,6 +139,8 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
         rollout = PartialRollout()
 
         for _ in range(num_local_steps):
+
+            predicting = next_predicting
 
             if (project is 'f') and (mode is 'on_line'):
                 fetched = policy.act(last_state, last_features, exploration=False)
@@ -159,7 +161,7 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 if mode is 'off_line':
                     state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
                 elif mode is 'on_line':
-                    state, reward, terminal, info, v_lable, predicting = env.step(action.argmax(), v)
+                    state, reward, terminal, info, v_lable, next_predicting = env.step(action.argmax(), v)
 
             # collect the experience
             rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)

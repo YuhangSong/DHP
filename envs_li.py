@@ -29,6 +29,7 @@ from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
 from move_view_lib_new import view_mover
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -130,7 +130,8 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     last_features = policy.get_initial_features()
     length = 0
     rewards = 0.0
-    from config import project, if_learning_v
+    next_predicting = False
+    from config import project, if_learning_v, mode
 
     while True:
 
@@ -138,7 +139,13 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
         rollout = PartialRollout()
 
         for _ in range(num_local_steps):
-            fetched = policy.act(last_state, last_features)
+
+            predicting = next_predicting
+
+            if (project is 'f') and (mode is 'on_line'):
+                fetched = policy.act(last_state, last_features, exploration=False)
+            else:
+                fetched = policy.act(last_state, last_features, exploration=True)
 
             action, value_, features = fetched[0], fetched[1], fetched[2]
 
@@ -151,7 +158,10 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             if project is 'g':
                 state, reward, terminal, info = env.step(action.argmax())
             elif project is 'f':
-                state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+                if mode is 'off_line':
+                    state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+                elif mode is 'on_line':
+                    state, reward, terminal, info, v_lable, next_predicting = env.step(action.argmax(), v)
 
             # collect the experience
             rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)
@@ -195,7 +205,8 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             rollout.r = policy.value(last_state, last_features)[0][0]
 
         '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
-        yield rollout
+        if predicting is False:
+            yield rollout
 
 class A3C(object):
     def __init__(self, env, env_id, task):
@@ -212,11 +223,15 @@ class A3C(object):
         from config import if_learning_v
         self.if_learning_v = if_learning_v
 
-        '''only log if the task is on zero and cluster is the main cluster'''
-        if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+        from config import project, mode
+        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+            '''only log if the task is on zero and cluster is the main cluster'''
+            if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+                self.log_thread = True
+            else:
+                self.log_thread = False
+        elif (project is 'f') and (mode is 'on_line'):
             self.log_thread = True
-        else:
-            self.log_thread = False
 
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
@@ -299,15 +314,16 @@ class A3C(object):
 
     def start(self, sess, summary_writer):
 
-        if(self.task!=config.task_chief):
-            print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
-            time.sleep(5)
-            sess.run(self.sync)  # copy weights from shared to local
-
-        if(self.task==config.task_plus):
-            print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
-            subprocess.call(["rm", "-r", 'temp/mix_exp/'])
-            subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
+        from config import project, mode
+        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+            if(self.task!=config.task_chief):
+                print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
+                time.sleep(5)
+                sess.run(self.sync)  # copy weights from shared to local
+            if(self.task==config.task_plus):
+                print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
+                subprocess.call(["rm", "-r", 'temp/mix_exp/'])
+                subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
@@ -430,7 +446,7 @@ class A3C(object):
             self.local_network.step_size: [1]*batch_size,
             self.step_forward: [1]*batch_size,
         }
-        
+
         if self.if_learning_v:
             feed_dict[self.v_lable] = batch_v_lable
 

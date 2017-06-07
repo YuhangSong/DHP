@@ -60,9 +60,16 @@ def linear(x, size, name, initializer=None, bias_init=0):
     b = tf.get_variable(name + "/b", [size], initializer=tf.constant_initializer(bias_init))
     return tf.matmul(x, w) + b
 
-def categorical_sample(logits, d):
-    value = tf.squeeze(tf.multinomial(logits - tf.reduce_max(logits, [1], keep_dims=True), 1), [1])
-    return tf.one_hot(value, d)
+def categorical_sample(logits, d, exploration=True):
+    # value = tf.squeeze(tf.multinomial(logits - tf.reduce_max(logits, [1], keep_dims=True), 1), [1])
+    temp = logits - tf.reduce_max(logits, [1], keep_dims=True)
+    if exploration is True:
+        temp = tf.multinomial(temp, 1)
+    elif exploration is False:
+        temp = tf.expand_dims(tf.argmax(temp, 1),-1)
+    temp = tf.squeeze(temp, [1])
+    temp = tf.one_hot(temp, d)
+    return temp
 
 def lstm_layer(x, size, step_size):
 
@@ -218,7 +225,8 @@ class LSTMPolicy(object):
             elif config.project is 'f':
                 print('f project share the whole model')
                 self.logits = linear(consi_output, ac_space, "action", normalized_columns_initializer(0.01))
-                self.sample = categorical_sample(self.logits, ac_space)[0, :]
+                self.sample = categorical_sample(self.logits, ac_space, exploration=True)[0, :]
+                self.sample_no_exploration = categorical_sample(self.logits, ac_space, exploration=False)[0, :]
                 self.vf = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
                 from config import if_learning_v
                 self.if_learning_v = if_learning_v
@@ -230,13 +238,17 @@ class LSTMPolicy(object):
     def get_initial_features(self):
         return self.state_init
 
-    def act(self, ob, state_in):
+    def act(self, ob, state_in, exploration=True):
         sess = tf.get_default_session()
         feed_dict = {self.x: [ob], self.step_size: [1]}
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
-        fetch_dic = [self.sample, self.vf, self.state_out]
+        if exploration is True:
+            fetch_dic = [self.sample]
+        elif exploration is False:
+            fetch_dic = [self.sample_no_exploration]
+        fetch_dic += [self.vf, self.state_out]
         if self.if_learning_v is True:
             fetch_dic += [self.v]
         return sess.run(fetch_dic, feed_dict)

@@ -29,6 +29,7 @@ from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
 from move_view_lib_new import view_mover
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,16 +48,24 @@ class env_li():
     Status: checking
     '''
 
-    def __init__(self, env_id, task):
+    def __init__(self, env_id, task, subject=None, summary_writer=None):
 
         '''only log if the task is on zero and cluster is the main cluster'''
         self.task = task
+
+        ''''''
+        self.summary_writer = summary_writer
 
         '''get id contains only name of the video'''
         self.env_id = env_id
 
         from config import reward_estimator
         self.reward_estimator = reward_estimator
+
+        from config import mode
+        self.mode = mode
+
+        self.subject = subject
 
         '''load config'''
         self.config()
@@ -99,18 +108,15 @@ class env_li():
         self.observation_space = observation_space
 
         '''set all temp dir for this worker'''
-        self.temp_dir = "temp/get_view/w_" + str(self.task) + '/'
+        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
+            self.temp_dir = "temp/get_view/w_" + str(self.task) + '/'
+        elif self.mode is 'on_line':
+            self.temp_dir = "temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
         print(self.task)
         print(self.temp_dir)
         '''clear temp dir for this worker'''
         subprocess.call(["rm", "-r", self.temp_dir])
         subprocess.call(["mkdir", "-p", self.temp_dir])
-
-        '''load in mat data of head movement'''
-        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
-        data_all = sio.loadmat(matfn)
-        data = data_all[self.env_id]
-        self.subjects_total = get_num_subjects(data=data)
 
         print("env set to: "+str(self.env_id))
 
@@ -126,7 +132,25 @@ class env_li():
             self.frame_bug_offset = 0
 
         '''get subjects'''
+        '''load in mat data of head movement'''
+        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
+        data_all = sio.loadmat(matfn)
+        data = data_all[self.env_id]
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
+
+        self.reward_dic_on_cur_episode = []
+        if self.mode is 'on_line':
+            self.subjects_total = 1
+            self.subjects = self.subjects[self.subject:self.subject+1]
+            self.cur_training_step = 0
+            self.cur_predicting_step = self.cur_training_step + 1
+            self.predicting = False
+            from config import train_to_reward
+            self.train_to_reward = train_to_reward
+            self.sum_reward_dic_on_cur_train = []
+            self.average_reward_dic_on_cur_train = []
+
+
 
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
@@ -153,12 +177,13 @@ class env_li():
 
         self.episode = 0
 
+        self.max_cc = 0.0
+        self.cur_cc = 0.0
+
         '''salmap'''
         self.heatmap_height = 180
         self.heatmap_width = 360
 
-        from config import mode
-        self.mode = mode
         if self.mode is 'data_processor':
             self.data_processor()
 
@@ -167,12 +192,16 @@ class env_li():
         gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
-        from config import num_workers_global,cluster_current,cluster_main
-        if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
+            from config import num_workers_global,cluster_current,cluster_main
+            if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+                print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                self.log_thread = True
+            else:
+                self.log_thread = False
+        elif self.mode is 'on_line':
             print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
             self.log_thread = True
-        else:
-            self.log_thread = False
 
         '''update settings for log_thread'''
         if self.log_thread:
@@ -199,25 +228,28 @@ class env_li():
         self.if_log_cc = if_log_cc
 
         if self.if_log_cc:
-            '''cc record'''
-            self.agent_result_saver = []
-            self.agent_result_stack = []
 
-            self.max_cc = 0.0
-            self.cur_cc = 0.0
+            if self.mode is 'off_line':
+                '''cc record'''
+                self.agent_result_saver = []
+                self.agent_result_stack = []
 
-            from config import relative_predicted_fixation_num
-            self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
-            print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
-            from config import relative_log_cc_interval
-            self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
-            print('log_cc_interval is '+str(self.if_log_cc_interval))
+
+                if self.mode is 'off_line': # yuhangsong here
+                    from config import relative_predicted_fixation_num
+                    self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
+                    print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
+                    from config import relative_log_cc_interval
+                    self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
+                    print('log_cc_interval is '+str(self.if_log_cc_interval))
 
     def reset(self):
 
         '''reset cur_step and cur_data'''
         self.cur_step = 0
         self.cur_data = 0
+
+        self.reward_dic_on_cur_episode = []
 
         '''episode add'''
         self.episode +=1
@@ -232,7 +264,10 @@ class env_li():
         subject_dic_code = []
         for i in range(self.subjects_total):
             subject_dic_code += [i]
-        subject_code = np.random.choice(a=subject_dic_code)
+        if self.mode is 'off_line':
+            subject_code = np.random.choice(a=subject_dic_code)
+        elif self.mode is 'on_line':
+            subject_code = 0
         self.cur_lon = self.subjects[subject_code].data_frame[0].p[0]
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
 
@@ -258,46 +293,48 @@ class env_li():
 
         if self.if_log_cc:
 
-            self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
-            self.agent_result_saver = []
+            if self.mode is 'off_line':
 
-            if len(self.agent_result_stack) > self.predicted_fixtions_num:
+                self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
+                self.agent_result_saver = []
 
-                '''if stack full, pop out the oldest data'''
-                self.agent_result_stack.pop(0)
+                if len(self.agent_result_stack) > self.predicted_fixtions_num:
 
-                if self.episode%self.if_log_cc_interval is 0:
+                    '''if stack full, pop out the oldest data'''
+                    self.agent_result_stack.pop(0)
 
-                    print('compute cc..................')
+                    if self.episode%self.if_log_cc_interval is 0:
 
-                    ccs_on_step_i = []
-                    heatmaps_on_step_i = []
-                    for step_i in range(self.step_total):
+                        print('compute cc..................')
 
-                        '''generate predicted salmap'''
-                        temp = np.asarray(self.agent_result_stack)[:,step_i]
-                        temp = np.sum(temp,axis=0)
-                        temp = temp / np.max(temp)
-                        heatmaps_on_step_i += [copy.deepcopy(temp)]
-                        from cc import calc_score
-                        ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
-                        print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
-
-                    self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
-                    print('cur_cc is '+str(self.cur_cc))
-                    if self.cur_cc > self.max_cc:
-                        print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
-                        self.max_cc = self.cur_cc
-                        self.heatmaps_of_max_cc = heatmaps_on_step_i
-
-                        from config import final_log_dir
-                        record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
-                        subprocess.call(["rm", "-r", record_dir])
-                        subprocess.call(["mkdir", "-p", record_dir])
+                        ccs_on_step_i = []
+                        heatmaps_on_step_i = []
                         for step_i in range(self.step_total):
-                            self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
-                                              path=record_dir,
-                                              name=str(step_i))
+
+                            '''generate predicted salmap'''
+                            temp = np.asarray(self.agent_result_stack)[:,step_i]
+                            temp = np.sum(temp,axis=0)
+                            temp = temp / np.max(temp)
+                            heatmaps_on_step_i += [copy.deepcopy(temp)]
+                            from cc import calc_score
+                            ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
+                            print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
+
+                        self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
+                        print('cur_cc is '+str(self.cur_cc))
+                        if self.cur_cc > self.max_cc:
+                            print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
+                            self.max_cc = self.cur_cc
+                            self.heatmaps_of_max_cc = heatmaps_on_step_i
+
+                            from config import final_log_dir
+                            record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
+                            subprocess.call(["rm", "-r", record_dir])
+                            subprocess.call(["mkdir", "-p", record_dir])
+                            for step_i in range(self.step_total):
+                                self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
+                                                  path=record_dir,
+                                                  name=str(step_i))
 
     def step(self, action, v):
 
@@ -358,12 +395,19 @@ class env_li():
             '''convert v to degree'''
             degree_per_step = distance_per_step / math.pi * 180.0
 
-            '''move view, update cur_lon and cur_lat'''
-            if self.if_learning_v:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
-                v_lable = degree_per_step
+            if (self.mode is 'on_line') and (self.predicting is True):
+                '''online and predicting, lon and lat is updated as subjects' ground-truth'''
+                '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
+                print('predicting run')
+                self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
+                self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
             else:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+                '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
+                if self.if_learning_v:
+                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
+                    v_lable = degree_per_step
+                else:
+                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
 
             '''update observation_now'''
             self.get_observation()
@@ -380,6 +424,10 @@ class env_li():
 
             '''smooth reward'''
             if self.last_action is not None:
+
+                '''if we have last_action'''
+
+                '''compute smooth reward'''
                 action_difference = abs(action-self.last_action)
                 from config import direction_num
                 if action_difference > (direction_num/2):
@@ -387,15 +435,100 @@ class env_li():
                 from config import reward_smooth_discount_to
                 reward *= (1.0-(action_difference*(1.0-reward_smooth_discount_to)/(direction_num/2)))
 
+            '''record'''
             self.last_action = action
+            self.reward_dic_on_cur_episode += [reward]
 
+            '''normally, we donot judge done when we in this'''
             done = False
 
-        if self.log_thread:
-            if self.if_log_cc:
-                return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
+            if self.mode is 'on_line':
 
-        return self.cur_observation, reward, done, 0.0, 0.0, v_lable
+                if self.predicting is False:
+
+                    '''if is training'''
+                    if self.cur_step > self.cur_training_step:
+
+                        '''if step is out of training range'''
+
+                        if np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward:
+
+                            '''if reward is trained to a acceptable range'''
+
+                            '''summary'''
+                            summary = tf.Summary()
+                            summary.value.add(tag=self.env_id+'on_cur_train/number_of_episodes',
+                                              simple_value=float(len(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            self.summary_writer.add_summary(summary, self.cur_training_step)
+                            self.summary_writer.flush()
+
+                            '''reset'''
+                            self.sum_reward_dic_on_cur_train = []
+                            self.average_reward_dic_on_cur_train = []
+
+                            '''tell outside: we are going to predict on the next run'''
+                            self.predicting = True
+
+                            '''update'''
+                            self.cur_training_step += 1
+                            self.cur_predicting_step += 1
+
+                            if self.cur_predicting_step >= self.step_total:
+
+                                '''on line terminating'''
+                                print('on line run meet end, terminating..')
+                                import sys
+                                sys.exit(0)
+
+                        else:
+
+                            '''is reward has not been trained to a acceptable range'''
+
+                            '''record this episode run before reset to start point'''
+                            self.average_reward_dic_on_cur_train += [np.mean(self.reward_dic_on_cur_episode)]
+                            self.sum_reward_dic_on_cur_train += [np.sum(self.reward_dic_on_cur_episode)]
+
+                            '''tell out side: we are not going to predict'''
+                            self.predicting = False
+
+                        '''reset anyway since cur_step beyond cur_training_step'''
+                        self.reset()
+                        done = True
+
+                else:
+
+                    '''if is predicting'''
+
+                    if self.cur_step > self.cur_predicting_step:
+
+                        '''if cur_step run beyond cur_predicting_step, means already make a prediction on this step'''
+
+                        '''summary'''
+                        summary = tf.Summary()
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@sum_reward_per_step@',
+                                          simple_value=float(np.sum(self.reward_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@average_reward_per_step@',
+                                          simple_value=float(np.mean(self.reward_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@reward_for_predicting_step@',
+                                          simple_value=float(self.reward_dic_on_cur_episode[-1]))
+                        self.summary_writer.add_summary(summary, self.cur_predicting_step)
+                        self.summary_writer.flush()
+
+                        '''tell out side: we are not going to predict'''
+                        self.predicting = False
+
+                        '''reset'''
+                        self.reset()
+                        done = True
+
+        if self.mode is 'off_line':
+            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
+        elif self.mode is 'on_line':
+            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable, self.predicting
 
     def log_thread_step(self):
         '''log_scan_path'''
@@ -409,10 +542,14 @@ class env_li():
             plt.pause(0.00001)
 
         if self.if_log_cc:
-            self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
-                                                                      mapwidth=self.heatmap_width,
-                                                                      mapheight=self.heatmap_height))]
-
+            if self.mode is 'off_line':
+                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
+                                                                          mapwidth=self.heatmap_width,
+                                                                          mapheight=self.heatmap_height))]
+            elif self.mode is 'on_line':
+                print('not implement')
+                import sys
+                sys.exit(0)
     def load_heatmaps(self, name):
 
         heatmaps = []

@@ -4,10 +4,10 @@ if project is 'g':
     model = None
 elif project is 'f':
     data_base = 'vr' #availible: vr, vr_new
-    mode = 'on_line' #availible: off_line, on_line, data_processor
+    mode = 'off_line' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
-        if_off_line_debug = True
+        if_off_line_debug = False
     if mode is 'on_line':
         if_on_line_debug = False
     elif mode is 'data_processor':
@@ -31,7 +31,7 @@ elif mode is 'data_processor':
     '''default setting'''
     status = "temp_run"
 
-basic_log_dir = project+"_3"
+basic_log_dir = project+"_4"
 log_dir = "1_testing_on_line"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 

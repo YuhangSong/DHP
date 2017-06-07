@@ -12,7 +12,7 @@ elif project is 'f':
         if_on_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
-        data_processor_id = 'w_1' # availible: minglang_mp4_to_yuv, w_1
+        data_processor_id = 'compute_consi'# #availible: compute_consi,
 
 '''log config'''
 if mode is 'off_line':
@@ -320,3 +320,23 @@ elif project is 'f':
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
+
+games_start_global = 0
+
+cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
+cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
+cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
+
+task_plus = cluster_current * num_workers_total_global
+task_chief = cluster_main * num_workers_total_global
+
+'''compute_consi config, only works in mode data_processor'''
+if project is 'f' and mode is 'data_processor':
+    fov_degree = 6
+    no_moving_gate = 0.0001
+    compute_lon_inter = fov_degree / 2
+    compute_lat_inter = fov_degree / 2
+    frame_gate = 20
+    MaxCenterNum = 4
+    NumDirectionForCluster = 8
+    DirectionInter = 360 / NumDirectionForCluster

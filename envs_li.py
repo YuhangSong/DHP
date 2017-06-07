@@ -214,10 +214,10 @@ class env_li():
             print('sssss')
         if data_processor_id is 'minglang_mp4_to_jpg':
             print('fffff')
-        if data_processor_id is 'w_1':
-            print('ttt')
+        if data_processor_id is 'compute_consi':
+            cov_on_video,valid_circle_exp_per_frame=compute_consi(self.subjects,self.data_total,self.subjects_total)
+            store_consi(cov_on_video,valid_circle_exp_per_frame)
         print('=============================data process end, programe terminate=============================')
-        print(t)
 
     def log_thread_config(self):
 
@@ -572,3 +572,87 @@ class env_li():
     def save_heatmap(self,heatmap,path,name):
         heatmap = heatmap * 255.0
         cv2.imwrite(path+'/'+name+'.jpg',heatmap)
+def compute_consi(subjects,num_data_frame,num_subject):
+    print('compute_consi')
+    '''config'''
+    from config import NumDirectionForCluster,frame_gate,fov_degree
+    from config import compute_lat_inter,compute_lon_inter
+    from config import DirectionInter
+    ''''''
+    sum_on_video = np.zeros((NumDirectionForCluster))
+    count_on_video = 0
+    valid_circle_count = 0
+    ''''''
+    for data_frame_i in range(0 + frame_gate, num_data_frame - frame_gate - 1):
+        sum_on_frame = np.zeros((NumDirectionForCluster))
+        count_on_frame=0
+        valid_circle_count_last = valid_circle_count
+        for lon_i in range(-180, 180, compute_lon_inter):
+            for lat_i in range(-90, 90, compute_lat_inter):
+                theta_dic = []
+                for data_frame_i_in_i in range(data_frame_i - frame_gate, data_frame_i + frame_gate + 1):
+                    for subject_i in range(num_subject):
+                        distance = haversine(lon1=lon_i,
+                                             lat1=lat_i,
+                                             lon2=subjects[subject_i].data_frame[data_frame_i_in_i].p[0],
+                                             lat2=subjects[subject_i].data_frame[data_frame_i_in_i].p[1])
+                        if(distance<1.0*(fov_degree*math.pi/180.0)):
+                            if(subjects[subject_i].data_frame[data_frame_i_in_i].theta != 'null'):
+                                theta_dic += [subjects[subject_i].data_frame[data_frame_i_in_i].theta]
+                if(len(theta_dic)>=(NumDirectionForCluster)):
+                    direction_dic = np.zeros((NumDirectionForCluster))
+                    for i in range(NumDirectionForCluster):
+                        direction_dic[i] = 0
+                    detect = False
+                    for theta_i in range(len(theta_dic)):
+                        if((theta_dic[theta_i]>(360.0-DirectionInter/2.0)) or (theta_dic[theta_i]<=(0.0+DirectionInter/2.0))):
+                            direction_dic[0] += 1
+                            detect = True
+                        else:
+                            for direction_i in range(1, NumDirectionForCluster):
+                                if((direction_i*DirectionInter - DirectionInter/2.0)<theta_dic[theta_i]<=(direction_i*DirectionInter + DirectionInter/2.0)):
+                                    direction_dic[direction_i] += 1
+                                    detect = True
+                        if(detect==False):
+                            print('!!!!')
+                            print('!!!!')
+                            print('!!!!')
+                    # print(direction_dic)
+                    direction_dic = np.sort(direction_dic)
+                    # print(direction_dic)
+                    direction_dic = direction_dic / np.sum(direction_dic)
+
+                    sum_on_frame += direction_dic
+                    count_on_frame += 1
+                    valid_circle_count += 1
+
+
+        cov_on_frame = sum_on_frame / count_on_frame
+        sum_on_video += cov_on_frame
+        count_on_video += 1
+        valid_circle_count_thisframe = valid_circle_count - valid_circle_count_last
+        display_string = 'frame\t'+str(data_frame_i)+'\tvalid_circle\t'+str(valid_circle_count_thisframe)
+        for print_i in range(NumDirectionForCluster):
+            display_string += ('\t\t' + str(cov_on_frame[print_i]))
+        print(display_string)
+    cov_on_video = sum_on_video / count_on_video
+    valid_circle_exp_per_frame = valid_circle_count * 1.0 / count_on_video
+    print('compute_over')
+    return cov_on_video,valid_circle_exp_per_frame
+def store_consi(cov_on_video,valid_circle_exp_per_frame):
+    print("store_consi_result")
+    '''config'''
+    from config import fov_degree,no_moving_gate,compute_lon_inter,compute_lat_inter
+    from config import frame_gate,MaxCenterNum,NumDirectionForCluster
+    print_string='\n'
+    print_string += '\tfov_degree\t'+str(fov_degree)+'\tno_moving_gate\t'+str(no_moving_gate)+'\tcompute_lon_inter\t'+str(compute_lon_inter)+'\tcompute_lat_inter\t'+str(compute_lat_inter)
+    print_string += '\tframe_gate\t'+str(frame_gate)+'\tMaxCenterNum\t'+str(MaxCenterNum)+'\tvalid_circle_exp_per_frame\t'+str(valid_circle_exp_per_frame)
+    display_string = ''
+    for print_i in range(NumDirectionForCluster):
+        print_string += ('\t' + str(cov_on_video[print_i]))
+        display_string += ('\t' + str(cov_on_video[print_i]))
+    print(display_string)
+    f = open('consistence_result.txt','a')
+    f.write(print_string)
+    f.close()
+    print('store_over')

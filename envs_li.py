@@ -58,6 +58,8 @@ class env_li():
 
         '''get id contains only name of the video'''
         self.env_id = env_id
+        from config import game_dic
+        self.env_id_num = game_dic.index(self.env_id)
 
         from config import reward_estimator
         self.reward_estimator = reward_estimator
@@ -477,12 +479,20 @@ class env_li():
                             self.cur_training_step += 1
                             self.cur_predicting_step += 1
 
-                            if self.cur_predicting_step >= self.step_total:
+                            if self.cur_predicting_step >= (self.step_total-2):
 
                                 '''on line terminating'''
-                                print('on line run meet end, terminating..')
-                                import sys
-                                sys.exit(0)
+                                print('on line run meet end, terminate and write done signal')
+
+                                from config import worker_done_signal_dir, worker_done_signal_file
+                                done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+                                done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
+                                np.savez(worker_done_signal_dir+worker_done_signal_file,
+                                         done_sinal_dic=done_sinal_dic)
+
+                                while True:
+                                    print('this worker is waiting to be killed')
+                                    time.sleep(1000)
 
                         else:
 

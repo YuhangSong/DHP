@@ -4,7 +4,7 @@ if project is 'g':
     model = None
 elif project is 'f':
     data_base = 'vr' #availible: vr, vr_new
-    mode = 'off_line' #availible: off_line, on_line, data_processor
+    mode = 'on_line' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
         if_off_line_debug = False
@@ -32,7 +32,7 @@ elif mode is 'data_processor':
     status = "temp_run"
 
 basic_log_dir = project+"_4"
-log_dir = "1_testing_on_line"
+log_dir = "1_testing_on_line_auto_conti"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -67,7 +67,7 @@ if (mode is 'off_line') or (mode is 'data_processor'):
 elif mode is 'on_line':
     if if_on_line_debug:
         '''default settings'''
-        num_workers_one_run = 2
+        num_workers_one_run = 3
     else:
         '''default settings'''
         if cluster_current is 0:
@@ -295,6 +295,9 @@ if (project is 'f') and (mode is 'on_line'):
         num_subjects = 40
     elif data_base is 'vr_new':
         num_subjects = 76
+    worker_done_signal_dir = 'temp/worker_done_signal_dir/'
+    worker_done_signal_file = 'worker_done_signal.npz'
+    check_worker_done_time = 60 * 10
 else:
     num_games_global = len(game_dic)
     num_workers_global = 16

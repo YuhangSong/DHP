@@ -224,14 +224,14 @@ class A3C(object):
         self.if_learning_v = if_learning_v
 
         from config import project, mode
-        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+        if (project is 'f') and (mode is 'on_line'):
+            self.log_thread = True
+        else:
             '''only log if the task is on zero and cluster is the main cluster'''
             if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
                 self.log_thread = True
             else:
                 self.log_thread = False
-        elif (project is 'f') and (mode is 'on_line'):
-            self.log_thread = True
 
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
@@ -315,7 +315,7 @@ class A3C(object):
     def start(self, sess, summary_writer):
 
         from config import project, mode
-        if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+        if not ((project is 'f') and (mode is 'on_line')):
             if(self.task!=config.task_chief):
                 print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
                 time.sleep(5)

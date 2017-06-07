@@ -290,17 +290,19 @@ cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139']
 cluster_name = ['yuhangsong'    , 'server'        , 'worker']
 cluster_home = ['yuhangsong'    , 's'             , 'irc207']
 
-if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
+if (project is 'f') and (mode is 'on_line'):
+    if data_base is 'vr':
+        num_subjects = 40
+    elif data_base is 'vr_new':
+        num_subjects = 76
+else:
     num_games_global = len(game_dic)
     num_workers_global = 16
     num_workers_total_global = num_games_global * num_workers_global
     task_plus = cluster_current * num_workers_total_global
     task_chief = cluster_main * num_workers_total_global
-elif (project is 'f') and (mode is 'on_line'):
-    if data_base is 'vr':
-        num_subjects = 40
-    elif data_base is 'vr_new':
-        num_subjects = 76
+    task_plus = cluster_current * num_workers_total_global
+    task_chief = cluster_main * num_workers_total_global
 
 if project is 'g':
     game_dic_all = get_env_dic([
@@ -326,9 +328,6 @@ games_start_global = 0
 cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
 cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
 cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
-
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global
 
 '''compute_consi config, only works in mode data_processor'''
 if project is 'f' and mode is 'data_processor':

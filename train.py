@@ -21,48 +21,10 @@ def create_tmux_commands(session, logdir):
     '''
     env_seq_id = config.game_dic
 
-    # for launching the TF workers and for launching tensorboard
+    '''for launching the TF workers'''
     from config import project, mode
-    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
-        base_cmd = [
-            'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-            '--log-dir', logdir, '--env-id', env_seq_id[0],
-            '--num-workers', str(config.num_workers_total_global)]
-
-        '''main cluster has ps worker'''
-        if(config.cluster_current==config.cluster_main):
-            cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
-        else:
-            cmds_map = []
-
-        for i in range(config.num_workers_total_global):
-            if((i % config.num_workers_global) >= config.num_workers_local):
-                continue
-            base_cmd = [
-                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-                '--log-dir', logdir,
-                '--env-id', env_seq_id[i / config.num_workers_global],
-                '--num-workers', str(config.num_workers_total_global)]
-            cmds_map += [new_tmux_cmd(session,
-                                      "w-%d" % i,
-                                      base_cmd + ["--job-name", "worker",
-                                                  "--task", str(i+config.task_plus)])]
-
-        windows = [v[0] for v in cmds_map]
-
-        cmds = [
-            "mkdir -p {}".format(logdir),
-            "tmux kill-session -t {}".format(session),
-            "tmux new-session -s {} -n {} -d".format(session, windows[0]),
-        ]
-        for w in windows[1:]:
-            cmds += ["tmux new-window -t {} -n {}".format(session, w)]
-        cmds += ["sleep 1"]
-        for window, cmd in cmds_map:
-            cmds += [cmd]
-
-        return cmds
-    elif (project is 'f') and (mode is 'on_line'):
+    '''different from f on_line and others'''
+    if (project is 'f') and (mode is 'on_line'):
         worker_running = 0
         cmds_map = []
         for game_i in range(len(env_seq_id)):
@@ -93,6 +55,44 @@ def create_tmux_commands(session, logdir):
                     break
             if breakout:
                 break
+        windows = [v[0] for v in cmds_map]
+
+        cmds = [
+            "mkdir -p {}".format(logdir),
+            "tmux kill-session -t {}".format(session),
+            "tmux new-session -s {} -n {} -d".format(session, windows[0]),
+        ]
+        for w in windows[1:]:
+            cmds += ["tmux new-window -t {} -n {}".format(session, w)]
+        cmds += ["sleep 1"]
+        for window, cmd in cmds_map:
+            cmds += [cmd]
+
+        return cmds
+    else:
+        base_cmd = [
+            'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+            '--log-dir', logdir, '--env-id', env_seq_id[0],
+            '--num-workers', str(config.num_workers_total_global)]
+
+        '''main cluster has ps worker'''
+        if(config.cluster_current==config.cluster_main):
+            cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
+        else:
+            cmds_map = []
+
+        for i in range(config.num_workers_total_global):
+            if((i % config.num_workers_global) >= config.num_workers_local):
+                continue
+            base_cmd = [
+                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+                '--log-dir', logdir,
+                '--env-id', env_seq_id[i / config.num_workers_global],
+                '--num-workers', str(config.num_workers_total_global)]
+            cmds_map += [new_tmux_cmd(session,
+                                      "w-%d" % i,
+                                      base_cmd + ["--job-name", "worker",
+                                                  "--task", str(i+config.task_plus)])]
 
         windows = [v[0] for v in cmds_map]
 

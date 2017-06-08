@@ -31,8 +31,8 @@ elif mode is 'data_processor':
     '''default setting'''
     status = "temp_run"
 
-basic_log_dir = project+"_4"
-log_dir = "1_testing_on_line_auto_conti_restrain_episode"
+basic_log_dir = project+"_5"
+log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -71,7 +71,7 @@ elif mode is 'on_line':
     else:
         '''default settings'''
         if cluster_current is 0:
-            num_workers_one_run = 4
+            num_workers_one_run = 16
         elif cluster_current is 1:
             num_workers_one_run = 32
         elif cluster_current is 2:

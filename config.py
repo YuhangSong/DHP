@@ -114,6 +114,7 @@ if project is 'f':
         if_log_scan_path = False
         if_log_cc = False
         train_to_reward = 0.2
+        train_to_episode = 500
     relative_predicted_fixation_num = 1.0
     relative_log_cc_interval = 3.0/40.0
 

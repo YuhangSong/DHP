@@ -149,6 +149,8 @@ class env_li():
             self.predicting = False
             from config import train_to_reward
             self.train_to_reward = train_to_reward
+            from config import train_to_episode
+            self.train_to_episode = train_to_episode
             self.sum_reward_dic_on_cur_train = []
             self.average_reward_dic_on_cur_train = []
 
@@ -453,9 +455,9 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        if np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward:
+                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
 
-                            '''if reward is trained to a acceptable range'''
+                            '''if reward is trained to a acceptable range or trained episode exceed a range'''
 
                             '''summary'''
                             summary = tf.Summary()

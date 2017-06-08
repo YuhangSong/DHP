@@ -12,8 +12,8 @@ elif project is 'f':
         if_on_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
-        data_processor_id = 'compute_consi'# #availible: compute_consi,
-
+        data_processor_id = 'minglang_obdl_cfg'#availible:minglang_mp4_to_yuv,compute_consi,minglang_mp4_to_jpg
+                                                 # minglang_obdl_cfg
 '''log config'''
 if mode is 'off_line':
     if if_off_line_debug is True:

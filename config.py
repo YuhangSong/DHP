@@ -7,7 +7,7 @@ elif project is 'f':
     mode = 'on_line' #availible: off_line, on_line, data_processor
     if_learning_v = True
     if mode is 'off_line':
-        if_off_line_debug = False
+        if_off_line_debug = True
     if mode is 'on_line':
         if_on_line_debug = False
     elif mode is 'data_processor':
@@ -32,7 +32,7 @@ elif mode is 'data_processor':
     status = "temp_run"
 
 basic_log_dir = project+"_4"
-log_dir = "1_testing_on_line_auto_conti"
+log_dir = "1_testing_on_line_auto_conti_restrain_episode"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":

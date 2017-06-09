@@ -543,6 +543,8 @@ class env_li():
             '''normally, we donot judge done when we in this'''
             done = False
 
+            '''core part for online'''
+            
             if self.mode is 'on_line':
 
                 if self.predicting is False:

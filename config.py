@@ -9,7 +9,7 @@ elif project is 'f':
     if mode is 'off_line':
         if_off_line_debug = True
     if mode is 'on_line':
-        if_on_line_debug = False
+        if_on_line_debug = True
     elif mode is 'data_processor':
         if_data_provessor_debug = True
         data_processor_id = 'minglang_obdl_cfg'#availible:minglang_mp4_to_yuv,compute_consi,minglang_mp4_to_jpg
@@ -52,7 +52,7 @@ if (mode is 'off_line') or (mode is 'data_processor'):
     if mode is 'off_line':
         if if_off_line_debug is True:
             '''default settings'''
-            num_workers_local = 1
+            num_workers_local = 3
         else:
             '''default settings'''
             if cluster_current is 0:

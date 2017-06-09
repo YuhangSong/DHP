@@ -39,10 +39,10 @@ if status is "temp_run":
     import subprocess
     subprocess.call(["rm", "-r", final_log_dir])
 
-# '''restore model config'''
-# if_restore_model = False
-# if if_restore_model is True:
-#     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
+'''restore model config'''
+if_restore_model = True
+if if_restore_model is True:
+    model_to_restore = "model.ckpt"
 
 '''cluster config'''
 cluster_current = 0

@@ -53,9 +53,25 @@ def run(args, server):
     init_all_op = tf.global_variables_initializer()
     saver = FastSaver(variables_to_save)
 
+    variables_to_restore = [v for v in tf.all_variables() if v.name.startswith("global")]
+    pre_train_saver = FastSaver(variables_to_restore)
+
     def init_fn(ses):
         logger.info("Initializing all parameters.")
         ses.run(init_all_op)
+        from config import project
+        if project is 'f':
+            from config import mode
+            if mode is 'on_line':
+                from config import if_restore_model
+                if if_restore_model:
+                    '''restore is only needed fot main cluster'''
+                    from config import model_to_restore
+
+                    restore_path = 'model_to_restore/'+model_to_restore
+                    print('restore model from:'+restore_path)
+                    pre_train_saver.restore(ses,
+                                            restore_path)
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 

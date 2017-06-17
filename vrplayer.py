@@ -6,7 +6,11 @@ import math
 from scipy.misc import imsave
 import subprocess
 from read_yuv import yuv_import
-import Image
+from config import cluster_name, cluster_current
+if cluster_name[cluster_current] is 'xuntian2':
+    import PIL.Image as Image
+else:
+    import Image
 from numpy import *
 
 def get_view(input_width,input_height,view_fov_x,view_fov_y,view_center_lat,view_center_lon,output_width,output_height,cur_frame,file_,is_render=False,temp_dir=""):

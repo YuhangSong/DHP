@@ -3,35 +3,22 @@ project = 'f' #availible: g, f
 if project is 'g':
     model = None
 elif project is 'f':
-    data_base = 'vr' #availible: vr, vr_new
+    data_base = 'vr_new' #availible: vr, vr_new
     mode = 'on_line' #availible: off_line, on_line, data_processor
     if_learning_v = True
-    if mode is 'off_line':
-        if_off_line_debug = True
-    if mode is 'on_line':
-        if_on_line_debug = True
-    elif mode is 'data_processor':
-        if_data_provessor_debug = True
+    debugging = False
+    debugging_range = [0,1]
+    if mode is 'data_processor':
         data_processor_id = 'minglang_obdl_cfg'#availible:minglang_mp4_to_yuv,compute_consi,minglang_mp4_to_jpg
                                                  # minglang_obdl_cfg
 '''log config'''
-if mode is 'off_line':
-    if if_off_line_debug is True:
-        '''default setting'''
-        status = "temp_run"
-    else:
-        status = ""
-elif mode is 'on_line':
-    if if_on_line_debug is True:
-        '''default setting'''
-        status = "temp_run"
-    else:
-        status = ""
-elif mode is 'data_processor':
+if debugging is True:
     '''default setting'''
     status = "temp_run"
+else:
+    status = ""
 
-basic_log_dir = project+"_5"
+basic_log_dir = project+"_12"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
@@ -45,12 +32,13 @@ if status is "temp_run":
 #     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
 
 '''cluster config'''
-cluster_current = 0
+cluster_current = 3
+
 if (mode is 'off_line') or (mode is 'data_processor'):
     cluster_main = 0
     '''worker config'''
     if mode is 'off_line':
-        if if_off_line_debug is True:
+        if debugging is True:
             '''default settings'''
             num_workers_local = 3
         else:
@@ -65,17 +53,19 @@ if (mode is 'off_line') or (mode is 'data_processor'):
         '''default settings'''
         num_workers_local = 1
 elif mode is 'on_line':
-    if if_on_line_debug:
+    if debugging:
         '''default settings'''
         num_workers_one_run = 3
     else:
         '''default settings'''
         if cluster_current is 0:
-            num_workers_one_run = 16
+            num_workers_one_run = 4
         elif cluster_current is 1:
             num_workers_one_run = 32
         elif cluster_current is 2:
             num_workers_one_run = 32
+        elif cluster_current is 3:
+            num_workers_one_run = 4
 
 
 '''model structure'''
@@ -113,8 +103,12 @@ if project is 'f':
     elif mode is 'on_line':
         if_log_scan_path = False
         if_log_cc = False
-        train_to_reward = 0.2
-        train_to_episode = 500
+
+        '''some conditions to terminate and move on the on_line train'''
+        train_to_reward = 0.2 # set to 1.0 to disable it
+        train_to_mo = 0.9 # set to 1.0 to disable it
+        train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
+
     relative_predicted_fixation_num = 1.0
     relative_log_cc_interval = 3.0/40.0
 
@@ -234,62 +228,14 @@ elif project is 'f':
 if project is 'g':
     game_dic = game_dic_test_multi_pong # specific game dic
 elif project is 'f':
-    if mode is 'off_line':
-        if if_off_line_debug is True:
-            '''default setting'''
-            game_dic = ['Pokemon'] # specific game dic
-        else:
-            if cluster_current is 0:
-                if data_base is 'vr':
-                    game_dic = ['Pokemon']
-                elif data_base is 'vr_new':
-                    print('not support!!')
-                    print(t)
-            elif cluster_current is 1:
-                if data_base is 'vr':
-                    game_dic = game_dic_all
-                elif data_base is 'vr_new':
-                    game_dic = game_dic_new_all
-            elif cluster_current is 2:
-                if data_base is 'vr':
-                    game_dic = game_dic_all
-                elif data_base is 'vr_new':
-                    game_dic = game_dic_new_all
-    elif mode is 'on_line':
-        if if_on_line_debug is True:
-            '''default setting'''
-            game_dic = ['Pokemon'] # specific game dic
-        else:
-            if cluster_current is 0:
-                if data_base is 'vr':
-                    game_dic = ['Pokemon']
-                elif data_base is 'vr_new':
-                    print('not support!!')
-                    print(t)
-            elif cluster_current is 1:
-                if data_base is 'vr':
-                    game_dic = game_dic_all
-                elif data_base is 'vr_new':
-                    game_dic = game_dic_new_all
-            elif cluster_current is 2:
-                if data_base is 'vr':
-                    game_dic = game_dic_all
-                elif data_base is 'vr_new':
-                    game_dic = game_dic_new_all
-    elif mode is 'data_processor':
-        '''default setting'''
-        if data_base is 'vr':
-            game_dic = game_dic_all
-        elif data_base is 'vr_new':
-            game_dic = game_dic_new_all
-        if if_data_provessor_debug is True:
-            game_dic = game_dic[:1]
+    if data_base is 'vr':
+        game_dic = game_dic_all
+    elif data_base is 'vr_new':
+        game_dic = game_dic_new_all
+    if debugging is True:
+        game_dic = game_dic[debugging_range[0]:debugging_range[1]]
 
 '''default config'''
-
-cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139']
-cluster_name = ['yuhangsong'    , 'server'        , 'worker']
-cluster_home = ['yuhangsong'    , 's'             , 'irc207']
 
 if (project is 'f') and (mode is 'on_line'):
     if data_base is 'vr':
@@ -329,9 +275,9 @@ elif project is 'f':
 
 games_start_global = 0
 
-cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139'] # main cluster has to be first
-cluster_name = ['yuhangsong'    , 'server'        , 'worker'] # main cluster has to be first
-cluster_home = ['yuhangsong'    , 's'             , 'irc207'] # main cluster has to be first
+cluster_host = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31'] # main cluster has to be first
+cluster_name = ['yuhangsong'    , 'server'        , 'worker',          'xuntian2'] # main cluster has to be first
+cluster_home = ['yuhangsong'    , 's'             , 'irc207',          'xuntian2'] # main cluster has to be first
 
 '''compute_consi config, only works in mode data_processor'''
 if project is 'f' and mode is 'data_processor':

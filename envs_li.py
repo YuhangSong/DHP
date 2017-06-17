@@ -141,18 +141,25 @@ class env_li():
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
 
         self.reward_dic_on_cur_episode = []
+
         if self.mode is 'on_line':
             self.subjects_total = 1
             self.subjects = self.subjects[self.subject:self.subject+1]
             self.cur_training_step = 0
             self.cur_predicting_step = self.cur_training_step + 1
             self.predicting = False
-            from config import train_to_reward
+            from config import train_to_reward, train_to_mo
             self.train_to_reward = train_to_reward
+            self.train_to_mo = train_to_mo
             from config import train_to_episode
             self.train_to_episode = train_to_episode
             self.sum_reward_dic_on_cur_train = []
             self.average_reward_dic_on_cur_train = []
+
+            '''record mo'''
+            self.mo_dic_on_cur_episode = []
+            self.sum_mo_dic_on_cur_train = []
+            self.average_mo_dic_on_cur_train = []
 
 
 
@@ -352,6 +359,9 @@ class env_li():
 
         self.reward_dic_on_cur_episode = []
 
+        if self.mode is 'on_line':
+            self.mo_dic_on_cur_episode = []
+
         '''episode add'''
         self.episode +=1
 
@@ -476,6 +486,7 @@ class env_li():
             '''terminating'''
             self.reset()
             reward = 0.0
+            mo = 0.0
             done = True
             if self.if_learning_v:
                 v_lable = 0.0
@@ -496,22 +507,12 @@ class env_li():
             '''convert v to degree'''
             degree_per_step = distance_per_step / math.pi * 180.0
 
-            if (self.mode is 'on_line') and (self.predicting is True):
-                '''online and predicting, lon and lat is updated as subjects' ground-truth'''
-                '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
-                print('predicting run')
-                self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
-                self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
+            '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
+            if self.if_learning_v:
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
+                v_lable = degree_per_step
             else:
-                '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
-                if self.if_learning_v:
-                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
-                    v_lable = degree_per_step
-                else:
-                    self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
-
-            '''update observation_now'''
-            self.get_observation()
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
 
             '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
@@ -522,6 +523,26 @@ class env_li():
                                               mapheight=self.heatmap_height)
                 from cc import calc_score
                 reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
+
+            if self.mode is 'on_line':
+                '''compute MO'''
+                '''
+                self.cur_lon
+                self.cur_lat
+                sefl.subjects[0].data_frame[self.cur_data].p[0] # lon
+                sefl.subjects[0].data_frame[self.cur_data].p[1] # lat
+                self.video_size_width,
+                self.video_size_heigth,
+                self.view_range_lon,
+                self.view_range_lat,
+                '''
+                from MeanOverlap import *
+                FOV_scale = self.view_range_lon*1.0/self.view_range_lat
+                mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
+                mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
+                print("-------------------------------------------------------------------------------------------------------")
+                print(str(mo))
+                print("-------------------------------------------------------------------------------------------------------")
 
             '''smooth reward'''
             if self.last_action is not None:
@@ -540,11 +561,31 @@ class env_li():
             self.last_action = action
             self.reward_dic_on_cur_episode += [reward]
 
+            if self.mode is 'on_line':
+                self.mo_dic_on_cur_episode += [mo]
+
+            '''
+            if we are predicting and the step has not ran to exceed the cur_training_step,
+            we are actually feeding the model so that we can produce a prediction with the experiences already experienced by the human,
+            not testing the modeling.
+            So we pull the position back to the ground-truth
+            '''
+            if (self.mode is 'on_line') and (self.predicting is True) and (self.cur_step > self.cur_training_step):
+                '''online and predicting, lon and lat is updated as subjects' ground-truth'''
+                '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
+                print('predicting run')
+                self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
+                self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
+
+            '''after pull the position, get observation'''
+            '''update observation_now'''
+            self.get_observation()
+
             '''normally, we donot judge done when we in this'''
             done = False
 
             '''core part for online'''
-            
+
             if self.mode is 'on_line':
 
                 if self.predicting is False:
@@ -554,24 +595,34 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
+                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
 
                             '''summary'''
                             summary = tf.Summary()
+                            '''summary reward'''
                             summary.value.add(tag=self.env_id+'on_cur_train/number_of_episodes',
                                               simple_value=float(len(self.sum_reward_dic_on_cur_train)))
                             summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_reward_per_step@',
                                               simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
                             summary.value.add(tag=self.env_id+'on_cur_train/average_@average_reward_per_step@',
                                               simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            '''summary mo'''
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_mo_per_step@',
+                                              simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_mo_per_step@',
+                                              simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
                             self.summary_writer.add_summary(summary, self.cur_training_step)
                             self.summary_writer.flush()
 
-                            '''reset'''
+                            '''reset reward record'''
                             self.sum_reward_dic_on_cur_train = []
                             self.average_reward_dic_on_cur_train = []
+
+                            '''reset mo record'''
+                            self.sum_mo_dic_on_cur_train = []
+                            self.average_mo_dic_on_cur_train = []
 
                             '''tell outside: we are going to predict on the next run'''
                             self.predicting = True
@@ -599,9 +650,13 @@ class env_li():
 
                             '''is reward has not been trained to a acceptable range'''
 
-                            '''record this episode run before reset to start point'''
+                            '''record reward in this episode run before reset to start point'''
                             self.average_reward_dic_on_cur_train += [np.mean(self.reward_dic_on_cur_episode)]
                             self.sum_reward_dic_on_cur_train += [np.sum(self.reward_dic_on_cur_episode)]
+
+                            '''record mo in this episode run before reset to start point'''
+                            self.average_mo_dic_on_cur_train += [np.mean(self.mo_dic_on_cur_episode)]
+                            self.sum_mo_dic_on_cur_train += [np.sum(self.mo_dic_on_cur_episode)]
 
                             '''tell out side: we are not going to predict'''
                             self.predicting = False
@@ -620,12 +675,23 @@ class env_li():
 
                         '''summary'''
                         summary = tf.Summary()
+
+                        '''summary reward'''
                         summary.value.add(tag=self.env_id+'on_cur_prediction/@sum_reward_per_step@',
                                           simple_value=float(np.sum(self.reward_dic_on_cur_episode)))
                         summary.value.add(tag=self.env_id+'on_cur_prediction/@average_reward_per_step@',
                                           simple_value=float(np.mean(self.reward_dic_on_cur_episode)))
                         summary.value.add(tag=self.env_id+'on_cur_prediction/@reward_for_predicting_step@',
                                           simple_value=float(self.reward_dic_on_cur_episode[-1]))
+
+                        '''summary mo'''
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@sum_mo_per_step@',
+                                          simple_value=float(np.sum(self.mo_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@average_mo_per_step@',
+                                          simple_value=float(np.mean(self.mo_dic_on_cur_episode)))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@mo_for_predicting_step@',
+                                          simple_value=float(self.mo_dic_on_cur_episode[-1]))
+
                         self.summary_writer.add_summary(summary, self.cur_predicting_step)
                         self.summary_writer.flush()
 

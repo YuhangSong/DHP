@@ -6,7 +6,7 @@ Created on Thu Jan 10 10:48:00 2013
 """
 
 from numpy import *
-import Image
+
 screenLevels = 255.0
 
 

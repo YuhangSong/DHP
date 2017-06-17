@@ -18,7 +18,7 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_12"
+basic_log_dir = project+"_13"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 

@@ -18,7 +18,7 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_13"
+basic_log_dir = project+"_15"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
@@ -241,7 +241,7 @@ if (project is 'f') and (mode is 'on_line'):
     if data_base is 'vr':
         num_subjects = 40
     elif data_base is 'vr_new':
-        num_subjects = 76
+        num_subjects = 58
     worker_done_signal_dir = 'temp/worker_done_signal_dir/'
     worker_done_signal_file = 'worker_done_signal.npz'
     check_worker_done_time = 60 * 10

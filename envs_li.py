@@ -140,13 +140,17 @@ class env_li():
         data = data_all[self.env_id]
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
 
+        # print("*************")
+        # print(self.subject_code)
+        # print(s)
+
         self.reward_dic_on_cur_episode = []
 
         if self.mode is 'on_line':
             self.subjects_total = 1
             self.subjects = self.subjects[self.subject:self.subject+1]
-            self.cur_training_step = 0
-            self.cur_predicting_step = self.cur_training_step + 1
+            self.cur_training_step = 0.0
+            self.cur_predicting_step = self.cur_training_step + 1.0
             self.predicting = False
             from config import train_to_reward, train_to_mo
             self.train_to_reward = train_to_reward
@@ -160,8 +164,7 @@ class env_li():
             self.mo_dic_on_cur_episode = []
             self.sum_mo_dic_on_cur_train = []
             self.average_mo_dic_on_cur_train = []
-
-
+            self.mo_on_prediction_dic = []
 
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
@@ -612,7 +615,7 @@ class env_li():
                             summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_mo_per_step@',
                                               simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
                             summary.value.add(tag=self.env_id+'on_cur_train/average_@average_mo_per_step@',
-                                              simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
+                                              simple_value=float(np.mean(self.average_mo_dic_on_cur_train)))
                             self.summary_writer.add_summary(summary, self.cur_training_step)
                             self.summary_writer.flush()
 
@@ -635,6 +638,15 @@ class env_li():
 
                                 '''on line terminating'''
                                 print('on line run meet end, terminate and write done signal')
+
+                                '''record the mo_mean for each subject'''
+
+                                mo_mean = np.mean(self.mo_on_prediction_dic)
+                                from config import final_log_dir
+                                with open(final_log_dir+"mo_mean.txt","a") as f:
+                                    f.write("subject[%s]:\t%s\n"%(self.subject,mo_mean))
+
+
 
                                 from config import worker_done_signal_dir, worker_done_signal_file
                                 done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
@@ -689,8 +701,12 @@ class env_li():
                                           simple_value=float(np.sum(self.mo_dic_on_cur_episode)))
                         summary.value.add(tag=self.env_id+'on_cur_prediction/@average_mo_per_step@',
                                           simple_value=float(np.mean(self.mo_dic_on_cur_episode)))
+                        mo_on_cur_prediction = self.mo_dic_on_cur_episode[-1]
+                        self.mo_on_prediction_dic += [mo_on_cur_prediction]
                         summary.value.add(tag=self.env_id+'on_cur_prediction/@mo_for_predicting_step@',
-                                          simple_value=float(self.mo_dic_on_cur_episode[-1]))
+                                          simple_value=float(mo_on_cur_prediction))
+                        summary.value.add(tag=self.env_id+'on_cur_prediction/@average_mo_till_predicting_step@',
+                                          simple_value=float(np.mean(self.mo_on_prediction_dic)))
 
                         self.summary_writer.add_summary(summary, self.cur_predicting_step)
                         self.summary_writer.flush()

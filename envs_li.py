@@ -644,19 +644,9 @@ class env_li():
                                 mo_mean = np.mean(self.mo_on_prediction_dic)
                                 from config import final_log_dir
                                 with open(final_log_dir+"mo_mean.txt","a") as f:
-                                    f.write("subject[%s]:\t%s\n"%(self.subject,mo_mean))
+                                    f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
 
-
-
-                                from config import worker_done_signal_dir, worker_done_signal_file
-                                done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
-                                done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
-                                np.savez(worker_done_signal_dir+worker_done_signal_file,
-                                         done_sinal_dic=done_sinal_dic)
-
-                                while True:
-                                    print('this worker is waiting to be killed')
-                                    time.sleep(1000)
+                                self.terminate_this_worker()
 
                         else:
 
@@ -722,6 +712,19 @@ class env_li():
             return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
         elif self.mode is 'on_line':
             return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable, self.predicting
+
+    def terminate_this_worker(self):
+
+        '''send signal to terminating this worker'''
+        from config import worker_done_signal_dir, worker_done_signal_file
+        done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+        done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
+        np.savez(worker_done_signal_dir+worker_done_signal_file,
+                 done_sinal_dic=done_sinal_dic)
+
+        while True:
+            print('this worker is waiting to be killed')
+            time.sleep(1000)
 
     def log_thread_step(self):
         '''log_scan_path'''

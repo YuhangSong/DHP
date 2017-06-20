@@ -102,47 +102,39 @@ def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subjec
     ''''''
     cmds_map = []
 
-    if (game_i_at>=len(config.game_dic)) or (subject_i_at>=config.num_subjects):
+    if (game_i_at>=len(config.game_dic)):
         print('all done')
         print(s)
 
-    '''scan'''
-    for game_i in range(game_i_at,len(config.game_dic)):
-        for subjects_i in range(subject_i_at,config.num_subjects):
+    base_cmd = [
+        'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+        '--log-dir', logdir, '--env-id', config.game_dic[game_i_at],
+        '--num-workers', str(1)]
 
-            '''first thing, check if worker_running is full, if not go on to create_tmux_commands_auto'''
-            breakout = False
-            if worker_running >= config.num_workers_one_run:
-                subject_i_at = subjects_i
-                breakout = True
-                break
+    cmds_map += [new_tmux_cmd(session, 'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-ps', base_cmd + ["--job-name", "ps",
+                                                                                                 "--subject", str(subject_i_at)])]
 
-            base_cmd = [
-                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-                '--log-dir', logdir, '--env-id', config.game_dic[game_i],
-                '--num-workers', str(1)]
+    base_cmd = [
+        'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+        '--log-dir', logdir,
+        '--env-id', config.game_dic[game_i_at],
+        '--num-workers', str(1)]
+    cmds_map += [new_tmux_cmd(session,
+                              'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-w-0',
+                              base_cmd + ["--job-name", "worker",
+                                          "--task", str(0),
+                                          "--subject", str(subject_i_at)])]
 
-            cmds_map += [new_tmux_cmd(session, 'g-'+str(game_i)+'-s-'+str(subjects_i)+'-ps', base_cmd + ["--job-name", "ps",
-                                                                                                         "--subject", str(subjects_i)])]
+    '''created new worker, add worker_running'''
+    print('a pair of ps_worker for game '+config.game_dic[game_i_at]+' subject '+str(subject_i_at)+' is created.')
+    worker_running += 1
 
-            base_cmd = [
-                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-                '--log-dir', logdir,
-                '--env-id', config.game_dic[game_i],
-                '--num-workers', str(1)]
-            cmds_map += [new_tmux_cmd(session,
-                                      'g-'+str(game_i)+'-s-'+str(subjects_i)+'-w-0',
-                                      base_cmd + ["--job-name", "worker",
-                                                  "--task", str(0),
-                                                  "--subject", str(subjects_i)])]
+    subject_i_at += 1
+    if subject_i_at >= config.num_subjects:
+        game_i_at += 1
+        subject_i_at = 0
 
-            '''created new worker, add worker_running'''
-            print('a pair of ps_worker for game '+config.game_dic[game_i]+' subject '+str(subjects_i)+' is created.')
-            worker_running += 1
-
-        if breakout:
-            game_i_at = game_i
-            break
+    worker_running +=1
 
     '''see if cmd added'''
     if len(cmds_map) > 0:
@@ -217,8 +209,8 @@ def run():
                 '''refresh the worker_running'''
                 worker_running -= 1
 
-            '''refresh to see if any thing need to create'''
-            worker_running, game_i_at, subject_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at, subject_i_at)
+                '''refresh to see if any thing need to create'''
+                worker_running, game_i_at, subject_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at, subject_i_at)
 
             '''sleep for we do not need to detecting very frequent'''
             time.sleep(config.check_worker_done_time)

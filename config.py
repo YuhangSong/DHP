@@ -5,6 +5,11 @@ if project is 'g':
 elif project is 'f':
     data_base = 'vr_new' #availible: vr, vr_new
     mode = 'on_line' #availible: off_line, on_line, data_processor
+    if mode is 'on_line':
+        if_run_baseline = True
+        if if_run_baseline is True:
+            baseline_type = 'keep' # availible: random, keep, None
+            v_used_in_baseline = 2.2
     if_learning_v = True
     debugging = False
     debugging_range = [0,1]

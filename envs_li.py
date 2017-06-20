@@ -102,6 +102,13 @@ class env_li():
         from config import data_base
         self.data_base = data_base
 
+        from config import if_run_baseline
+        self.if_run_baseline = if_run_baseline
+        if self.if_run_baseline is True:
+            from config import baseline_type, v_used_in_baseline
+            self.baseline_type = baseline_type
+            self.v_used_in_baseline = v_used_in_baseline
+
         from config import if_learning_v
         self.if_learning_v = if_learning_v
 
@@ -496,6 +503,20 @@ class env_li():
 
         else:
 
+            if self.mode is 'on_line':
+
+                if self.if_run_baseline is True:
+
+                    '''if run baseline, overwrite the action and v'''
+                    if self.if_learning_v:
+                        v = self.v_used_in_baseline * self.data_per_step / math.pi * 180.0
+                    if self.baseline_type is 'keep':
+                        from suppor_lib import constrain_degree_to_0_360
+                        action = int(round((constrain_degree_to_0_360(self.subjects[0].data_frame[self.last_data].theta))/45.0)) # constrain to 0~360, /45.0 round
+                    elif self.baseline_type is 'random':
+                        import random
+                        action = random.randint(0,7)
+
             '''get reward and v from last state'''
             last_prob, distance_per_data = get_prob(lon=self.last_lon,
                                                     lat=self.last_lat,
@@ -598,9 +619,10 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
+                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode) or (self.if_run_baseline is True):
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
+                            '''or is running baseline'''
 
                             '''summary'''
                             summary = tf.Summary()

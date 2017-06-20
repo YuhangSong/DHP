@@ -226,3 +226,7 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+1
     salmap = salmap * (1.0 / np.amax(salmap))
     salmap = np.transpose(salmap)
     return salmap
+
+
+def constrain_degree_to_0_360(direction):
+    return (direction+360.0) if (direction<0) else (direction+0.0)

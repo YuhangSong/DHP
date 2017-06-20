@@ -5,6 +5,11 @@ if project is 'g':
 elif project is 'f':
     data_base = 'vr_new' #availible: vr, vr_new
     mode = 'on_line' #availible: off_line, on_line, data_processor
+    if mode is 'on_line':
+        if_run_baseline = True
+        if if_run_baseline is True:
+            baseline_type = 'keep' # availible: random, keep, None
+            v_used_in_baseline = 2.2
     if_learning_v = True
     debugging = False
     debugging_range = [0,1]
@@ -18,7 +23,7 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_15"
+basic_log_dir = project+"_17"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
@@ -244,7 +249,7 @@ if (project is 'f') and (mode is 'on_line'):
         num_subjects = 58
     worker_done_signal_dir = 'temp/worker_done_signal_dir/'
     worker_done_signal_file = 'worker_done_signal.npz'
-    check_worker_done_time = 60 * 10
+    check_worker_done_time = 2# 60 * 10
 else:
     num_games_global = len(game_dic)
     num_workers_global = 16

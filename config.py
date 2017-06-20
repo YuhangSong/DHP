@@ -9,7 +9,7 @@ elif project is 'f':
         if_run_baseline = True
         if if_run_baseline is True:
             baseline_type = 'keep' # availible: random, keep, None
-            v_used_in_baseline = 2.2
+            v_used_in_baseline = 0.075080846
     if_learning_v = True
     debugging = False
     debugging_range = [0,1]

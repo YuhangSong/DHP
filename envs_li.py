@@ -28,7 +28,6 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
-from move_view_lib_new import view_mover
 import tensorflow as tf
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,11 @@ class env_li():
         self.config()
 
         '''create view_mover'''
-        self.view_mover = view_mover()
+        from config import use_move_view_lib
+        self.use_move_view_lib = use_move_view_lib
+        if self.use_move_view_lib is 'new':
+            from move_view_lib_new import view_mover
+            self.view_mover = view_mover()
 
         '''reset'''
         self.observation = self.reset()
@@ -393,8 +396,9 @@ class env_li():
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
 
         '''reset view_mover'''
-        self.view_mover.init_position(Latitude=self.cur_lat,
-                                      Longitude=self.cur_lon)
+        if self.use_move_view_lib is 'new':
+            self.view_mover.init_position(Latitude=self.cur_lat,
+                                          Longitude=self.cur_lon)
 
         '''set observation_now to the first frame'''
         self.get_observation()
@@ -508,8 +512,8 @@ class env_li():
                 if self.if_run_baseline is True:
 
                     '''if run baseline, overwrite the action and v'''
-                    if self.if_learning_v:
-                        v = self.v_used_in_baseline * self.data_per_step / math.pi * 180.0
+
+
                     if self.baseline_type is 'keep':
                         from suppor_lib import constrain_degree_to_0_360
                         action = int(round((constrain_degree_to_0_360(self.subjects[0].data_frame[self.last_data].theta))/45.0)) # constrain to 0~360, /45.0 round
@@ -517,27 +521,54 @@ class env_li():
                         import random
                         action = random.randint(0,7)
 
-            '''get reward and v from last state'''
+
+                    '''overwrite v ,if v<0,action turn to the opposite'''
+                    self.v_expectation_used_in_baseline = self.v_used_in_baseline * self.data_per_step / math.pi *180.0
+                    self.v_stdev_used_in_baseline = self.v_expectation_used_in_baseline
+                    v = numpy.random.normal(self.v_expectation_used_in_baseline,self.v_stdev_used_in_baseline)
+                    if v < 0:
+                        action = (action + 4) % 8
+                        v = 0 - v
+                    print("###############################")
+                    print(str(v))
+                    print("###############################")
+
+            '''get direction reward and ground-truth v from data_base in last state'''
             last_prob, distance_per_data = get_prob(lon=self.last_lon,
                                                     lat=self.last_lat,
                                                     theta=action * 45.0,
                                                     subjects=self.subjects,
                                                     subjects_total=self.subjects_total,
                                                     cur_data=self.last_data)
-
             '''rescale'''
             distance_per_step = distance_per_data * self.data_per_step
-
             '''convert v to degree'''
             degree_per_step = distance_per_step / math.pi * 180.0
+            '''set v_lable'''
+            v_lable = degree_per_step
 
             '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
+            print("$$$$$$$$$$$$$$$$$$$")
+            print("the old center is  "+str(self.cur_lon)+"    "+str(self.cur_lat))
+            print("the action is   "+str(action))
+            print("the v is "+str(v))
             if self.if_learning_v:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
-                v_lable = degree_per_step
+                v_used_to_step = v
             else:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+                v_used_to_step = v_lable
 
+            if self.use_move_view_lib is 'new':
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,
+                                                                       degree_per_step=v_used_to_step)
+            elif self.use_move_view_lib is 'ziyu':
+                from move_view_lib import move_view
+                self.cur_lon, self.cur_lat = move_view(cur_lon=self.cur_lon,
+                                                       cur_lat=self.cur_lat,
+                                                       direction=action,
+                                                       degree_per_step=v_used_to_step)
+
+            print("the new center is   "+str(self.cur_lon)+"    "+str(self.cur_lat))
+            print("$$$$$$$$$$$$$$$$$$$")
             '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
@@ -561,11 +592,17 @@ class env_li():
                 self.view_range_lat,
                 '''
                 from MeanOverlap import *
-                FOV_scale = self.view_range_lon*1.0/self.view_range_lat
+                FOV_scale = self.view_range_lat*1.0/self.view_range_lon
                 mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 print("-------------------------------------------------------------------------------------------------------")
-                print(str(mo))
+
+                print("the predicting center is "+str(self.cur_lon)+"    "+str(self.cur_lat))
+                print("the ground-truth center is "+str(self.subjects[0].data_frame[self.cur_data].p[0])+"   "+str(self.subjects[0].data_frame[self.cur_data].p[1]))
+                print("the FOV_x is "+str(self.view_range_lon) )
+                print("the FOV_y is "+str(self.view_range_lat) )
+                print("the FOV_scale is " + str(FOV_scale))
+                print (str(mo))
                 print("-------------------------------------------------------------------------------------------------------")
 
             '''smooth reward'''
@@ -664,8 +701,8 @@ class env_li():
                                 '''record the mo_mean for each subject'''
 
                                 mo_mean = np.mean(self.mo_on_prediction_dic)
-                                from config import final_log_dir
-                                with open(final_log_dir+"mo_mean.txt","a") as f:
+                                from config import final_log_dir,baseline_type
+                                with open(final_log_dir+baseline_type+"_mo_mean.txt","a") as f:
                                     f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
 
                                 self.terminate_this_worker()

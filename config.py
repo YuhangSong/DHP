@@ -5,11 +5,12 @@ if project is 'g':
 elif project is 'f':
     data_base = 'vr_new' #availible: vr, vr_new
     mode = 'on_line' #availible: off_line, on_line, data_processor
+    use_move_view_lib = 'ziyu' # availible: ziyu, new # Warning: we find new move_view_lib is bugging!!!
     if mode is 'on_line':
         if_run_baseline = True
         if if_run_baseline is True:
-            baseline_type = 'keep' # availible: random, keep, None
-            v_used_in_baseline = 0.075080846
+            baseline_type = 'random' # availible: random, keep, None
+            v_used_in_baseline = 0.075080846 # / 3.0 # bug in here for data_base dismatched
     if_learning_v = True
     debugging = False
     debugging_range = [0,1]
@@ -23,7 +24,7 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_17"
+basic_log_dir = project+"_29s"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 

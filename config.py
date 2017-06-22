@@ -9,7 +9,7 @@ elif project is 'f':
     if mode is 'off_line':
         if_off_line_debug = True
     if mode is 'on_line':
-        if_on_line_debug = True
+        if_on_line_debug = False
     elif mode is 'data_processor':
         if_data_provessor_debug = True
         data_processor_id = 'minglang_obdl_cfg'#availible:minglang_mp4_to_yuv,compute_consi,minglang_mp4_to_jpg
@@ -31,8 +31,8 @@ elif mode is 'data_processor':
     '''default setting'''
     status = "temp_run"
 
-basic_log_dir = project+"_5"
-log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
+basic_log_dir = project+"_8"
+log_dir = "testing_load_off_line_model"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -40,9 +40,9 @@ if status is "temp_run":
     subprocess.call(["rm", "-r", final_log_dir])
 
 '''restore model config'''
-if_restore_model = True
+if_restore_model = False
 if if_restore_model is True:
-    model_to_restore = "model.ckpt"
+    model_to_restore = "0613model.ckpt-39.data-00000-of-00001"
 
 '''cluster config'''
 cluster_current = 0
@@ -71,7 +71,7 @@ elif mode is 'on_line':
     else:
         '''default settings'''
         if cluster_current is 0:
-            num_workers_one_run = 16
+            num_workers_one_run = 3
         elif cluster_current is 1:
             num_workers_one_run = 32
         elif cluster_current is 2:

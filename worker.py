@@ -65,13 +65,12 @@ def run(args, server):
             if mode is 'on_line':
                 from config import if_restore_model
                 if if_restore_model:
-                    '''restore is only needed fot main cluster'''
                     from config import model_to_restore
-
+                    logger.info("'restore model from:'+restore_path")
                     restore_path = 'model_to_restore/'+model_to_restore
-                    print('restore model from:'+restore_path)
                     pre_train_saver.restore(ses,
                                             restore_path)
+
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 
@@ -94,7 +93,7 @@ def run(args, server):
         is_chief = (args.task == config.task_chief)
 
     sv = tf.train.Supervisor(is_chief=is_chief,
-                             logdir=logdir,
+                             logdir=logdir+'_ps',
                              saver=saver,
                              summary_op=None,
                              init_op=init_op,

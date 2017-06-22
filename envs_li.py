@@ -28,7 +28,6 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
-from move_view_lib_new import view_mover
 import tensorflow as tf
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,11 @@ class env_li():
         self.config()
 
         '''create view_mover'''
-        self.view_mover = view_mover()
+        from config import use_move_view_lib
+        self.use_move_view_lib = use_move_view_lib
+        if self.use_move_view_lib is 'new':
+            from move_view_lib_new import view_mover
+            self.view_mover = view_mover()
 
         '''reset'''
         self.observation = self.reset()
@@ -393,8 +396,9 @@ class env_li():
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
 
         '''reset view_mover'''
-        self.view_mover.init_position(Latitude=self.cur_lat,
-                                      Longitude=self.cur_lon)
+        if self.use_move_view_lib is 'new':
+            self.view_mover.init_position(Latitude=self.cur_lat,
+                                          Longitude=self.cur_lon)
 
         '''set observation_now to the first frame'''
         self.get_observation()
@@ -529,19 +533,19 @@ class env_li():
                     print(str(v))
                     print("###############################")
 
-            '''get reward and v from last state'''
+            '''get direction reward and ground-truth v from data_base in last state'''
             last_prob, distance_per_data = get_prob(lon=self.last_lon,
                                                     lat=self.last_lat,
                                                     theta=action * 45.0,
                                                     subjects=self.subjects,
                                                     subjects_total=self.subjects_total,
                                                     cur_data=self.last_data)
-
             '''rescale'''
             distance_per_step = distance_per_data * self.data_per_step
-
             '''convert v to degree'''
             degree_per_step = distance_per_step / math.pi * 180.0
+            '''set v_lable'''
+            v_lable = degree_per_step
 
             '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
             print("$$$$$$$$$$$$$$$$$$$")
@@ -549,10 +553,19 @@ class env_li():
             print("the action is   "+str(action))
             print("the v is "+str(v))
             if self.if_learning_v:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=v)
-                v_lable = degree_per_step
+                v_used_to_step = v
             else:
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,degree_per_step=degree_per_step)
+                v_used_to_step = v_lable
+
+            if self.use_move_view_lib is 'new':
+                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,
+                                                                       degree_per_step=v_used_to_step)
+            elif self.use_move_view_lib is 'ziyu':
+                from move_view_lib import move_view
+                self.cur_lon, self.cur_lat = move_view(cur_lon=self.cur_lon,
+                                                       cur_lat=self.cur_lat,
+                                                       direction=action,
+                                                       degree_per_step=v_used_to_step)
 
             print("the new center is   "+str(self.cur_lon)+"    "+str(self.cur_lat))
             print("$$$$$$$$$$$$$$$$$$$")

@@ -81,6 +81,8 @@ class env_li():
         '''reset'''
         self.observation = self.reset()
 
+        self.terminate_this_worker()
+
     def get_observation(self):
 
         '''interface to get view'''
@@ -776,10 +778,25 @@ class env_li():
 
         '''send signal to terminating this worker'''
         from config import worker_done_signal_dir, worker_done_signal_file
-        done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+
+        while True:
+            try:
+                done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+                break
+            except Exception, e:
+                print(str(Exception)+": "+str(e))
+                time.sleep(1)
+
         done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
-        np.savez(worker_done_signal_dir+worker_done_signal_file,
-                 done_sinal_dic=done_sinal_dic)
+
+        while True:
+            try:
+                np.savez(worker_done_signal_dir+worker_done_signal_file,
+                         done_sinal_dic=done_sinal_dic)
+                break
+            except Exception, e:
+                print(str(Exception)+": "+str(e))
+                time.sleep(1)
 
         while True:
             print('this worker is waiting to be killed')

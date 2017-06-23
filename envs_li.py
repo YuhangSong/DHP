@@ -107,12 +107,13 @@ class env_li():
         from config import data_base
         self.data_base = data_base
 
-        from config import if_run_baseline
-        self.if_run_baseline = if_run_baseline
-        if self.if_run_baseline is True:
-            from config import baseline_type, v_used_in_baseline
-            self.baseline_type = baseline_type
-            self.v_used_in_baseline = v_used_in_baseline
+        if self.mode is 'on_line':
+            from config import if_run_baseline
+            self.if_run_baseline = if_run_baseline
+            if self.if_run_baseline is True:
+                from config import baseline_type, v_used_in_baseline
+                self.baseline_type = baseline_type
+                self.v_used_in_baseline = v_used_in_baseline
 
         from config import if_learning_v
         self.if_learning_v = if_learning_v
@@ -151,10 +152,6 @@ class env_li():
         data_all = sio.loadmat(matfn)
         data = data_all[self.env_id]
         self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
-
-        # print("*************")
-        # print(self.subject_code)
-        # print(s)
 
         self.reward_dic_on_cur_episode = []
 
@@ -531,9 +528,6 @@ class env_li():
                     if v < 0:
                         action = (action + 4) % 8
                         v = 0 - v
-                    print("###############################")
-                    print(str(v))
-                    print("###############################")
 
             '''get direction reward and ground-truth v from data_base in last state'''
             last_prob, distance_per_data = get_prob(lon=self.last_lon,
@@ -550,10 +544,6 @@ class env_li():
             v_lable = degree_per_step
 
             '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
-            print("$$$$$$$$$$$$$$$$$$$")
-            print("the old center is  "+str(self.cur_lon)+"    "+str(self.cur_lat))
-            print("the action is   "+str(action))
-            print("the v is "+str(v))
             if self.if_learning_v:
                 v_used_to_step = v
             else:
@@ -569,8 +559,6 @@ class env_li():
                                                        direction=action,
                                                        degree_per_step=v_used_to_step)
 
-            print("the new center is   "+str(self.cur_lon)+"    "+str(self.cur_lat))
-            print("$$$$$$$$$$$$$$$$$$$")
             '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
@@ -597,15 +585,14 @@ class env_li():
                 FOV_scale = self.view_range_lat*1.0/self.view_range_lon
                 mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
-                print("-------------------------------------------------------------------------------------------------------")
-
-                print("the predicting center is "+str(self.cur_lon)+"    "+str(self.cur_lat))
-                print("the ground-truth center is "+str(self.subjects[0].data_frame[self.cur_data].p[0])+"   "+str(self.subjects[0].data_frame[self.cur_data].p[1]))
-                print("the FOV_x is "+str(self.view_range_lon) )
-                print("the FOV_y is "+str(self.view_range_lat) )
-                print("the FOV_scale is " + str(FOV_scale))
-                print (str(mo))
-                print("-------------------------------------------------------------------------------------------------------")
+                # print("-------------------------------------------------------------------------------------------------------")
+                # print("the predicting center is "+str(self.cur_lon)+"    "+str(self.cur_lat))
+                # print("the ground-truth center is "+str(self.subjects[0].data_frame[self.cur_data].p[0])+"   "+str(self.subjects[0].data_frame[self.cur_data].p[1]))
+                # print("the FOV_x is "+str(self.view_range_lon) )
+                # print("the FOV_y is "+str(self.view_range_lat) )
+                # print("the FOV_scale is " + str(FOV_scale))
+                # print (str(mo))
+                # print("-------------------------------------------------------------------------------------------------------")
 
             '''smooth reward'''
             if self.last_action is not None:

@@ -46,9 +46,15 @@ def create_tmux_commands(session, logdir):
         subprocess.call(["rm", "-r", worker_done_signal_dir])
         subprocess.call(["mkdir", "-p", worker_done_signal_dir])
         '''save the done_sinal_dic'''
-        np.savez(worker_done_signal_dir+worker_done_signal_file,
-                 done_sinal_dic=done_sinal_dic)
 
+        while True:
+            try:
+                np.savez(worker_done_signal_dir+worker_done_signal_file,
+                         done_sinal_dic=done_sinal_dic)
+                break
+            except Exception, e:
+                print(str(Exception)+": "+str(e))
+                sleep(1)
         '''cmds for init the tmux session'''
         cmds = [
             "mkdir -p {}".format(logdir),
@@ -191,11 +197,29 @@ def run():
 
             from config import worker_done_signal_dir, worker_done_signal_file
             '''load done_sinal_dic'''
-            done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+
+            '''use try except to avoid file_io_conflict'''
+            from time import sleep
+            while True:
+                try:
+                    done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+
+                    break
+                except Exception, e:
+                    print(str(Exception)+": "+str(e))
+                    sleep(1)
 
             '''clear the done_sinal_dic'''
-            np.savez(worker_done_signal_dir+worker_done_signal_file,
-                     done_sinal_dic=[[-1,-1]])
+            while True:
+                try:
+                    np.savez(worker_done_signal_dir+worker_done_signal_file,
+                             done_sinal_dic=[[-1,-1]])
+                    break
+                except Exception, e:
+                    print(str(Exception)+": "+str(e))
+                    sleep(1)
+
+
 
             '''scan done_sinal_dic, kill windows according to done_sinal_dic'''
             for i in range(np.shape(done_sinal_dic)[0]):

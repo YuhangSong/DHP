@@ -9,7 +9,7 @@ elif project is 'f':
     if mode is 'on_line':
         if_run_baseline = True
         if if_run_baseline is True:
-            baseline_type = 'random' # availible: random, keep, None
+            baseline_type = 'keep' # availible: random, keep, None
             v_used_in_baseline = 0.075080846 # / 3.0 # bug in here for data_base dismatched
     if_learning_v = True
     debugging = False
@@ -24,7 +24,7 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_29s"
+basic_log_dir = project+"_33"
 log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 

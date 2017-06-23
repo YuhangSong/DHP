@@ -81,7 +81,7 @@ class env_li():
         '''reset'''
         self.observation = self.reset()
 
-        self.terminate_this_worker()
+        # self.terminate_this_worker()
 
     def get_observation(self):
 

@@ -39,7 +39,7 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 basic_log_dir = project+"_37"
-log_dir = "test_off_line"
+log_dir = "online_baseline_keep"
 
 '''
     Description: cluster config

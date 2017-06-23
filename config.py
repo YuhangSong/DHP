@@ -38,7 +38,7 @@ if status is "temp_run":
 #     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
 
 '''cluster config'''
-cluster_current = 3
+cluster_current = 0
 
 if (mode is 'off_line') or (mode is 'data_processor'):
     cluster_main = 0

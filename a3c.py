@@ -256,7 +256,7 @@ class A3C(object):
             log_prob_tf = tf.nn.log_softmax(pi.logits)
             prob_tf = tf.nn.softmax(pi.logits)
 
-            # the "policy gradients" loss:  its derivative is precisely the policy gradient
+            # the "policy gradients" loss:  its derivative is precisely the policy gradients
             # notice that self.ac is a placeholder that is provided externally.
             # ac will contain the advantages, as calculated in process_rollout
             pi_loss = - tf.reduce_sum(tf.reduce_sum(log_prob_tf * self.ac, [1]) * self.adv)

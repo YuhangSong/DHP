@@ -21,7 +21,7 @@ if debugging is True:
         Description: cut game_dic to a smaller range to debug
         Availible:
     '''
-    debugging_range = [0,4]
+    debugging_range = [0,3]
 
 '''
     Description: if restore model
@@ -39,7 +39,7 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 basic_log_dir = project+"_37"
-log_dir = "online_baseline_keep"
+log_dir = "run_off_line"
 
 '''
     Description: cluster config
@@ -106,7 +106,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'off_line'
 
     '''
         Description: if learning v in the model,
@@ -125,7 +125,11 @@ elif project is 'f':
         Description: config env behaviour
     '''
     if_log_scan_path = False
-    if_log_cc = False
+
+    if mode is 'off_line':
+        if_log_cc = True
+    else:
+        if_log_cc = False
 
     if if_log_cc is True:
 
@@ -250,7 +254,7 @@ if project is 'f':
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
     if mode is 'off_line' or mode is 'data_processor':
         '''off line run all video together, should constrain the game_dic'''
-        if num_workers_one_run is not -1:
+        if num_workers_one_run_max is not -1:
             game_dic = game_dic[0:num_workers_one_run_max]
     if mode is 'on_line':
         num_workers_one_run = num_workers_one_run_proper
@@ -264,14 +268,6 @@ if project is 'f':
         worker_done_signal_file = 'worker_done_signal.npz'
         check_worker_done_time = 60
 
-num_games_global = len(game_dic)
-num_workers_global = 16
-num_workers_total_global = num_games_global * num_workers_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global
-
 if debugging is True:
     status = "temp_run"
     game_dic = game_dic[debugging_range[0]:debugging_range[1]]
@@ -283,3 +279,12 @@ final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 if status is "temp_run":
     import subprocess
     subprocess.call(["rm", "-r", final_log_dir])
+
+num_games_global = len(game_dic)
+num_workers_global = 16
+num_workers_local = 1
+num_workers_total_global = num_games_global * num_workers_global
+task_plus = cluster_current * num_workers_total_global
+task_chief = cluster_main * num_workers_total_global
+task_plus = cluster_current * num_workers_total_global
+task_chief = cluster_main * num_workers_total_global

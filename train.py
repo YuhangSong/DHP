@@ -171,6 +171,32 @@ def kill_a_pair_of_ps_worker_windows(session,game,subject):
     '''excute cmds'''
     os.system("\n".join(cmds))
 
+def check_best_cc():
+
+    best_cc_dic = {}
+
+    for i in range(len(config.game_dic)):
+
+        env_id = config.game_dic[i]
+
+        from config import final_log_dir
+        record_dir = final_log_dir+'ff_best_cc/'+env_id+'/'
+
+        try:
+            best_cc_dic[env_id] = np.load(record_dir+'best_cc.npz')['best_cc'][0]
+        except Exception, e:
+            pass
+            # print(str(Exception)+": "+str(e))
+
+    if len(best_cc_dic) is 0:
+        return
+
+    best_cc_dic=sorted(best_cc_dic.items(), key=lambda e:e[1], reverse=True)
+
+    print('=======================sorted cc==========================')
+    for i in range(len(best_cc_dic)):
+        print(best_cc_dic[i][0]+'\t'+str(best_cc_dic[i][1]))
+
 def run():
 
     args = parser.parse_args()
@@ -181,63 +207,75 @@ def run():
     os.system("\n".join(cmds))
 
     from config import project, mode
-    if (project is 'f') and (mode is 'on_line'):
+    if project is 'f':
 
-        '''auto worker starter'''
+        if mode is 'on_line':
 
-        '''init position recorder'''
-        worker_running = config.num_workers_one_run # this is fake to start the run
-        game_i_at=0
-        subject_i_at=0
+            '''auto worker starter'''
 
-        '''detecting'''
-        while True:
+            '''init position recorder'''
+            worker_running = config.num_workers_one_run # this is fake to start the run
+            game_i_at=0
+            subject_i_at=0
 
-            # print('checking if any worker done')
-
-            from config import worker_done_signal_dir, worker_done_signal_file
-            '''load done_sinal_dic'''
-
-            '''use try except to avoid file_io_conflict'''
-            from time import sleep
+            '''detecting'''
             while True:
-                try:
-                    done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
 
-                    break
-                except Exception, e:
-                    print(str(Exception)+": "+str(e))
-                    sleep(1)
+                # print('checking if any worker done')
 
-            '''clear the done_sinal_dic'''
+                from config import worker_done_signal_dir, worker_done_signal_file
+                '''load done_sinal_dic'''
+
+                '''use try except to avoid file_io_conflict'''
+                from time import sleep
+                while True:
+                    try:
+                        done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+                '''clear the done_sinal_dic'''
+                while True:
+                    try:
+                        np.savez(worker_done_signal_dir+worker_done_signal_file,
+                                 done_sinal_dic=[[-1,-1]])
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+
+
+                '''scan done_sinal_dic, kill windows according to done_sinal_dic'''
+                for i in range(np.shape(done_sinal_dic)[0]):
+
+                    '''if done_sinal_dic signal is -1, it is putted in by the control and it is invalid'''
+                    if done_sinal_dic[i][0] < 0:
+                        continue
+
+                    '''kill_a_pair_of_ps_worker_windows'''
+                    kill_a_pair_of_ps_worker_windows(session,done_sinal_dic[i][0],done_sinal_dic[i][1])
+                    '''refresh the worker_running'''
+                    worker_running -= 1
+
+                    '''refresh to see if any thing need to create'''
+                    worker_running, game_i_at, subject_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at, subject_i_at)
+
+                '''sleep for we do not need to detecting very frequent'''
+                time.sleep(config.check_worker_done_time)
+
+        if mode is 'off_line':
+
+            '''detecting'''
             while True:
-                try:
-                    np.savez(worker_done_signal_dir+worker_done_signal_file,
-                             done_sinal_dic=[[-1,-1]])
-                    break
-                except Exception, e:
-                    print(str(Exception)+": "+str(e))
-                    sleep(1)
 
+                check_best_cc()
 
-
-            '''scan done_sinal_dic, kill windows according to done_sinal_dic'''
-            for i in range(np.shape(done_sinal_dic)[0]):
-
-                '''if done_sinal_dic signal is -1, it is putted in by the control and it is invalid'''
-                if done_sinal_dic[i][0] < 0:
-                    continue
-
-                '''kill_a_pair_of_ps_worker_windows'''
-                kill_a_pair_of_ps_worker_windows(session,done_sinal_dic[i][0],done_sinal_dic[i][1])
-                '''refresh the worker_running'''
-                worker_running -= 1
-
-                '''refresh to see if any thing need to create'''
-                worker_running, game_i_at, subject_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at, subject_i_at)
-
-            '''sleep for we do not need to detecting very frequent'''
-            time.sleep(config.check_worker_done_time)
+                '''sleep for we do not need to detecting very frequent'''
+                time.sleep(config.check_worker_done_time)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,10 @@
 '''
+    Description: cluster config
+'''
+cluster_current = 0
+cluster_main = cluster_current
+
+'''
     Description: which project you want to run
     Availible: g, f
 '''
@@ -38,6 +44,7 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
+<<<<<<< HEAD
 basic_log_dir = project+"_40"
 log_dir = "run_off_line"
 
@@ -46,6 +53,10 @@ log_dir = "run_off_line"
 '''
 cluster_current = 1
 cluster_main = cluster_current
+=======
+basic_log_dir = project+"_50"
+log_dir = "run_on_line_baseline_keep"
+>>>>>>> f8fd87735638d6287f819ea5854597177a39c6ca
 
 '''
     Description: set model structure
@@ -75,6 +86,7 @@ if_mix_exp = False
         unavailible
 '''
 if_reward_auto_normalize = False
+
 
 if project is 'g':
 
@@ -106,7 +118,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'off_line'
+    mode = 'on_line'
 
     '''
         Description: if learning v in the model,

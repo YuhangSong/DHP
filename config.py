@@ -24,8 +24,8 @@ if debugging is True:
 else:
     status = ""
 
-basic_log_dir = project+"_33"
-log_dir = "1_testing_on_line_auto_conti_restrain_episode_help_all"
+basic_log_dir = project+"_40"
+log_dir = "on_line_baseline_keep"
 final_log_dir = "../../result/"+basic_log_dir+status+"/" + log_dir + status+'/'
 
 if status is "temp_run":
@@ -36,9 +36,6 @@ if status is "temp_run":
 # if_restore_model = False
 # if if_restore_model is True:
 #     model_to_restore = "../../result/model_to_restore/model.ckpt-8496809"
-
-'''cluster config'''
-cluster_current = 0
 
 if (mode is 'off_line') or (mode is 'data_processor'):
     cluster_main = 0

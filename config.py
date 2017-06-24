@@ -1,4 +1,10 @@
 '''
+    Description: cluster config
+'''
+cluster_current = 0
+cluster_main = cluster_current
+
+'''
     Description: which project you want to run
     Availible: g, f
 '''
@@ -42,12 +48,6 @@ basic_log_dir = project+"_50"
 log_dir = "run_off_line_on_vr"
 
 '''
-    Description: cluster config
-'''
-cluster_current = 1
-cluster_main = cluster_current
-
-'''
     Description: set model structure
 '''
 conv_depth = 4
@@ -75,6 +75,7 @@ if_mix_exp = False
         unavailible
 '''
 if_reward_auto_normalize = False
+
 
 if project is 'g':
 
@@ -106,7 +107,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'off_line'
+    mode = 'on_line'
 
     '''
         Description: if learning v in the model,

@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 1
 cluster_main = cluster_current
 
 '''
@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_50"
-log_dir = "run_off_line_on_vr"
+basic_log_dir = project+"_53"
+log_dir = "run_off_line_on_vr_new"
 
 '''
     Description: set model structure
@@ -101,13 +101,13 @@ elif project is 'f':
         Description: select data_base you are running on
         Availible: vr, vr_new
     '''
-    data_base = 'vr'
+    data_base = 'vr_new'
 
     '''
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'off_line'
 
     '''
         Description: if learning v in the model,
@@ -137,6 +137,10 @@ elif project is 'f':
         '''config for log cc'''
         relative_predicted_fixation_num = 1.0
         relative_log_cc_interval = 0.5
+
+
+        # relative_predicted_fixation_num = 2.0 / 58.0
+        # relative_log_cc_interval = 1.0
 
     '''
         Description: config env
@@ -256,7 +260,7 @@ if project is 'f':
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
-    check_worker_done_time = 2
+    check_worker_done_time = 60
     if mode is 'off_line' or mode is 'data_processor':
         '''off line run all video together, should constrain the game_dic'''
         if num_workers_one_run_max is not -1:

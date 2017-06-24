@@ -437,11 +437,9 @@ class env_li():
 
                         ccs_on_step_i = []
                         heatmaps_on_step_i = []
-                        for step_i in range(self.step_total):
+                        for step_i in range(self.step_total-1):
 
                             '''generate predicted salmap'''
-                            print(len(self.agent_result_stack))
-                            print(self.step_total)
                             temp = np.asarray(self.agent_result_stack)[:,step_i]
                             temp = np.sum(temp,axis=0)
                             temp = temp / np.max(temp)
@@ -462,7 +460,7 @@ class env_li():
                             record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
                             subprocess.call(["rm", "-r", record_dir])
                             subprocess.call(["mkdir", "-p", record_dir])
-                            for step_i in range(self.step_total):
+                            for step_i in range(self.step_total-1):
                                 self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
                                                   path=record_dir,
                                                   name=str(step_i))

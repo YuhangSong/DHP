@@ -38,13 +38,13 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_37"
+basic_log_dir = project+"_40"
 log_dir = "run_off_line"
 
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 1
 cluster_main = cluster_current
 
 '''

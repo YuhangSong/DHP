@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 4
 cluster_main = cluster_current
 
 '''
@@ -206,7 +206,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = True
+        if_run_baseline = False
 
         if if_run_baseline is True:
 
@@ -234,11 +234,11 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31'] # main cluster has to be first
-cluster_name                   = ['yuhangsong'    , 'server'        , 'worker'         , 'xuntian2'    ] # main cluster has to be first
-cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ] # main cluster has to be first
-num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ]
-num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ]
+cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197'] # main cluster has to be first
+cluster_name                   = ['yuhangsong'    , 'server'        , 'worker'         , 'xuntian2'    ,'haochen'] # main cluster has to be first
+cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'] # main cluster has to be first
+num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16]
+num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8]
 num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 

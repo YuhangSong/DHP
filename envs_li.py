@@ -83,6 +83,10 @@ class env_li():
 
         # self.terminate_this_worker()
 
+        # self.max_cc = self.env_id_num
+        # self.write_best_cc()
+        # print(s)
+
     def get_observation(self):
 
         '''interface to get view'''
@@ -436,6 +440,8 @@ class env_li():
                         for step_i in range(self.step_total):
 
                             '''generate predicted salmap'''
+                            print(len(self.agent_result_stack))
+                            print(self.step_total)
                             temp = np.asarray(self.agent_result_stack)[:,step_i]
                             temp = np.sum(temp,axis=0)
                             temp = temp / np.max(temp)
@@ -451,6 +457,7 @@ class env_li():
                             self.max_cc = self.cur_cc
                             self.heatmaps_of_max_cc = heatmaps_on_step_i
 
+                            '''log'''
                             from config import final_log_dir
                             record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
                             subprocess.call(["rm", "-r", record_dir])
@@ -459,6 +466,22 @@ class env_li():
                                 self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
                                                   path=record_dir,
                                                   name=str(step_i))
+
+                            self.write_best_cc()
+
+    def write_best_cc(self):
+        from config import final_log_dir
+        record_dir = final_log_dir+'ff_best_cc/'+self.env_id+'/'
+        while True:
+            try:
+                subprocess.call(["rm", "-r", record_dir])
+                subprocess.call(["mkdir", "-p", record_dir])
+                np.savez(record_dir+'best_cc.npz',
+                         best_cc=[self.max_cc])
+                break
+            except Exception, e:
+                print(str(Exception)+": "+str(e))
+                time.sleep(1)
 
     def step(self, action, v):
 

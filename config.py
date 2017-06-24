@@ -38,8 +38,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_40"
-log_dir = "run_off_line"
+basic_log_dir = project+"_50"
+log_dir = "run_off_line_on_vr"
 
 '''
     Description: cluster config
@@ -100,7 +100,7 @@ elif project is 'f':
         Description: select data_base you are running on
         Availible: vr, vr_new
     '''
-    data_base = 'vr_new'
+    data_base = 'vr'
 
     '''
         Description: select mode
@@ -135,7 +135,7 @@ elif project is 'f':
 
         '''config for log cc'''
         relative_predicted_fixation_num = 1.0
-        relative_log_cc_interval = 1.0
+        relative_log_cc_interval = 0.5
 
     '''
         Description: config env
@@ -249,9 +249,13 @@ if project is 'f':
     if data_base is 'vr_new':
         from f_game_dic import f_game_dic_new_all
         game_dic = f_game_dic_new_all # specific game dic
+    elif data_base is 'vr':
+        from f_game_dic import f_game_dic_all
+        game_dic = f_game_dic_all # specific game dic
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
+    check_worker_done_time = 2
     if mode is 'off_line' or mode is 'data_processor':
         '''off line run all video together, should constrain the game_dic'''
         if num_workers_one_run_max is not -1:
@@ -266,7 +270,6 @@ if project is 'f':
             num_subjects = 58
         worker_done_signal_dir = 'temp/worker_done_signal_dir/'
         worker_done_signal_file = 'worker_done_signal.npz'
-        check_worker_done_time = 60
 
 if debugging is True:
     status = "temp_run"

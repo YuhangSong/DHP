@@ -173,6 +173,8 @@ def kill_a_pair_of_ps_worker_windows(session,game,subject):
 
 def check_best_cc():
 
+    # print('=======================checking best cc==========================')
+
     best_cc_dic = {}
 
     for i in range(len(config.game_dic)):

@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 1
+cluster_current = 3
 cluster_main = cluster_current
 
 '''
@@ -44,8 +44,19 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_53"
-log_dir = "run_off_line_on_vr_new"
+basic_log_dir = project+"_57"
+# log_dir = "run_off_line_on_vr_new"
+log_dir = "run_on_line_on_vr_new"
+
+
+'''
+    Description:if separate game_dic
+'''
+if_separate_game_dic = True
+
+if if_separate_game_dic :
+    separate_start_game_index = 1  #  set the start game index ,availible: 0~~len(game_dic)
+
 
 '''
     Description: set model structure
@@ -107,7 +118,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'off_line'
+    mode = 'on_line'
 
     '''
         Description: if learning v in the model,
@@ -210,7 +221,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = False
+        if_run_baseline = True
 
         if if_run_baseline is True:
 
@@ -225,7 +236,7 @@ elif project is 'f':
                     keep: to keep the direction of last action
                     random: to select the action of direction and v randomly
             '''
-            baseline_type = 'keep'
+            baseline_type = 'random'
 
             '''
                 Description: v used when runing the baseline
@@ -254,6 +265,11 @@ if project is 'f':
     if data_base is 'vr_new':
         from f_game_dic import f_game_dic_new_all
         game_dic = f_game_dic_new_all # specific game dic
+
+        '''if separate the game_dict'''
+        if if_separate_game_dic :
+            game_dic = game_dic[separate_start_game_index:]
+
     elif data_base is 'vr':
         from f_game_dic import f_game_dic_all
         game_dic = f_game_dic_all # specific game dic

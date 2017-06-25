@@ -44,7 +44,7 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_53"
+basic_log_dir = project+"_52"
 log_dir = "run_off_line_on_vr_new"
 
 '''

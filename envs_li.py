@@ -445,7 +445,7 @@ class env_li():
                             temp = temp / np.max(temp)
                             heatmaps_on_step_i += [copy.deepcopy(temp)]
                             from cc import calc_score
-                            ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
+                            ccs_on_step_i += [calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i])]
                             print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
 
                         self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
@@ -453,7 +453,7 @@ class env_li():
                         if self.cur_cc > self.max_cc:
                             print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
                             self.max_cc = self.cur_cc
-                            self.heatmaps_of_max_cc = heatmaps_on_step_i
+                            heatmaps_of_max_cc = heatmaps_on_step_i
 
                             '''log'''
                             from config import final_log_dir
@@ -461,20 +461,24 @@ class env_li():
                             subprocess.call(["rm", "-r", record_dir])
                             subprocess.call(["mkdir", "-p", record_dir])
                             for step_i in range(self.step_total-1):
-                                self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
+                                self.save_heatmap(heatmap=heatmaps_of_max_cc[step_i],
                                                   path=record_dir,
                                                   name=str(step_i))
 
                             self.write_best_cc()
 
     def write_best_cc(self):
+
+
         from config import final_log_dir
         record_dir = final_log_dir+'ff_best_cc/'+self.env_id+'/'
+        record_file = record_dir+'best_cc.npz'
+
         while True:
             try:
-                subprocess.call(["rm", "-r", record_dir])
-                subprocess.call(["mkdir", "-p", record_dir])
-                np.savez(record_dir+'best_cc.npz',
+                subprocess.call(["rm", "-r", record_file])
+                subprocess.call(["mkdir", "-p", record_file])
+                np.savez(record_file,
                          best_cc=[self.max_cc])
                 break
             except Exception, e:
@@ -823,9 +827,9 @@ class env_li():
 
         if self.if_log_cc:
             if self.mode is 'off_line':
-                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
+                self.agent_result_saver += [fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
                                                                           mapwidth=self.heatmap_width,
-                                                                          mapheight=self.heatmap_height))]
+                                                                          mapheight=self.heatmap_height)]
             elif self.mode is 'on_line':
                 print('not implement')
                 import sys

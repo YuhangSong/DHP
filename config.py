@@ -47,6 +47,18 @@ if if_restore_model is True:
 basic_log_dir = project+"_52"
 log_dir = "run_off_line_on_vr_new"
 
+
+'''
+    Description:if separate game_dic
+'''
+if_separate_game_dic = True
+
+if if_separate_game_dic :
+    separate_start_game_index_from = 1  #  set the start game index ,availible: 0~~len(game_dic)
+    separate_start_game_index_to = 10  #  set the start game index ,availible: 0~~len(game_dic)
+
+>>>>>>> 473a8f861f5371dd442d4a4cf34883d305b21093
+
 '''
     Description: set model structure
 '''
@@ -210,7 +222,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = False
+        if_run_baseline = True
 
         if if_run_baseline is True:
 
@@ -225,7 +237,7 @@ elif project is 'f':
                     keep: to keep the direction of last action
                     random: to select the action of direction and v randomly
             '''
-            baseline_type = 'keep'
+            baseline_type = 'random'
 
             '''
                 Description: v used when runing the baseline
@@ -251,12 +263,16 @@ if project is 'g':
     game_dic_all = g_game_dic_all
 if project is 'f':
     use_move_view_lib = 'ziyu'
+    
     if data_base is 'vr_new':
         from f_game_dic import f_game_dic_new_all
         game_dic = f_game_dic_new_all # specific game dic
     elif data_base is 'vr':
         from f_game_dic import f_game_dic_all
         game_dic = f_game_dic_all # specific game dic
+    if if_separate_game_dic :
+        game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
+        
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))

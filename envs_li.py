@@ -715,8 +715,13 @@ class env_li():
                                 '''record the mo_mean for each subject'''
 
                                 mo_mean = np.mean(self.mo_on_prediction_dic)
-                                from config import final_log_dir,baseline_type
-                                with open(final_log_dir+baseline_type+"_mo_mean.txt","a") as f:
+                                from config import final_log_dir,if_run_baseline
+                                if if_run_baseline:
+                                    from config import baseline_type
+                                    self.record_mo_file_name = baseline_type
+                                else :
+                                    self.record_mo_file_name = "on_line_model"
+                                with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
                                     f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
 
                                 self.terminate_this_worker()

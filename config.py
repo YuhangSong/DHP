@@ -55,7 +55,8 @@ log_dir = "run_on_line_on_vr_new"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index = 1  #  set the start game index ,availible: 0~~len(game_dic)
+    separate_start_game_index_from = 1  #  set the start game index ,availible: 0~~len(game_dic)
+    separate_start_game_index_to = 10  #  set the start game index ,availible: 0~~len(game_dic)
 
 
 '''
@@ -262,17 +263,16 @@ if project is 'g':
     game_dic_all = g_game_dic_all
 if project is 'f':
     use_move_view_lib = 'ziyu'
+    
     if data_base is 'vr_new':
         from f_game_dic import f_game_dic_new_all
         game_dic = f_game_dic_new_all # specific game dic
-
-        '''if separate the game_dict'''
-        if if_separate_game_dic :
-            game_dic = game_dic[separate_start_game_index:]
-
     elif data_base is 'vr':
         from f_game_dic import f_game_dic_all
         game_dic = f_game_dic_all # specific game dic
+    if if_separate_game_dic :
+        game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
+        
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))

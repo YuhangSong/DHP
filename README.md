@@ -4,7 +4,9 @@
 简明版环境教程，严格遵守，非常容易。除非特殊说明可以同时进行的部分，一律按照顺序来
 
 安装ubuntu
+
 home装在最大的硬盘上一整个就好
+
 用户名s，密码x
 
 (以下需要的文件都在rl_env文件夹里)
@@ -12,10 +14,15 @@ home装在最大的硬盘上一整个就好
 先把env/rl_env复制到home下备用
 
 安装显卡驱动
+
    ctrl+alt+F1进入第一控制台
+   
    登录进入
+   
    sudo sh NVIDIA.run
+   
    各种默认继续，有一个地方，write x configuration file什么的，这里默认是no，选成yes即可
+   
    sudu reboot重启
 
 安装teamviewer，一般双击即可
@@ -25,7 +32,9 @@ home装在最大的硬盘上一整个就好
 此时，你已经可以远程了，用teamviewer或者ssh
 
 sudo passwd
+
 输入x
+
 再次输入x
 
 su root
@@ -34,9 +43,13 @@ su root
 以下操作在root下进行
 
 bash Anaconda3-4.3.1-Linux-x86_64.sh 
+
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+
 conda config --set show_channel_urls yes
+
 conda create -n song_1 python=2
+
 source activate song_1
 
 这时，已经进入song_1虚拟环境（控制台会显示），如果没有，自行学习conda虚拟环境怎么用
@@ -50,64 +63,98 @@ source activate song_1
    pip install tensorflow... (1.1 version)
    
    apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
+   
    apt-get -y install git
+   
    cd gym
+   
    pip install -e .[all] # all install
-   cd ..
    
    pip install six
+   
    sudo apt-get install Python-scipy
 
    apt-get -y install htop
+   
    apt-get -y install tmux
 
-   tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz
+   tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.
+   
    gedit /etc/profile
+   
    写入以下内容：
+   
       export PATH=$PATH:/usr/local/go/bin
+      
    source /etc/profile
+   
    go version
+   
    看看上一步输出的版本是不是1.7，如果不是：
+   
       which go # should show XXXX
+      
       mv -r XXXX /home/
+      
       source /etc/profile
+      
       go version
+      
       再次看看输出的版本是不是1.7
 
    pip install txaio
+   
    pip install websocket
+   
    pip install docker
 
    cd universe
+   
    pip install -e .
 
    pip install matplotlib
 
 3，不要进入虚拟环境，在root下！！！ 
+
    tar ffmpeg
+   
    cd ffmpeg
+   
    ./configure --enable-shared
+   
    make -j40
+   
    make install
 
    sudo apt-get -y install g++
+   
    sudo apt-get -y install vim
+   
    sudo apt-get install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
    
    上一步如果失败，使用aptitude安装
+   
       sudo apt-get install aptitude
+      
       sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
    
    unzip opencv-2.4.13.zip
+   
    cd opencv-2.4.13
+   
    mkdir release
+   
    cd release/
+   
    cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local ..
+   
    make -j40
+   
    make install
    
 4,
    把remap放在home下，提升权限到可执行
+   
 
 ==================================简明版完结=========================================
 

@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 5
+cluster_current = 0
 cluster_main = cluster_current
 
 '''
@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_51"
-log_dir = "run_on_line"
+basic_log_dir = project+"_70"
+log_dir = "run_on_line_baseline_keep"
 # log_dir = "run_off_line_on_vr_new"
 
 
@@ -222,7 +222,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = False
+        if_run_baseline = True
 
         if if_run_baseline is True:
 

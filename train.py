@@ -7,7 +7,6 @@ import copy
 import time
 import numpy as np
 import subprocess
-from config import worker_done_signal_dir, worker_done_signal_file
 
 parser = argparse.ArgumentParser(description="Run commands")
 
@@ -42,8 +41,14 @@ def create_tmux_commands(session, logdir):
             if breakout:
                 break
 
+        '''clean the temp dir'''
+        from config import worker_done_signal_dir
+        subprocess.call(["rm", "-r", worker_done_signal_dir])
+        subprocess.call(["mkdir", "-p", worker_done_signal_dir])
+
         while True:
             try:
+                from config import worker_done_signal_dir, worker_done_signal_file
                 np.savez(worker_done_signal_dir+worker_done_signal_file,
                          done_sinal_dic=done_sinal_dic)
                 break
@@ -208,10 +213,9 @@ def run():
 
         if mode is 'on_line':
 
-            from config import worker_done_signal_dir, worker_done_signal_file
-
             try:
-                run_to = np.load(worker_done_signal_dir+'run_to.npz')['run_to']
+                from config import final_log_dir
+                run_to = np.load(final_log_dir+'run_to.npz')['run_to']
                 game_i_at = run_to[0]
                 subject_i_at = run_to[1]
                 worker_running = run_to[2]
@@ -225,12 +229,13 @@ def run():
             '''record run_to'''
             while True:
                 try:
-                    np.savez(worker_done_signal_dir+'run_to.npz',
+                    from config import final_log_dir
+                    np.savez(final_log_dir+'run_to.npz',
                              run_to=[game_i_at,subject_i_at,worker_running])
                     break
                 except Exception, e:
                     print(str(Exception)+": "+str(e))
-                    sleep(1)
+                    time.sleep(1)
 
 if __name__ == "__main__":
     run()

@@ -205,6 +205,7 @@ def run():
 
     from config import project, mode
     from config import worker_done_signal_dir, worker_done_signal_file
+    from config import final_log_dir
 
     if project is 'f':
 
@@ -213,7 +214,7 @@ def run():
             '''auto worker starter'''
 
             try:
-                run_to = np.load(worker_done_signal_dir+'run_to.npz')['run_to']
+                run_to = np.load(final_log_dir+'run_to.npz')['run_to']
                 game_i_at = run_to[0]
                 subject_i_at = run_to[1]
                 worker_running = run_to[2]
@@ -267,7 +268,7 @@ def run():
                     '''record run_to'''
                     while True:
                         try:
-                            np.savez(worker_done_signal_dir+'run_to.npz',
+                            np.savez(final_log_dir+'run_to.npz',
                                      run_to=[game_i_at,subject_i_at,worker_running])
                             break
                         except Exception, e:

@@ -575,10 +575,11 @@ class env_li():
                                                                        degree_per_step=v_used_to_step)
             elif self.use_move_view_lib is 'ziyu':
                 from move_view_lib import move_view
-                self.cur_lon, self.cur_lat = move_view(cur_lon=self.cur_lon,
-                                                       cur_lat=self.cur_lat,
+                self.cur_lon, self.cur_lat = move_view(cur_lon=self.last_lon,
+                                                       cur_lat=self.last_lat,
                                                        direction=action,
                                                        degree_per_step=v_used_to_step)
+            self.last_action = action
 
             '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
@@ -591,29 +592,13 @@ class env_li():
                 reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
 
             if self.mode is 'on_line':
+
                 '''compute MO'''
-                '''
-                self.cur_lon
-                self.cur_lat
-                sefl.subjects[0].data_frame[self.cur_data].p[0] # lon
-                sefl.subjects[0].data_frame[self.cur_data].p[1] # lat
-                self.video_size_width,
-                self.video_size_heigth,
-                self.view_range_lon,
-                self.view_range_lat,
-                '''
                 from MeanOverlap import *
                 FOV_scale = self.view_range_lat*1.0/self.view_range_lon
                 mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
-                # print("-------------------------------------------------------------------------------------------------------")
-                # print("the predicting center is "+str(self.cur_lon)+"    "+str(self.cur_lat))
-                # print("the ground-truth center is "+str(self.subjects[0].data_frame[self.cur_data].p[0])+"   "+str(self.subjects[0].data_frame[self.cur_data].p[1]))
-                # print("the FOV_x is "+str(self.view_range_lon) )
-                # print("the FOV_y is "+str(self.view_range_lat) )
-                # print("the FOV_scale is " + str(FOV_scale))
-                # print (str(mo))
-                # print("-------------------------------------------------------------------------------------------------------")
+                self.mo_dic_on_cur_episode += [mo]
 
             '''smooth reward'''
             if self.last_action is not None:
@@ -629,22 +614,20 @@ class env_li():
                 reward *= (1.0-(action_difference*(1.0-reward_smooth_discount_to)/(direction_num/2)))
 
             '''record'''
-            self.last_action = action
             self.reward_dic_on_cur_episode += [reward]
 
-            if self.mode is 'on_line':
-                self.mo_dic_on_cur_episode += [mo]
 
             '''
             if we are predicting and the step has not ran to exceed the cur_training_step,
             we are actually feeding the model so that we can produce a prediction with the experiences already experienced by the human,
             not testing the modeling.
             So we pull the position back to the ground-truth
+            if if_run_baseline, we also do this
             '''
-            if (self.mode is 'on_line') and (self.predicting is True) and (self.cur_step > self.cur_training_step):
+            if (self.mode is 'on_line') and (self.predicting is True) and (self.cur_step > self.cur_training_step) or (self.if_run_baseline is True):
                 '''online and predicting, lon and lat is updated as subjects' ground-truth'''
                 '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
-                print('predicting run')
+                print('>>>>>>Draw position back>>>>>>>')
                 self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
                 self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
 
@@ -659,6 +642,15 @@ class env_li():
 
             if self.mode is 'on_line':
 
+                if (self.if_run_baseline is True):
+
+                    '''if running baseline, we are always predicting'''
+                    self.predicting = True
+
+                    '''we predict until the last step'''
+                    self.cur_predicting_step = self.step_total - 4
+
+
                 if self.predicting is False:
 
                     '''if is training'''
@@ -666,7 +658,7 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode) or (self.if_run_baseline is True):
+                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
                             '''or is running baseline'''
@@ -706,20 +698,11 @@ class env_li():
                             if self.cur_predicting_step >= (self.step_total-2):
 
                                 '''on line terminating'''
-                                print('on line run meet end, terminate and write done signal')
 
                                 '''record the mo_mean for each subject'''
+                                self.save_mo_result()
 
-                                mo_mean = np.mean(self.mo_on_prediction_dic)
-                                from config import final_log_dir,if_run_baseline
-                                if if_run_baseline:
-                                    from config import baseline_type
-                                    self.record_mo_file_name = baseline_type
-                                else :
-                                    self.record_mo_file_name = "on_line_model"
-                                with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
-                                    f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
-
+                                print('on line run meet end, terminate and write done signal')
                                 self.terminate_this_worker()
 
                         else:
@@ -745,7 +728,7 @@ class env_li():
 
                     '''if is predicting'''
 
-                    if self.cur_step > self.cur_predicting_step:
+                    if (self.cur_step > self.cur_predicting_step) or (self.if_run_baseline is True):
 
                         '''if cur_step run beyond cur_predicting_step, means already make a prediction on this step'''
 
@@ -775,12 +758,29 @@ class env_li():
                         self.summary_writer.add_summary(summary, self.cur_predicting_step)
                         self.summary_writer.flush()
 
-                        '''tell out side: we are not going to predict'''
-                        self.predicting = False
+                        if self.if_run_baseline is True:
 
-                        '''reset'''
-                        self.reset()
-                        done = True
+                            if self.cur_step > self.cur_predicting_step:
+
+                                '''if we are running baseline and over the cur_predicting_step, terminate here'''
+
+                                '''record the mo_mean for each subject'''
+                                self.save_mo_result()
+
+                                print('on line run meet end, terminate and write done signal')
+                                self.terminate_this_worker()
+
+                        else:
+
+                            '''we are not running baseline'''
+
+                            '''tell out side: we are not going to predict'''
+                            self.predicting = False
+
+                            '''reset'''
+                            self.reset()
+                            done = True
+
 
         if self.mode is 'off_line':
             return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
@@ -857,3 +857,19 @@ class env_li():
     def save_heatmap(self,heatmap,path,name):
         heatmap = heatmap * 255.0
         cv2.imwrite(path+'/'+name+'.jpg',heatmap)
+
+    def save_mo_result(self):
+
+        '''
+            Description: save mo result to result dir
+        '''
+
+        mo_mean = np.mean(self.mo_on_prediction_dic)
+        from config import final_log_dir,if_run_baseline
+        if if_run_baseline:
+            from config import baseline_type
+            self.record_mo_file_name = baseline_type
+        else :
+            self.record_mo_file_name = "on_line_model"
+        with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
+            f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))

@@ -41,20 +41,20 @@ def create_tmux_commands(session, logdir):
             if breakout:
                 break
 
+        from config import worker_done_signal_dir, worker_done_signal_file
         '''clean the temp dir'''
-        from config import worker_done_signal_dir
         subprocess.call(["rm", "-r", worker_done_signal_dir])
         subprocess.call(["mkdir", "-p", worker_done_signal_dir])
+        '''save the done_sinal_dic'''
 
         while True:
             try:
-                from config import worker_done_signal_dir, worker_done_signal_file
                 np.savez(worker_done_signal_dir+worker_done_signal_file,
                          done_sinal_dic=done_sinal_dic)
                 break
             except Exception, e:
                 print(str(Exception)+": "+str(e))
-                time.sleep(1)
+                sleep(1)
         '''cmds for init the tmux session'''
         cmds = [
             "mkdir -p {}".format(logdir),
@@ -201,20 +201,19 @@ def check_best_cc():
 
 def run():
 
-    args = parser.parse_args()
     session = "a3c"
 
-    cmds = create_tmux_commands(session, config.final_log_dir)
-    print("\n".join(cmds))
-    os.system("\n".join(cmds))
-
     from config import project, mode
+    from config import worker_done_signal_dir, worker_done_signal_file
+    from config import final_log_dir
+
     if project is 'f':
 
         if mode is 'on_line':
 
+            '''auto worker starter'''
+
             try:
-                from config import final_log_dir
                 run_to = np.load(final_log_dir+'run_to.npz')['run_to']
                 game_i_at = run_to[0]
                 subject_i_at = run_to[1]
@@ -226,16 +225,59 @@ def run():
                 game_i_at=0
                 subject_i_at=0
 
-            '''record run_to'''
+            '''detecting'''
             while True:
-                try:
-                    from config import final_log_dir
-                    np.savez(final_log_dir+'run_to.npz',
-                             run_to=[game_i_at,subject_i_at,worker_running])
-                    break
-                except Exception, e:
-                    print(str(Exception)+": "+str(e))
-                    time.sleep(1)
+
+                '''use try except to avoid file_io_conflict'''
+                from time import sleep
+                while True:
+                    try:
+                        done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+                '''clear the done_sinal_dic'''
+                while True:
+                    try:
+                        np.savez(worker_done_signal_dir+worker_done_signal_file,
+                                 done_sinal_dic=[[-1,-1]])
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+
+
+                '''scan done_sinal_dic, kill windows according to done_sinal_dic'''
+                for i in range(np.shape(done_sinal_dic)[0]):
+
+                    '''if done_sinal_dic signal is -1, it is putted in by the control and it is invalid'''
+                    if done_sinal_dic[i][0] < 0:
+                        continue
+
+                    '''kill_a_pair_of_ps_worker_windows'''
+                    kill_a_pair_of_ps_worker_windows(session,done_sinal_dic[i][0],done_sinal_dic[i][1])
+                    '''refresh the worker_running'''
+                    worker_running -= 1
+
+                    '''refresh to see if any thing need to create'''
+                    worker_running, game_i_at, subject_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at, subject_i_at)
+
+                    '''record run_to'''
+                    while True:
+                        try:
+                            np.savez(final_log_dir+'run_to.npz',
+                                     run_to=[game_i_at,subject_i_at,worker_running])
+                            break
+                        except Exception, e:
+                            print(str(Exception)+": "+str(e))
+                            sleep(1)
+
+                '''sleep for we do not need to detecting very frequent'''
+                time.sleep(config.check_worker_done_time)
+
 
 if __name__ == "__main__":
     run()

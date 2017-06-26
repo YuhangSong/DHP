@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 5
 cluster_main = cluster_current
 
 '''
@@ -44,9 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_70"
-log_dir = "run_on_line_baseline_keep"
-# log_dir = "run_off_line_on_vr_new"
+basic_log_dir = project+"_85"
+log_dir = "run_on_line"
 
 
 '''
@@ -216,13 +215,13 @@ elif project is 'f':
             Description: conditions to terminate and move on the on_line train
         '''
         train_to_reward = 0.2 # set to 1.0 to disable it
-        train_to_mo = 0.9 # set to 1.0 to disable it
+        train_to_mo = 0.8 # set to 1.0 to disable it
         train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
 
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = True
+        if_run_baseline = False
 
         if if_run_baseline is True:
 

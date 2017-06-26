@@ -595,8 +595,10 @@ class env_li():
 
                 '''compute MO'''
                 from MeanOverlap import *
-                FOV_scale = self.view_range_lat*1.0/self.view_range_lon
-                mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
+                mo_calculator = MeanOverlap(self.video_size_width,
+                                            self.video_size_heigth,
+                                            65.5,
+                                            3.0/4.0)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 self.mo_dic_on_cur_episode += [mo]
 
@@ -618,28 +620,43 @@ class env_li():
 
 
             '''
-            if we are predicting and the step has not ran to exceed the cur_training_step,
-            we are actually feeding the model so that we can produce a prediction with the experiences already experienced by the human,
-            not testing the modeling.
-            So we pull the position back to the ground-truth
-            if if_run_baseline, we also do this
+                All reward and scores has been computed, we now consider if we want to drawback the position
             '''
-            if (self.mode is 'on_line') and (self.predicting is True) and (self.cur_step > self.cur_training_step) or (self.if_run_baseline is True):
-                '''online and predicting, lon and lat is updated as subjects' ground-truth'''
-                '''other procedure may not used by the agent, but still implemented to keep the interface unified'''
-                print('>>>>>>Draw position back>>>>>>>')
-                self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
-                self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
+            if (self.mode is 'on_line'):
 
-            '''after pull the position, get observation'''
-            '''update observation_now'''
+                if self.if_run_baseline is True:
+
+                    '''
+                        if run baseline, should draw back
+                    '''
+                    print('>>>>>>Draw position back>>>>>>>')
+                    self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
+                    self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
+
+                if (self.predicting is True) or (self.if_run_baseline is True):
+
+                    '''
+                        if we are predicting we are actually feeding the model so that we can produce
+                        a prediction with the experiences already experienced by the human.
+                    '''
+                    print('>>>>>>Draw position back>>>>>>>')
+                    self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
+                    self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
+
+            '''
+                after pull the position, get observation
+                update observation_now
+            '''
             self.get_observation()
 
-            '''normally, we donot judge done when we in this'''
+            '''
+                normally, we donot judge done when we in this
+            '''
             done = False
 
-            '''core part for online'''
-
+            '''
+                core part for online
+            '''
             if self.mode is 'on_line':
 
                 if (self.if_run_baseline is True):
@@ -662,6 +679,8 @@ class env_li():
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
                             '''or is running baseline'''
+
+                            print('>>>>>train to an acceptable state')
 
                             '''summary'''
                             summary = tf.Summary()
@@ -724,7 +743,7 @@ class env_li():
                         self.reset()
                         done = True
 
-                else:
+                elif self.predicting is True:
 
                     '''if is predicting'''
 

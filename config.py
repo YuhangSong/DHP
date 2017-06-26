@@ -44,7 +44,7 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_50"
+basic_log_dir = project+"_51"
 log_dir = "run_on_line"
 # log_dir = "run_off_line_on_vr_new"
 
@@ -254,7 +254,7 @@ cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.2
 cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
 cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
 num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
-num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,32]
+num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,16]
 num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 

@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 5
 cluster_main = cluster_current
 
 '''
@@ -45,7 +45,7 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 basic_log_dir = project+"_50"
-log_dir = "run_on_line_baseline_keep"
+log_dir = "run_on_line"
 # log_dir = "run_off_line_on_vr_new"
 
 
@@ -55,7 +55,7 @@ log_dir = "run_on_line_baseline_keep"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 3  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
@@ -222,7 +222,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = True
+        if_run_baseline = False
 
         if if_run_baseline is True:
 
@@ -250,11 +250,11 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197'] # main cluster has to be first
-cluster_name                   = ['yuhangsong'    , 'server'        , 'worker'         , 'xuntian2'    ,'haochen'] # main cluster has to be first
-cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'] # main cluster has to be first
-num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16]
-num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8]
+cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
+cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
+cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
+num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
+num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,32]
 num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 

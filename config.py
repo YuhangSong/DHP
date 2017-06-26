@@ -44,7 +44,7 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_80"
+basic_log_dir = project+"_85"
 log_dir = "run_on_line"
 
 
@@ -215,7 +215,7 @@ elif project is 'f':
             Description: conditions to terminate and move on the on_line train
         '''
         train_to_reward = 0.2 # set to 1.0 to disable it
-        train_to_mo = 0.9 # set to 1.0 to disable it
+        train_to_mo = 0.8 # set to 1.0 to disable it
         train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
 
         '''

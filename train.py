@@ -219,12 +219,18 @@ def run():
                 game_i_at = run_to[0]
                 subject_i_at = run_to[1]
                 worker_running = run_to[2]
+                print('>>>>>Previous run_to found, init run_to:')
+                print('\t\tgame_i_at: '+str(game_i_at))
+                print('\t\tsubject_i_at: '+str(subject_i_at))
+                print('\t\tworker_running: '+str(worker_running))
             except Exception, e:
-                print Exception,":",e
-                print('no previous run_to, init run_to')
                 worker_running = config.num_workers_one_run # this is fake to start the run
                 game_i_at=0
                 subject_i_at=0
+                print('>>>>>No previous run_to found, init run_to:')
+                print('\t\tgame_i_at: '+str(game_i_at))
+                print('\t\tsubject_i_at: '+str(subject_i_at))
+                print('\t\tworker_running: '+str(worker_running))
 
             '''record run_to'''
             while True:

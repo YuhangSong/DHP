@@ -27,7 +27,7 @@ if debugging is True:
         Description: cut game_dic to a smaller range to debug
         Availible:
     '''
-    debugging_range = [0,3]
+    debugging_range = [0,1]
 
 '''
     Description: if restore model
@@ -55,8 +55,8 @@ log_dir = "run_on_line_baseline_keep"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 1  #  set the start game index ,availible: 0~~len(game_dic)
-    separate_start_game_index_to = 10  #  set the start game index ,availible: 0~~len(game_dic)
+    separate_start_game_index_from = 3  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -243,7 +243,7 @@ elif project is 'f':
                 Description: v used when runing the baseline
                 Note: this value should be a averaged value from all data_base
             '''
-            v_used_in_baseline = 0.075080846
+            v_used_in_baseline = 0.0745080846
 
 
 '''
@@ -259,9 +259,12 @@ num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 
 if project is 'g':
+
     from g_game_dic import g_game_dic_all
     game_dic_all = g_game_dic_all
+
 if project is 'f':
+
     use_move_view_lib = 'ziyu'
 
     if data_base is 'vr_new':
@@ -270,13 +273,11 @@ if project is 'f':
     elif data_base is 'vr':
         from f_game_dic import f_game_dic_all
         game_dic = f_game_dic_all # specific game dic
-    if if_separate_game_dic :
-        game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
 
     my_sigma = (11.75+13.78)/2
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
-    check_worker_done_time = 60
+    check_worker_done_time = 5
     if mode is 'off_line' or mode is 'data_processor':
         '''off line run all video together, should constrain the game_dic'''
         if num_workers_one_run_max is not -1:
@@ -291,6 +292,13 @@ if project is 'f':
             num_subjects = 58
         worker_done_signal_dir = 'temp/worker_done_signal_dir/'
         worker_done_signal_file = 'worker_done_signal.npz'
+
+if if_separate_game_dic :
+    if separate_start_game_index_from is -1:
+        separate_start_game_index_from = 0
+    if separate_start_game_index_to is -1:
+        separate_start_game_index_to = len(game_dic)
+    game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
 
 if debugging is True:
     status = "temp_run"

@@ -46,7 +46,7 @@ source activate song_1
 1，
    先把env/ff复制到工作目录下备用
 
-2，
+2，进入虚拟环境！！！ 
    pip install tensorflow... (1.1 version)
    
    apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
@@ -83,7 +83,7 @@ source activate song_1
 
    pip install matplotlib
 
-3，
+3，不要进入虚拟环境，在root下！！！ 
    tar ffmpeg
    cd ffmpeg
    ./configure --enable-shared

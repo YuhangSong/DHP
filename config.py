@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 5
+cluster_current = 1
 cluster_main = cluster_current
 
 '''
@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_85"
-log_dir = "run_on_line"
+basic_log_dir = project+"_52"
+log_dir = "run_off_line_on_vr_new"
 
 
 '''
@@ -54,7 +54,7 @@ log_dir = "run_on_line"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 40  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
@@ -118,7 +118,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'off_line'
 
     '''
         Description: if learning v in the model,

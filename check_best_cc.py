@@ -36,6 +36,14 @@ def check_best_cc():
     for i in range(len(best_cc_dic)):
         print(best_cc_dic[i][0]+'\t'+str(best_cc_dic[i][1]))
 
+    print('=======================sorted cc==========================')
+    for i in range(len(best_cc_dic)):
+        print(best_cc_dic[i][0])
+
+    print('=======================sorted cc==========================')
+    for i in range(len(game_dic)):
+        print(game_dic[i])
+
 def run():
 
     '''detecting'''

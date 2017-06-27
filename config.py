@@ -54,7 +54,7 @@ log_dir = "run_off_line_on_vr_new"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 40  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 

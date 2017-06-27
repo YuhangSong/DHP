@@ -171,34 +171,6 @@ def kill_a_pair_of_ps_worker_windows(session,game,subject):
     '''excute cmds'''
     os.system("\n".join(cmds))
 
-def check_best_cc():
-
-    # print('=======================checking best cc==========================')
-
-    best_cc_dic = {}
-
-    for i in range(len(config.game_dic)):
-
-        env_id = config.game_dic[i]
-
-        from config import final_log_dir
-        record_dir = final_log_dir+'ff_best_cc/'+env_id+'/'
-
-        try:
-            best_cc_dic[env_id] = np.load(record_dir+'best_cc.npz')['best_cc'][0]
-        except Exception, e:
-            pass
-            # print(str(Exception)+": "+str(e))
-
-    if len(best_cc_dic) is 0:
-        return
-
-    best_cc_dic=sorted(best_cc_dic.items(), key=lambda e:e[1], reverse=True)
-
-    print('=======================sorted cc==========================')
-    for i in range(len(best_cc_dic)):
-        print(best_cc_dic[i][0]+'\t'+str(best_cc_dic[i][1]))
-
 def run():
 
     args = parser.parse_args()

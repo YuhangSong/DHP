@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 5
+cluster_current = 6
 cluster_main = cluster_current
 
 '''
@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_85"
-log_dir = "run_on_line"
+basic_log_dir = project+"_dp_1"
+log_dir = "test_1"
 
 
 '''
@@ -55,7 +55,7 @@ if_separate_game_dic = True
 
 if if_separate_game_dic :
     separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 8  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -118,7 +118,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'data_processor'
 
     '''
         Description: if learning v in the model,
@@ -186,7 +186,7 @@ elif project is 'f':
                        minglang_mp4_to_jpg
                        minglang_obdl_cfg
         '''
-        data_processor_id = 'minglang_obdl_cfg'
+        data_processor_id = 'song'
 
         if data_processor_id is 'compute_consi':
 
@@ -249,11 +249,11 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
-cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
-cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
-num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
-num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,16]
+cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83','192.168.1.106'] # main cluster has to be first
+cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'       ,'minglang'] # main cluster has to be first
+cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'             ,'minglang'] # main cluster has to be first
+num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1              ,8]
+num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,16              ,8]
 num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 
@@ -277,10 +277,11 @@ if project is 'f':
     import math
     sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
     check_worker_done_time = 5
-    if mode is 'off_line' or mode is 'data_processor':
+    if mode is 'off_line':
         '''off line run all video together, should constrain the game_dic'''
         if num_workers_one_run_max is not -1:
             game_dic = game_dic[0:num_workers_one_run_max]
+
     if mode is 'on_line':
         num_workers_one_run = num_workers_one_run_proper
         if debugging is True:
@@ -289,6 +290,9 @@ if project is 'f':
             num_subjects = 40
         elif data_base is 'vr_new':
             num_subjects = 58
+
+    if (mode is 'on_line') or (mode is 'data_processor'):
+        num_workers_one_run = num_workers_one_run_proper
         worker_done_signal_dir = 'temp/worker_done_signal_dir/'
         worker_done_signal_file = 'worker_done_signal.npz'
 

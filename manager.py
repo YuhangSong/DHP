@@ -103,9 +103,10 @@ def create_tmux_commands(session, logdir):
 
         return cmds
 
-def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subject_i_at):
+def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subject_i_at=0):
 
-    ''''''
+    from config import mode
+
     cmds_map = []
 
     if (game_i_at>=len(config.game_dic)):
@@ -117,28 +118,49 @@ def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subjec
         '--log-dir', logdir, '--env-id', config.game_dic[game_i_at],
         '--num-workers', str(1)]
 
-    cmds_map += [new_tmux_cmd(session, 'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-ps', base_cmd + ["--job-name", "ps",
+    if mode is 'on_line':
+        cmds_map += [new_tmux_cmd(session, 'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-ps', base_cmd + ["--job-name", "ps",
                                                                                                  "--subject", str(subject_i_at)])]
 
-    base_cmd = [
-        'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-        '--log-dir', logdir,
-        '--env-id', config.game_dic[game_i_at],
-        '--num-workers', str(1)]
-    cmds_map += [new_tmux_cmd(session,
-                              'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-w-0',
-                              base_cmd + ["--job-name", "worker",
-                                          "--task", str(0),
-                                          "--subject", str(subject_i_at)])]
+    if mode is 'on_line':
+        base_cmd = [
+            'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+            '--log-dir', logdir,
+            '--env-id', config.game_dic[game_i_at],
+            '--num-workers', str(1)]
+        cmds_map += [new_tmux_cmd(session,
+                                  'g-'+str(game_i_at)+'-s-'+str(subject_i_at)+'-w-0',
+                                  base_cmd + ["--job-name", "worker",
+                                              "--task", str(0),
+                                              "--subject", str(subject_i_at)])]
 
-    '''created new worker, add worker_running'''
-    print('a pair of ps_worker for game '+config.game_dic[game_i_at]+' subject '+str(subject_i_at)+' is created.')
-    worker_running += 1
+        '''created new worker, add worker_running'''
+        print('a pair of ps_worker for game '+config.game_dic[game_i_at]+' subject '+str(subject_i_at)+' is created.')
+        worker_running += 1
 
-    subject_i_at += 1
-    if subject_i_at >= config.num_subjects:
+        subject_i_at += 1
+        if subject_i_at >= config.num_subjects:
+            game_i_at += 1
+            subject_i_at = 0
+
+    if mode is 'data_processor':
+
+        base_cmd = [
+            'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+            '--log-dir', logdir,
+            '--env-id', config.game_dic[game_i_at],
+            '--num-workers', str(1)]
+
+        cmds_map += [new_tmux_cmd(session,
+                                  'g-'+str(game_i_at)+'-w-0',
+                                  base_cmd + ["--job-name", "worker",
+                                              "--task", str(game_i_at+config.task_plus)])]
+
+        '''created new worker, add worker_running'''
+        print('a pair of ps_worker for game '+config.game_dic[game_i_at]+' is created.')
+        worker_running += 1
+
         game_i_at += 1
-        subject_i_at = 0
 
     worker_running +=1
 
@@ -157,16 +179,30 @@ def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subjec
         '''excute cmds'''
         os.system("\n".join(cmds))
 
-    return worker_running, game_i_at, subject_i_at
+    if mode is 'on_line':
+        return worker_running, game_i_at, subject_i_at
+    if mode is 'data_processor':
+        return worker_running, game_i_at,
 
-def kill_a_pair_of_ps_worker_windows(session,game,subject):
 
-    print('a pair of ps_worker for game '+config.game_dic[game]+' subject '+str(subject)+' is being killed.')
+def kill_a_pair_of_ps_worker_windows(session,game,subject=0):
+    from config import mode
+    if mode is 'on_line':
 
-    '''ganerate cmds'''
-    cmds = []
-    cmds += ["tmux kill-window -t "+session+":"+"g-"+str(game)+"-s-"+str(subject)+"-w-"+str(0)]
-    cmds += ["tmux kill-window -t "+session+":"+"g-"+str(game)+"-s-"+str(subject)+"-ps"]
+        print('a pair of ps_worker for game '+config.game_dic[game]+' subject '+str(subject)+' is being killed.')
+
+        '''ganerate cmds'''
+        cmds = []
+        cmds += ["tmux kill-window -t "+session+":"+"g-"+str(game)+"-s-"+str(subject)+"-w-"+str(0)]
+        cmds += ["tmux kill-window -t "+session+":"+"g-"+str(game)+"-s-"+str(subject)+"-ps"]
+
+    elif mode is 'data_processor':
+
+        print('a worker for game '+config.game_dic[game]+' is being killed.')
+
+        '''ganerate cmds'''
+        cmds = []
+        cmds += ["tmux kill-window -t "+session+":"+"g-"+str(game)+"-w-"+str(0)]
 
     '''excute cmds'''
     os.system("\n".join(cmds))
@@ -270,6 +306,74 @@ def run():
                         try:
                             np.savez(final_log_dir+'run_to.npz',
                                      run_to=[game_i_at,subject_i_at,worker_running])
+                            break
+                        except Exception, e:
+                            print(str(Exception)+": "+str(e))
+                            sleep(1)
+
+                '''sleep for we do not need to detecting very frequent'''
+                time.sleep(config.check_worker_done_time)
+
+        if mode is 'data_processor':
+
+            '''auto worker starter'''
+
+            try:
+                run_to = np.load(final_log_dir+'run_to.npz')['run_to']
+                game_i_at = run_to[0]
+                worker_running = run_to[1]
+                print('>>>>>Previous run_to found, init run_to:')
+                print('\t\tgame_i_at: '+str(game_i_at))
+                print('\t\tworker_running: '+str(worker_running))
+            except Exception, e:
+                print Exception,":",e
+                print('no previous run_to, init run_to')
+                worker_running = config.num_workers_one_run # this is fake to start the run
+                game_i_at=0
+
+            '''detecting'''
+            while True:
+
+                '''use try except to avoid file_io_conflict'''
+                from time import sleep
+                while True:
+                    try:
+                        done_sinal_dic = np.load(worker_done_signal_dir+worker_done_signal_file)['done_sinal_dic']
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+                '''clear the done_sinal_dic'''
+                while True:
+                    try:
+                        np.savez(worker_done_signal_dir+worker_done_signal_file,
+                                 done_sinal_dic=[[-1]])
+                        break
+                    except Exception, e:
+                        print(str(Exception)+": "+str(e))
+                        sleep(1)
+
+                '''scan done_sinal_dic, kill windows according to done_sinal_dic'''
+                for i in range(np.shape(done_sinal_dic)[0]):
+
+                    '''if done_sinal_dic signal is -1, it is putted in by the control and it is invalid'''
+                    if done_sinal_dic[i][0] < 0:
+                        continue
+
+                    '''kill_a_pair_of_ps_worker_windows'''
+                    kill_a_pair_of_ps_worker_windows(session,done_sinal_dic[i][0])
+                    '''refresh the worker_running'''
+                    worker_running -= 1
+
+                    '''refresh to see if any thing need to create'''
+                    worker_running, game_i_at = create_tmux_commands_auto(session, config.final_log_dir, worker_running, game_i_at)
+
+                    '''record run_to'''
+                    while True:
+                        try:
+                            np.savez(final_log_dir+'run_to.npz',
+                                     run_to=[game_i_at,worker_running])
                             break
                         except Exception, e:
                             print(str(Exception)+": "+str(e))

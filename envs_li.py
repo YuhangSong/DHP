@@ -211,13 +211,13 @@ class env_li():
         self.heatmap_height = 180
         self.heatmap_width = 360
 
-        if self.mode is 'data_processor':
-            self.data_processor()
-
         '''load ground-truth heat map'''
         from config import heatmap_sigma
         gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
+
+        if self.mode is 'data_processor':
+            self.data_processor()
 
         if (self.mode is 'off_line') or (self.mode is 'data_processor'):
             from config import num_workers_global,cluster_current,cluster_main
@@ -237,111 +237,116 @@ class env_li():
     def data_processor(self):
         from config import data_processor_id
         print('==========================data process start: '+data_processor_id+'================================')
-        if data_processor_id is 'minglang_mp4_to_yuv':
-            print('sssss')
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
-                if i >= 0 and i <= 0: #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    self.video = cv2.VideoCapture(file_in_1)
-                    input_width_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-                    input_height_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-                    self.mp4_to_yuv(input_width_1,input_height_1,file_in_1,file_out_1)
-                    print('end processing: ',file_out_1)
+        # if data_processor_id is 'minglang_mp4_to_yuv':
+        #     print('sssss')
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #         if i >= 0 and i <= 0: #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             self.video = cv2.VideoCapture(file_in_1)
+        #             input_width_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        #             input_height_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        #             self.mp4_to_yuv(input_width_1,input_height_1,file_in_1,file_out_1)
+        #             print('end processing: ',file_out_1)
+        #
+        #     # print('len_game_dic_new_all: ',len(game_dic_new_all))
+        #     # print('get_view')
+        #
+        #     # print(game_dic_new_all)
+        #
+        # if data_processor_id is 'minglang_mp4_to_jpg':
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #         if i >= 1 and i <= len(game_dic_new_all): #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'.yuv'
+        #
+        #             video = cv2.VideoCapture(file_in_1)
+        #             self.video = video
+        #             self.frame_per_second = round(video.get(cv2.cv.CV_CAP_PROP_FPS))
+        #             self.frame_total = round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+        #
+        #             for frame_i in range(int(self.frame_total)):
+        #
+        #                 try:
+        #                     rval, frame = self.video.read()
+        #                     # here minglang 1
+        #                     cv2.imwrite('/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'_'+str(frame_i)+'.jpg',frame)
+        #                     print(frame_i)
+        #                 except Exception, e:
+        #                     print('failed on this frame, continue')
+        #                     print Exception,":",e
+        #                     continue
+        #
+        #             print('end processing: ',file_in_1,self.frame_per_second,self.frame_total)
+        #
+        # if data_processor_id is 'minglang_obdl_cfg':
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #
+        #         if i >= 100 and i <=  len(game_dic_new_all): #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
+        #
+        #             # # get the paramters
+        #             video = cv2.VideoCapture(file_in_1)
+        #             self.video = video
+        #             self.frame_per_second = int(round(video.get(cv2.cv.CV_CAP_PROP_FPS)))
+        #             self.frame_total = int(round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)))
+        #             NAME = game_dic_new_all[i]
+        #             FRAMESCOUNT = self.frame_total
+        #             FRAMERATE = self.frame_per_second
+        #             IMAGEWIDTH = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        #             IMAGEHEIGHT = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        #
+        #             # write the paramters throuh cfg
+        #             # conf = ConfigParser.ConfigParser()
+        #             # cfgfile = open(CONFIG_FILE,'w')
+        #             # # conf.add_section("")
+        #
+        #             # write through txt
+        #             f_config = open(CONFIG_FILE,"w")
+        #             f_config.write("NAME\n")
+        #             f_config.write(str(game_dic_new_all[i])+'\n')
+        #             f_config.write("FRAMESCOUNT\n")
+        #             f_config.write(str(FRAMESCOUNT)+'\n')
+        #             f_config.write("FRAMERATE\n")
+        #             f_config.write(str(FRAMERATE)+'\n')
+        #             f_config.write("IMAGEWIDTH\n")
+        #             f_config.write(str(IMAGEWIDTH)+'\n')
+        #             f_config.write("IMAGEHEIGHT\n")
+        #             f_config.write(str(IMAGEHEIGHT)+'\n')
+        #             f_config.close()
+        #
+        #         #one video and one cfg in one file
+        #         if i >= 0 and i <= len(game_dic_new_all): #len(game_dic_new_all)
+        #             cfg_file = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/obdl_vr_new/'+str(game_dic_new_all[i])
+        #             os.makedirs(cfg_file)
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             shutil.copy(file_in_1,cfg_file)
+        #             CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
+        #             shutil.copy(CONFIG_FILE,cfg_file)
+        #             print("os.makedirs(cfg_file)")
 
-            # print('len_game_dic_new_all: ',len(game_dic_new_all))
-            # print('get_view')
+        if data_processor_id is 'song':
+            for step_i in range(self.step_total):
+                fcb_map = fixation2salmap(fixation=[[0.0,0.0]],
+                                          mapwidth=self.heatmap_width,
+                                          mapheight=self.heatmap_height)
+            print(ss)
+            self.terminate_this_worker()
 
-            # print(game_dic_new_all)
-
-        if data_processor_id is 'minglang_mp4_to_jpg':
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
-                if i >= 1 and i <= len(game_dic_new_all): #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'.yuv'
-
-                    video = cv2.VideoCapture(file_in_1)
-                    self.video = video
-                    self.frame_per_second = round(video.get(cv2.cv.CV_CAP_PROP_FPS))
-                    self.frame_total = round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-
-                    for frame_i in range(int(self.frame_total)):
-
-                        try:
-                            rval, frame = self.video.read()
-                            # here minglang 1
-                            cv2.imwrite('/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'_'+str(frame_i)+'.jpg',frame)
-                            print(frame_i)
-                        except Exception, e:
-                            print('failed on this frame, continue')
-                            print Exception,":",e
-                            continue
-
-                    print('end processing: ',file_in_1,self.frame_per_second,self.frame_total)
-
-        if data_processor_id is 'minglang_obdl_cfg':
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
-
-                if i >= 100 and i <=  len(game_dic_new_all): #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
-
-                    # # get the paramters
-                    video = cv2.VideoCapture(file_in_1)
-                    self.video = video
-                    self.frame_per_second = int(round(video.get(cv2.cv.CV_CAP_PROP_FPS)))
-                    self.frame_total = int(round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)))
-                    NAME = game_dic_new_all[i]
-                    FRAMESCOUNT = self.frame_total
-                    FRAMERATE = self.frame_per_second
-                    IMAGEWIDTH = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-                    IMAGEHEIGHT = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-
-                    # write the paramters throuh cfg
-                    # conf = ConfigParser.ConfigParser()
-                    # cfgfile = open(CONFIG_FILE,'w')
-                    # # conf.add_section("")
-
-                    # write through txt
-                    f_config = open(CONFIG_FILE,"w")
-                    f_config.write("NAME\n")
-                    f_config.write(str(game_dic_new_all[i])+'\n')
-                    f_config.write("FRAMESCOUNT\n")
-                    f_config.write(str(FRAMESCOUNT)+'\n')
-                    f_config.write("FRAMERATE\n")
-                    f_config.write(str(FRAMERATE)+'\n')
-                    f_config.write("IMAGEWIDTH\n")
-                    f_config.write(str(IMAGEWIDTH)+'\n')
-                    f_config.write("IMAGEHEIGHT\n")
-                    f_config.write(str(IMAGEHEIGHT)+'\n')
-                    f_config.close()
-
-                #one video and one cfg in one file
-                if i >= 0 and i <= len(game_dic_new_all): #len(game_dic_new_all)
-                    cfg_file = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/obdl_vr_new/'+str(game_dic_new_all[i])
-                    os.makedirs(cfg_file)
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    shutil.copy(file_in_1,cfg_file)
-                    CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
-                    shutil.copy(CONFIG_FILE,cfg_file)
-                    print("os.makedirs(cfg_file)")
-
-
-        print('=============================data process end, programe terminate=============================')
-        print(t)
 
     def log_thread_config(self):
 
@@ -819,7 +824,10 @@ class env_li():
                 print(str(Exception)+": "+str(e))
                 time.sleep(1)
 
-        done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
+        if self.mode is 'on_line':
+            done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num,self.subject]], axis=0)
+        elif self.mode is 'data_processor':
+            done_sinal_dic=np.append(done_sinal_dic, [[self.env_id_num]], axis=0)
 
         while True:
             try:

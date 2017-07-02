@@ -1,14 +1,14 @@
 '''
     Description: cluster config
 '''
-cluster_current = 4
+cluster_current = 0
 cluster_main = cluster_current
 
 '''
     Description: which project you want to run
     Availible: g, f
 '''
-project = 'f'
+project = 'g'
 
 '''
     Description: set True if you are debugging
@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_85"
-log_dir = "run_on_line"
+basic_log_dir = project+"_online_1"
+log_dir = "run_on_line_40_end"
 
 
 '''
@@ -54,7 +54,7 @@ log_dir = "run_on_line"
 if_separate_game_dic = False
 
 if if_separate_game_dic :
-    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 40  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
@@ -88,14 +88,14 @@ if_mix_exp = False
 if_reward_auto_normalize = False
 
 
-if project is 'g':
+if project is 'f':
 
     '''
         Description: specific settings for project g
     '''
 
     from g_game_dic import *
-    game_dic = game_dic_test_multi_pong # specific game dic
+    game_dic = g_game_dic_test_single_pong # specific game dic
 
     '''
         Description:

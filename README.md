@@ -1,9 +1,9 @@
 
-==================================简明版开始=========================================
+# 简明版环境开始
 
 简明版环境教程，严格遵守，非常容易。除非特殊说明可以同时进行的部分，一律按照顺序来
 
-安装ubuntu
+## 安装ubuntu
 
 home装在最大的硬盘上一整个就好
 
@@ -13,44 +13,55 @@ home装在最大的硬盘上一整个就好
 
 先把env/rl_env复制到home下备用
 
-安装显卡驱动
+## 安装显卡驱动
 
-   ctrl+alt+F1进入第一控制台
-   
-   登录进入
-   
-   sudo sh NVIDIA.run
-   
-   各种默认继续，有一个地方，write x configuration file什么的，这里默认是no，选成yes即可
-   
-   sudu reboot重启
+ctrl+alt+F1进入第一控制台
+登录进入
+sudo sh NVIDIA.run
+各种默认继续，有一个地方，write x configuration file什么的，这里默认是no，选成yes即可
+sudu reboot重启
 
-安装teamviewer，一般双击即可
+## 安装teamviewer，一般双击即可
 
-在普通用户下：sudo apt-get install openssh-server
-
-此时，你已经可以远程了，用teamviewer或者ssh
-
+## 在普通用户下：sudo apt-get install openssh-server
 sudo passwd
-
 输入x
-
 再次输入x
-
 su root
 输入x
 
-以下操作在root下进行
+## 此时，你已经可以远程了，用teamviewer或者ssh
 
-bash Anaconda3-4.3.1-Linux-x86_64.sh 
+## 以下操作在root下进行
 
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+### conda installation
+```
+bash Anaconda3-4.3.1-Linux-x86_64.sh && ~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes
+```
 
-conda config --set show_channel_urls yes
+### for basic ff, entry rl_env
+```
+~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig git Python-scipy htop tmux six txaio websocket docker g++ vim && tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari] && cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && source deactivate
+```
 
-conda create -n song_1 python=2
+### for opencv, ffmpeg supported
+```
+cd opencv-2.4.13 && mkdir release && cd release/ && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local .. && make clean && make -j40 && make install && cp lib/cv2.so ~/anaconda3/envs/song_1/include/
+```
 
-source activate song_1
+### for opencv, ffmpeg not supported
+```
+source activate song_1 && conda install -c menpo opencv=2 && source deactivate]
+```
+
+### for wgan
+~/anaconda3/bin/conda create --name wgan_1 python=3.5 -y && source activate wgan_1 && pip install http://download.pytorch.org/whl/cu80/torch-0.1.12.post2-cp35-cp35m-linux_x86_64.whl && pip install torchvision && pip install lmdb
+
+python main.py --dataset lsun --dataroot [lsun-train-folder] --cuda
+python main.py --mlp_G --ngf 512
+
+### for dowload lsun dataset
+~/anaconda3/bin/conda create -n lsun_1 python=2.7 -y && source activate lsun_1 && git clone https://github.com/fyu/lsun.git && cd lsun && python2.7 download.py
 
 sudo apt-get install aptitude
 

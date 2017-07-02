@@ -121,18 +121,34 @@ class RunnerThread(threading.Thread):
             self.queue.put(next(rollout_provider), timeout=None)
 
 def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread):
+
     """
     The logic of the thread runner.  In brief, it constantly keeps on running
     the policy, and as long as the rollout exceeds a certain length, the thread
     runner appends the policy to the queue.
     """
+
+    '''
+        get initial state and features
+    '''
     last_state = env.reset()
     last_features = policy.get_initial_features()
+
+    '''
+        recorders for length and rewards
+    '''
     length = 0
     rewards = 0.0
-    next_predicting = False
-    from config import project, if_learning_v, mode
 
+    '''
+        if this is a predicting run
+        if no one modify it, keep not predicting
+    '''
+    next_predicting = False
+
+    '''
+        run interaction
+    '''
     while True:
 
         terminal_end = False
@@ -140,48 +156,144 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
 
         for _ in range(num_local_steps):
 
+            '''
+                if this step is predicting is determined from the last step setting
+            '''
             predicting = next_predicting
 
-            if (project is 'f') and (mode is 'on_line'):
-                fetched = policy.act(last_state, last_features, exploration=False)
+            '''
+                if is predicting determines whether take actions with exploration
+            '''
+            if predicting is True:
+                exploration = False
             else:
-                fetched = policy.act(last_state, last_features, exploration=True)
+                exploration = True
+            
+            '''
+                fetch from the model
+            '''
+            fetched = policy.act(last_state, last_features, exploration=exploration)
 
+            '''
+                unpach action, value and features
+            '''
             action, value_, features = fetched[0], fetched[1], fetched[2]
 
-            if if_learning_v:
-                v = fetched[3][0]
-            else:
-                v = 0.0
+            '''
+                if project is f, also fetch v produced by the model
+            '''
+            from config import project
+            if project is 'f':
 
-            # argmax to convert from one-hot
+                '''
+                    if learning v, we ,need to fetch v
+                '''
+                if if_learning_v:
+
+                    '''
+                        fetch v
+                    '''
+                    v = fetched[3][0]
+
+                else:
+
+                    '''
+                        this is fake, if not learning v,
+                        the env will use the groundtruth v
+                        as v instead, so this is not for use
+                    '''
+                    v = 0.0
+
+            '''
+                take action
+            '''
+            from config import project
             if project is 'g':
+
+                '''
+                    in project g, action is just the arg max in action
+                '''
                 state, reward, terminal, info = env.step(action.argmax())
+
+                '''
+                    this is fake, just for some interfaces to be union
+                '''
+                v_lable = 0.0
+
             elif project is 'f':
+
+                '''
+                    in project f, action is both argmax of action and v
+                '''
                 if mode is 'off_line':
+
+                    '''
+                        for off line mode, env do not provide next_predicting
+                    '''
                     state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+
                 elif mode is 'on_line':
+
+                    '''
+                        for on line mode, env provide next_predicting and it is updated
+                        for next step
+                    '''
                     state, reward, terminal, info, v_lable, next_predicting = env.step(action.argmax(), v)
 
-            # collect the experience
+            '''
+                collect the experience
+            '''
             rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)
 
+            '''
+                step forward
+            '''
             length += 1
             rewards += reward
 
+            '''
+                record last state and features
+            '''
             last_state = state
             last_features = features
 
+            '''
+                log info
+            '''
             if info and log_thread:
+
+                '''
+                    process summary
+                '''
                 summary = tf.Summary()
                 for k, v in info.items():
-                    '''YuhangSong: here we add game id to compare different games in different graph'''
+
+                    '''
+                        add game id to compare different games in different graph
+                    '''
                     k = env_id + "/" + k
+
+                    '''
+                        add in summary
+                    '''
                     summary.value.add(tag=k, simple_value=float(v))
+
+                '''
+                    add step cordinate
+                '''
                 summary_writer.add_summary(summary, policy.global_step.eval())
+
+                '''
+                    flush
+                '''
                 summary_writer.flush()
 
+            from config import project
             if project is 'g':
+
+                '''
+                    step conditions for project g
+                '''
                 timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
                 if terminal or length >= timestep_limit:
                     terminal_end = True
@@ -192,7 +304,12 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                     length = 0
                     rewards = 0.0
                     break
+
             elif project is 'f':
+
+                '''
+                    step conditions for project f
+                '''
                 if terminal:
                     terminal_end = True
                     last_features = policy.get_initial_features()
@@ -201,10 +318,15 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                     rewards = 0.0
                     break
 
+        '''
+            if not terminal end, bootstrap from the model
+        '''
         if not terminal_end:
             rollout.r = policy.value(last_state, last_features)[0][0]
 
-        '''once we have enough experience, yield it, and have the TheradRunner place it on a queue'''
+        '''
+            once we have enough experience, yield it, and have the TheradRunner place it on a queue
+        '''
         if predicting is False:
             yield rollout
 

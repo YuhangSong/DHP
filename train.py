@@ -24,50 +24,99 @@ def create_tmux_commands(session, logdir):
     '''
 
     '''for launching the TF workers'''
-    from config import project, mode
+    from config import project
     '''different from f on_line and others'''
-    if (project is 'f') and (mode is 'on_line'):
+    if project is 'f':
 
-        '''genrate game done dic for first run, so that latter is auto started by the programe'''
-        done_sinal_dic = []
-        worker_running = 0
-        for game_i in range(0,len(config.game_dic)):
-            for subjects_i in range(0,config.num_subjects):
-                done_sinal_dic += [[game_i,subjects_i]]
-                worker_running += 1
-                if worker_running >= config.num_workers_one_run:
-                    breakout = True
+        from config import mode
+        if mode is 'on_line':
+
+            '''genrate game done dic for first run, so that latter is auto started by the programe'''
+            done_sinal_dic = []
+            worker_running = 0
+            for game_i in range(0,len(config.game_dic)):
+                for subjects_i in range(0,config.num_subjects):
+                    done_sinal_dic += [[game_i,subjects_i]]
+                    worker_running += 1
+                    if worker_running >= config.num_workers_one_run:
+                        breakout = True
+                        break
+                if breakout:
                     break
-            if breakout:
-                break
 
-        '''clean the temp dir'''
-        from config import worker_done_signal_dir
-        subprocess.call(["rm", "-r", worker_done_signal_dir])
-        subprocess.call(["mkdir", "-p", worker_done_signal_dir])
+            '''clean the temp dir'''
+            from config import worker_done_signal_dir
+            subprocess.call(["rm", "-r", worker_done_signal_dir])
+            subprocess.call(["mkdir", "-p", worker_done_signal_dir])
 
-        while True:
-            try:
-                from config import worker_done_signal_dir, worker_done_signal_file
-                np.savez(worker_done_signal_dir+worker_done_signal_file,
-                         done_sinal_dic=done_sinal_dic)
-                break
-            except Exception, e:
-                print(str(Exception)+": "+str(e))
-                time.sleep(1)
-        '''cmds for init the tmux session'''
-        cmds = [
-            "mkdir -p {}".format(logdir),
-            "tmux kill-session -t {}".format(session),
-            "tmux new-session -s {} -d".format(session),
-        ]
+            while True:
+                try:
+                    from config import worker_done_signal_dir, worker_done_signal_file
+                    np.savez(worker_done_signal_dir+worker_done_signal_file,
+                             done_sinal_dic=done_sinal_dic)
+                    break
+                except Exception, e:
+                    print(str(Exception)+": "+str(e))
+                    time.sleep(1)
+            '''cmds for init the tmux session'''
+            cmds = [
+                "mkdir -p {}".format(logdir),
+                "tmux kill-session -t {}".format(session),
+                "tmux new-session -s {} -d".format(session),
+            ]
 
-        return cmds
+            return cmds
+
+        else:
+
+            from config import game_dic, num_workers_total_global
+            print(game_dic)
+            base_cmd = [
+                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+                '--log-dir', logdir, '--env-id', game_dic[0],
+                '--num-workers', str(num_workers_total_global)]
+
+            '''main cluster has ps worker'''
+            if(config.cluster_current==config.cluster_main):
+                cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
+            else:
+                cmds_map = []
+
+            for i in range(config.num_workers_total_global):
+                if((i % config.num_workers_global) >= config.num_workers_local):
+                    continue
+                base_cmd = [
+                    'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
+                    '--log-dir', logdir,
+                    '--env-id', config.game_dic[i / config.num_workers_global],
+                    '--num-workers', str(config.num_workers_total_global)]
+                cmds_map += [new_tmux_cmd(session,
+                                          "w-%d" % i,
+                                          base_cmd + ["--job-name", "worker",
+                                                      "--task", str(i+config.task_plus)])]
+
+            windows = [v[0] for v in cmds_map]
+
+            cmds = [
+                "mkdir -p {}".format(logdir),
+                "tmux kill-session -t {}".format(session),
+                "tmux new-session -s {} -n {} -d".format(session, windows[0]),
+            ]
+            for w in windows[1:]:
+                cmds += ["tmux new-window -t {} -n {}".format(session, w)]
+            cmds += ["sleep 1"]
+            for window, cmd in cmds_map:
+                cmds += [cmd]
+
+            return cmds
     else:
+        
+        from config import game_dic, num_workers_total_global
+        print(game_dic)
         base_cmd = [
             'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
-            '--log-dir', logdir, '--env-id', config.game_dic[0],
-            '--num-workers', str(config.num_workers_total_global)]
+            '--log-dir', logdir, '--env-id', game_dic[0],
+            '--num-workers', str(num_workers_total_global)]
 
         '''main cluster has ps worker'''
         if(config.cluster_current==config.cluster_main):
@@ -208,9 +257,10 @@ def run():
     print("\n".join(cmds))
     os.system("\n".join(cmds))
 
-    from config import project, mode
+    from config import project
     if project is 'f':
 
+        from config import mode
         if mode is 'on_line':
 
             try:

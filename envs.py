@@ -42,8 +42,8 @@ class env_f():
         class nnn():
             def __init__(self, n):
                 self.n = n
-        import config
-        self.action_space = nnn(config.direction_num)
+        from config import direction_num
+        self.action_space = nnn(direction_num)
 
         self.env_id = env_id
         import envs_li

@@ -10,8 +10,8 @@ def get_env_dic(env_seq_id):
         env_seq_id[i] = '{}Deterministic-v3'.format(name)
     return env_seq_id
 def get_env_ac_space(env_id):
-    from envs import create_atari_env
-    return create_atari_env(env_id).action_space.n
+    import gym
+    return gym.make(env_id).action_space.n
 def get_env_dic_ac_space(env_id_dic):
     env_dic_ac_space = {}
     for env_id in env_id_dic:

@@ -54,7 +54,7 @@ log_dir = "run_on_line_40_end"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 40  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
@@ -261,6 +261,9 @@ if project is 'g':
 
     from g_game_dic import g_game_dic_all
     game_dic_all = g_game_dic_all
+
+    from g_game_dic import g_game_dic_test_single_pong
+    game_dic = g_game_dic_test_single_pong
 
 if project is 'f':
 

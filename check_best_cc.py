@@ -35,14 +35,10 @@ def check_best_cc():
     print('=======================sorted cc==========================')
     for i in range(len(best_cc_dic)):
         print(best_cc_dic[i][0]+'\t'+str(best_cc_dic[i][1]))
+        # with open("best_cc.txt","a") as f:
+        #     f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
 
-    print('=======================sorted cc==========================')
-    for i in range(len(best_cc_dic)):
-        print(best_cc_dic[i][0])
 
-    print('=======================sorted cc==========================')
-    for i in range(len(game_dic)):
-        print(game_dic[i])
 
 def run():
 

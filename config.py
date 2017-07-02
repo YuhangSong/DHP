@@ -44,7 +44,10 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_52"
+# basic_log_dir = project+"_on_line_1"
+# log_dir = "running_on_line_20_end"
+
+basic_log_dir = project+"f_52_0627"
 log_dir = "run_off_line_on_vr_new"
 
 
@@ -54,7 +57,7 @@ log_dir = "run_off_line_on_vr_new"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 20  #  set the start game index, set to -1 to be extrame
     separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
 
 
@@ -118,7 +121,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'off_line'
+    mode = 'on_line'
 
     '''
         Description: if learning v in the model,

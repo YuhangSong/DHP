@@ -230,3 +230,25 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+1
 
 def constrain_degree_to_0_360(direction):
     return (direction+360.0) if (direction<0) else (direction+0.0)
+def compute_average_of_angle(theta_dic):
+    last = theta_dic[0]
+    sum = theta_dic[0]
+    for i in range(1,len(theta_dic)):
+        diff = (theta_dic[i]-theta_dic[i-1]+180)%360-180
+        last = last + diff;
+        sum = sum + last;
+    avg = (sum/len(theta_dic))%360
+    return avg
+def compute_deviation_of_theta(theta_dic):
+    average_of_angle = compute_average_of_angle(theta_dic)
+    summm = 0
+    for i in range(len(theta_dic)):
+        x = theta_dic[i]-average_of_angle
+        if x<0:
+            x = -x
+        if x>180:
+            x = 360 -x
+        summm += x*x
+    summm /= len(theta_dic)
+    summm = math.sqrt(summm)
+    return summm

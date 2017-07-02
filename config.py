@@ -19,7 +19,7 @@ project = 'g'
           it is clear that the results is not for analysis
         2,the directory to store results data will be cleaned
 '''
-debugging = False
+debugging = True
 
 if debugging is True:
 
@@ -51,7 +51,7 @@ log_dir = "run_on_line_40_end"
 '''
     Description:if separate game_dic
 '''
-if_separate_game_dic = True
+if_separate_game_dic = False
 
 if if_separate_game_dic :
     separate_start_game_index_from = 40  #  set the start game index, set to -1 to be extrame
@@ -118,7 +118,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'data_processor'
 
     '''
         Description: if learning v in the model,
@@ -186,7 +186,7 @@ elif project is 'f':
                        minglang_mp4_to_jpg
                        minglang_obdl_cfg
         '''
-        data_processor_id = 'minglang_obdl_cfg'
+        data_processor_id = 'compute_direction'
 
         if data_processor_id is 'compute_consi':
 
@@ -204,7 +204,22 @@ elif project is 'f':
                 MaxCenterNum = 4
                 NumDirectionForCluster = 8
                 DirectionInter = 360 / NumDirectionForCluster
+        if data_processor_id is 'compute_direction':
 
+            if project is 'f' and mode is 'data_processor':
+
+                '''
+                    Description: compute_consi config
+                '''
+                speed_gate = 15/180*3.14 # rads per sec
+                fov_degree = 6
+                no_moving_gate = 0.0001
+                compute_lon_inter = fov_degree / 2
+                compute_lat_inter = fov_degree / 2
+                frame_gate = 20
+                MaxCenterNum = 4
+                NumDirectionForCluster = 8
+                DirectionInter = 360 / NumDirectionForCluster
     elif mode is 'on_line':
 
         '''
@@ -272,6 +287,10 @@ if project is 'f':
     elif data_base is 'vr':
         from f_game_dic import f_game_dic_all
         game_dic = f_game_dic_all # specific game dic
+
+    if if_separate_game_dic :
+        game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
+
 
     my_sigma = (11.75+13.78)/2
     import math

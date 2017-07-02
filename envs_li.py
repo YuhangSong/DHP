@@ -597,7 +597,7 @@ class env_li():
                 from MeanOverlap import *
                 mo_calculator = MeanOverlap(self.video_size_width,
                                             self.video_size_heigth,
-                                            65.5,
+                                            65.5/2,
                                             3.0/4.0)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 self.mo_dic_on_cur_episode += [mo]

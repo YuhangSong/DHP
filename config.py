@@ -44,7 +44,7 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_85"
+basic_log_dir = project+"_86"
 log_dir = "run_on_line"
 
 

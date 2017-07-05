@@ -45,8 +45,8 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 
-basic_log_dir = project+"_90"
-log_dir = "run_online_test_8_14"
+basic_log_dir = project+"_91"
+log_dir = "run_online_nf_0_5"
 
 
 '''
@@ -55,8 +55,8 @@ log_dir = "run_online_test_8_14"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 8  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = 14  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 0  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 5  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -164,7 +164,7 @@ elif project is 'f':
     '''
         Description: config env
     '''
-    data_tensity = 10
+    data_tensity = 20
     view_range_lon = 110
     view_range_lat = 113
     final_discount_to = 10**(-4)

@@ -52,6 +52,10 @@ conda create -n song_1 python=2
 
 source activate song_1
 
+sudo apt-get install aptitude
+
+sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig git Python-scipy htop tmux six txaio websocket docker g++ vim
+
 这时，已经进入song_1虚拟环境（控制台会显示），如果没有，自行学习conda虚拟环境怎么用
 
 下面1,2，3,4可以同时进行，两个不冲突
@@ -60,23 +64,12 @@ source activate song_1
    先把env/ff复制到工作目录下备用
 
 2，进入虚拟环境！！！ 
+
    pip install tensorflow... (1.1 version)
-   
-   apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
-   
-   apt-get -y install git
    
    cd gym
    
    pip install -e .[all] # all install
-   
-   pip install six
-   
-   sudo apt-get install Python-scipy
-
-   apt-get -y install htop
-   
-   apt-get -y install tmux
 
    tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.
    
@@ -102,12 +95,6 @@ source activate song_1
       
       再次看看输出的版本是不是1.7
 
-   pip install txaio
-   
-   pip install websocket
-   
-   pip install docker
-
    cd universe
    
    pip install -e .
@@ -125,18 +112,6 @@ source activate song_1
    make -j40
    
    make install
-
-   sudo apt-get -y install g++
-   
-   sudo apt-get -y install vim
-   
-   sudo apt-get install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
-   
-   上一步如果失败，使用aptitude安装
-   
-      sudo apt-get install aptitude
-      
-      sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
    
    unzip opencv-2.4.13.zip
    
@@ -151,6 +126,8 @@ source activate song_1
    make -j40
    
    make install
+   
+   cp lib/cv2.so ~/anaconda3/lib
    
 4,
    把remap放在home下，提升权限到可执行

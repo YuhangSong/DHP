@@ -44,8 +44,9 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_86"
-log_dir = "run_on_line"
+
+basic_log_dir = project+"_90"
+log_dir = "run_online_test_8_14"
 
 
 '''
@@ -54,8 +55,8 @@ log_dir = "run_on_line"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = -1  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 8  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 14  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -113,6 +114,13 @@ elif project is 'f':
         Availible: vr, vr_new
     '''
     data_base = 'vr_new'
+
+    if data_base is 'vr_new':
+        from f_game_dic import f_game_dic_new_all, f_game_dic_new_test
+        game_dic = f_game_dic_new_test # specific game dic
+    elif data_base is 'vr':
+        from f_game_dic import f_game_dic_all
+        game_dic = f_game_dic_all # specific game dic
 
     '''
         Description: select mode
@@ -265,13 +273,6 @@ if project is 'g':
 if project is 'f':
 
     use_move_view_lib = 'ziyu'
-
-    if data_base is 'vr_new':
-        from f_game_dic import f_game_dic_new_all
-        game_dic = f_game_dic_new_all # specific game dic
-    elif data_base is 'vr':
-        from f_game_dic import f_game_dic_all
-        game_dic = f_game_dic_all # specific game dic
 
     my_sigma = (11.75+13.78)/2
     import math

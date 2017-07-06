@@ -24,15 +24,20 @@ class FastSaver(tf.train.Saver):
 
 def run(args, server):
 
-    from config import project, mode
+    '''default log_dir'''
+    from config import project
     logdir = os.path.join(args.log_dir, 'train')
+
+    '''if project f and online, overwrite it'''
     if project is 'f':
         if mode is 'on_line':
+
             '''f project and on_line mode is special, log_dir is sperate by game (g) and subject (s)'''
             logdir = os.path.join(args.log_dir, 'train_g_'+str(args.env_id)+'_s_'+str(args.subject))
 
     '''any way, log_dir is separate by work (task)'''
-    summary_writer = tf.summary.FileWriter(logdir + "_%d" % args.task)
+    summary_writer = tf.summary.FileWriter(logdir + "_w_%d" % args.task)
+
     '''log final log_dir'''
     logger.info("Events directory: %s_%s", logdir, args.task)
 
@@ -44,15 +49,22 @@ def run(args, server):
                      subject=args.subject,
                      summary_writer=summary_writer)
 
-    '''create trainer'''
+    '''
+        create trainer
+    '''
     trainer = A3C(env, args.env_id, args.task)
 
-    '''Variable names that start with "local" are not saved in checkpoints.'''
+    '''
+        Variable names that start with "local" are not saved in checkpoints.
+    '''
     variables_to_save = [v for v in tf.global_variables() if not v.name.startswith("local")]
     init_op = tf.variables_initializer(variables_to_save)
     init_all_op = tf.global_variables_initializer()
     saver = FastSaver(variables_to_save)
 
+    '''
+        for restore model
+    '''
     variables_to_restore = [v for v in tf.all_variables() if v.name.startswith("global")]
     pre_train_saver = FastSaver(variables_to_restore)
 
@@ -72,30 +84,58 @@ def run(args, server):
                     # pre_train_saver.restore(ses,
                     #                         restore_path)
 
+    '''
+        config
+    '''
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 
-    '''whether call init var to avoid the bug'''
+    '''
+        whether call init var to avoid the bug
+    '''
     if not ((project is 'f') and (mode is 'on_line')):
-        '''project f and mode on_line not support GTN, so not have this problem'''
+
+        '''
+            project f and mode on_line not support GTN, so do not have this problem
+        '''
         if args.task is not config.task_chief:
+
             if config.project is 'g':
+
+                '''
+                    fix the bug
+                '''
                 print('this is g project, bug on ver init, since the graph is different across threads')
                 tf.Session(server.target, config=config_tf).run(init_all_op)
+
             elif config.project is 'f':
+
+                '''
+                    donot have to fix
+                '''
                 print('this is f project, no bug on ver init, since the praph is exactly same across threads')
 
     '''
         determine is_chief
     '''
 
-    '''normally, is_chief is determined by if the task is a cheif task (see config.py)'''
+    '''
+        normally, is_chief is determined by if the task is a cheif task (see config.py)
+    '''
     is_chief = (args.task == config.task_chief)
+
+
     if project is 'f':
         if mode is 'on_line':
-            '''f project and on_line mode is special, it has one worker for each ps, so it is always the cheif'''
+
+            '''
+                f project and on_line mode is special, it has one worker for each ps, so it is always the cheif
+            '''
             is_chief = True
         
 
+    '''
+        create supervisor
+    '''
     sv = tf.train.Supervisor(is_chief=is_chief,
                              logdir=logdir,
                              saver=saver,
@@ -108,27 +148,40 @@ def run(args, server):
                              save_model_secs=30,
                              save_summaries_secs=30)
 
-
+    '''
+        waiting for ps to be ready
+    '''
     logger.info(
         "Starting session. If this hangs, we're mostly likely waiting to connect to the parameter server. " +
         "One common cause is that the parameter server DNS name isn't resolving yet, or is misspecified.")
 
-    '''start run'''
+    '''
+        start run
+    '''
     with sv.managed_session(server.target, config=config_tf) as sess:
 
-        '''start trainer'''
+        '''
+            start trainer
+        '''
         trainer.start(sess, summary_writer)
 
-        '''log global_step so that we can see if the model is restored successfully'''
+        '''
+            log global_step so that we can see if the model is restored successfully
+        '''
         global_step = sess.run(trainer.global_step)
         logger.info("Starting training at step=%d", global_step)
 
-        '''keep runing'''
+        '''
+            keep runing
+        '''
         while not sv.should_stop() and True:
+
             trainer.process(sess)
             global_step = sess.run(trainer.global_step)
 
-    '''Ask for all the services to stop.'''
+    '''
+        Ask for all the services to stop.
+    '''
     sv.stop()
     logger.info('reached %s steps. worker stopped.', global_step)
 

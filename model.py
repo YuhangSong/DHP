@@ -9,8 +9,8 @@ import envs
 import config
 
 '''
-Coder: YuhangSong
-Description: main hyper-paramters for ct
+    Coder: YuhangSong
+    Description: main hyper-paramters for ct
 '''
 MaxNumLstmPerConsi = 6
 LstmSize = 256
@@ -173,8 +173,8 @@ class LSTMPolicy(object):
                                                                 num_layers     = config.conv_depth,
                                                                 consi_layer_id = 0)
                     x, state_init_t, c_in_t, h_in_t, state_out_t = lstm_layer(x         = x,
-                                                                          size      = config.lstm_size[consi_layer_id],
-                                                                          step_size = self.step_size)
+                                                                              size      = config.lstm_size[consi_layer_id],
+                                                                              step_size = self.step_size)
                     lift_out[consi_layer_id] = x
 
                 '''set lift_in for next consi layer'''
@@ -208,6 +208,7 @@ class LSTMPolicy(object):
             consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
 
             if config.project is 'g':
+
                 print('g project has seperate layer for each game')
                 logits_all = range(len(config.game_dic_all))
                 sample_all = range(len(config.game_dic_all))
@@ -222,12 +223,15 @@ class LSTMPolicy(object):
                 self.logits = logits_all[env_id_num]
                 self.sample = sample_all[env_id_num]
                 self.vf = vf_all[env_id_num]
+
             elif config.project is 'f':
+
                 print('f project share the whole model')
                 self.logits = linear(consi_output, ac_space, "action", normalized_columns_initializer(0.01))
                 self.sample = categorical_sample(self.logits, ac_space, exploration=True)[0, :]
                 self.sample_no_exploration = categorical_sample(self.logits, ac_space, exploration=False)[0, :]
                 self.vf = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
+
                 from config import if_learning_v
                 self.if_learning_v = if_learning_v
                 if self.if_learning_v is True:
@@ -239,27 +243,63 @@ class LSTMPolicy(object):
         return self.state_init
 
     def act(self, ob, state_in, exploration=True):
+
+        '''get session'''
         sess = tf.get_default_session()
+
+        '''create feed_dic'''
         feed_dict = {self.x: [ob], self.step_size: [1]}
+
+        '''feed state at all consi layer'''
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
+
+        '''feed action according to whether exploration'''
         if exploration is True:
             fetch_dic = [self.sample]
         elif exploration is False:
             fetch_dic = [self.sample_no_exploration]
+
+        '''create fetch dic'''
         fetch_dic += [self.vf, self.state_out]
-        if self.if_learning_v is True:
-            fetch_dic += [self.v]
-        return sess.run(fetch_dic, feed_dict)
+
+        '''fetch v'''
+        from config import project
+        if project is 'f':
+            if self.if_learning_v is True:
+                fetch_dic += [self.v]
+
+        '''run session'''
+        fetched = sess.run(fetch_dic, feed_dict)
+
+        '''return fetched'''
+        return fetched
 
     def value(self, ob, state_in):
+
+        '''get session'''
         sess = tf.get_default_session()
+
+        '''create feed_dic'''
         feed_dict = {self.x: [ob], self.step_size: [1]}
+
+        '''feed state at all consi layer'''
         for consi_layer_id in range(config.consi_depth):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
+
+        '''create fetch dic'''
         fetch_dic = [self.vf]
-        if self.if_learning_v is True:
-            fetch_dic += [self.v]
-        return sess.run(fetch_dic, feed_dict)
+
+        '''fetch v'''
+        from config import project
+        if project is 'f':
+            if self.if_learning_v is True:
+                fetch_dic += [self.v]
+
+        '''run session'''
+        fetched = sess.run(fetch_dic, feed_dict)
+
+        '''return fetched'''
+        return fetched

@@ -342,12 +342,17 @@ class A3C(object):
         self.env = env
         self.task = task
         self.env_id = env_id
-        from config import if_learning_v
-        self.if_learning_v = if_learning_v
 
-        from config import project, mode
-        if (project is 'f') and (mode is 'on_line'):
-            self.log_thread = True
+        from config import project
+        if project is 'f':
+            from config import if_learning_v
+            self.if_learning_v = if_learning_v
+
+        from config import project
+        if project is 'f':
+            from config import mode
+            if mode is 'on_line':
+                self.log_thread = True
         else:
             '''only log if the task is on zero and cluster is the main cluster'''
             if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
@@ -372,8 +377,11 @@ class A3C(object):
             self.adv = tf.placeholder(tf.float32, [None], name="adv")
             self.r = tf.placeholder(tf.float32, [None], name="r")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
-            if self.if_learning_v:
-                self.v_lable = tf.placeholder(tf.float32, [None], name="v_lable")
+
+            from config import project
+            if project is 'f':
+                if self.if_learning_v:
+                    self.v_lable = tf.placeholder(tf.float32, [None], name="v_lable")
 
             log_prob_tf = tf.nn.log_softmax(pi.logits)
             prob_tf = tf.nn.softmax(pi.logits)
@@ -389,14 +397,23 @@ class A3C(object):
             # -entropy loss
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
-            # v loss
-            if self.if_learning_v:
-                v_loss = 0.5 * tf.reduce_sum(tf.square(pi.v - self.v_lable))
+            from config import project
+            if project is 'f':
+                if self.if_learning_v:
+
+                    '''
+                        v loss
+                    '''
+                    v_loss = 0.5 * tf.reduce_sum(tf.square(pi.v - self.v_lable))
 
             bs = tf.to_float(tf.shape(pi.x)[0])
 
-            if self.if_learning_v:
-                self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01 + 0.5 * v_loss
+            from config import project
+            if project is 'f':
+                if self.if_learning_v:
+                    self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01 + 0.5 * v_loss
+                else:
+                    self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
             else:
                 self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
 
@@ -416,8 +433,11 @@ class A3C(object):
             tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
             tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
             tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
-            if self.if_learning_v:
-                tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
+
+            from config import project
+            if project is 'f':
+                if self.if_learning_v:
+                    tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
 
             self.summary_op = tf.summary.merge_all()
             grads, _ = tf.clip_by_global_norm(grads, 40.0)
@@ -434,18 +454,25 @@ class A3C(object):
             self.summary_writer = None
             self.local_steps = 0
 
+    def cluster_pre_process(self, sess):
+
+        from config import project
+        if project is 'f':
+            if mode is 'on_line':
+                return
+
+        if(self.task!=config.task_chief):
+            print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
+            time.sleep(5)
+            sess.run(self.sync)  # copy weights from shared to local
+        if(self.task==config.task_plus):
+            print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
+            subprocess.call(["rm", "-r", 'temp/mix_exp/'])
+            subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
+
     def start(self, sess, summary_writer):
 
-        from config import project, mode
-        if not ((project is 'f') and (mode is 'on_line')):
-            if(self.task!=config.task_chief):
-                print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
-                time.sleep(5)
-                sess.run(self.sync)  # copy weights from shared to local
-            if(self.task==config.task_plus):
-                print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
-                subprocess.call(["rm", "-r", 'temp/mix_exp/'])
-                subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
+        self.cluster_pre_process(sess)
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
@@ -569,8 +596,10 @@ class A3C(object):
             self.step_forward: [1]*batch_size,
         }
 
-        if self.if_learning_v:
-            feed_dict[self.v_lable] = batch_v_lable
+        from config import project
+        if project is 'f':
+            if self.if_learning_v:
+                feed_dict[self.v_lable] = batch_v_lable
 
         '''remap state'''
         for consi_layer_id in range(config.consi_depth):

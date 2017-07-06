@@ -44,8 +44,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-basic_log_dir = project+"_online_1"
-log_dir = "run_on_line_40_end"
+basic_log_dir = project+"test_1"
+log_dir = "test_pong_2"
 
 
 '''
@@ -87,20 +87,25 @@ if_mix_exp = False
 '''
 if_reward_auto_normalize = False
 
-
-if project is 'f':
+if project is 'g':
 
     '''
         Description: specific settings for project g
     '''
-
     from g_game_dic import *
     game_dic = g_game_dic_test_single_pong # specific game dic
 
     '''
-        Description:
+    Description:
+    Availible: single_task, multi_task
     '''
-    model = None
+    task_mode = 'single_task'
+
+    '''
+        Description:
+        Availible:
+    '''
+    number_workers_per_task = 2
 
 elif project is 'f':
 
@@ -113,6 +118,16 @@ elif project is 'f':
         Availible: vr, vr_new
     '''
     data_base = 'vr_new'
+
+    '''
+        specific game dic here
+    '''
+    if data_base is 'vr_new':
+        from f_game_dic import f_game_dic_new_all
+        game_dic = f_game_dic_new_all # specific game dic
+    elif data_base is 'vr':
+        from f_game_dic import f_game_dic_all
+        game_dic = f_game_dic_all # specific game dic
 
     '''
         Description: select mode
@@ -259,8 +274,9 @@ num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 
 if project is 'g':
 
-    from g_game_dic import g_game_dic_all
+    from g_game_dic import g_game_dic_all, g_game_dic_all_ac_space
     game_dic_all = g_game_dic_all
+    game_dic_all_ac_space = g_game_dic_all_ac_space
 
     from g_game_dic import g_game_dic_test_single_pong
     game_dic = g_game_dic_test_single_pong
@@ -268,13 +284,6 @@ if project is 'g':
 if project is 'f':
 
     use_move_view_lib = 'ziyu'
-
-    if data_base is 'vr_new':
-        from f_game_dic import f_game_dic_new_all
-        game_dic = f_game_dic_new_all # specific game dic
-    elif data_base is 'vr':
-        from f_game_dic import f_game_dic_all
-        game_dic = f_game_dic_all # specific game dic
 
     my_sigma = (11.75+13.78)/2
     import math
@@ -316,7 +325,7 @@ if status is "temp_run":
 
 num_games_global = len(game_dic)
 num_workers_global = 16
-num_workers_local = 1
+num_workers_local = 8
 num_workers_total_global = num_games_global * num_workers_global
 task_plus = cluster_current * num_workers_total_global
 task_chief = cluster_main * num_workers_total_global

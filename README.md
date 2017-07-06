@@ -34,14 +34,41 @@ su root
 
 ## 以下操作在root下进行
 
+### cuda and cudnn
+click cuda.deb
+```
+sudo apt-get -y install freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libgl1-mesa-glx libglu1-mesa libglu1-mesa-dev vim & echo "export PATH=/usr/local/cuda-8.0/bin:$PATH" >> /etc/profile & echo "export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH" >> /etc/profile & sudo ldconfig & source /etc/profile & nvidia-smi & cd ../NVIDIA_CUDA-8.0_Samples & make -j40
+cd ../rl_env
+tar -zxvf cudnn-8.0-linux-x64-v5.1.tgz
+sudo cp cuda/include/cudnn.h /usr/local/cuda/include/
+sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64/
+sudo chmod a+r /usr/local/cuda/include/cudnn.h
+sudo chmod a+r /usr/local/cuda/lib64/libcudnn*
+sudo reboot
+```
+
 ### conda installation
 ```
-bash Anaconda3-4.3.1-Linux-x86_64.sh && ~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes
+bash Anaconda3-4.3.1-Linux-x86_64.sh
+
+# ctrl+d and su root again
+
+~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes
 ```
 
 ### for basic ff, entry rl_env
 ```
-~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig git Python-scipy htop tmux six txaio websocket docker g++ vim && tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari] && cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && source deactivate
+
+~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl
+
+sudo apt-get install aptitude -y && sudo apt-get -y install g++ && sudo apt-get -y install vim && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev git yasm libjpeg-turbo8-dev && git config --global push.default "current"
+
+tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari]
+
+# fialed gym but tested ok
+
+cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && source deactivate
+
 ```
 
 ### for opencv, ffmpeg supported
@@ -282,7 +309,7 @@ Warning: this work is currently in submission for NIPS 2017.
 
      sudo apt-get -y install g++
      sudo apt-get -y install vim
-     sudo apt-get install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
+     sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev
      unzip opencv-2.4.13.zip
      cd opencv-2.4.13
      mkdir release

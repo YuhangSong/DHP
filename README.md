@@ -13,6 +13,8 @@ home装在最大的硬盘上一整个就好
 
 先把env/rl_env复制到home下备用
 
+## sudo apt-get update
+
 ## 安装显卡驱动
 
 ctrl+alt+F1进入第一控制台
@@ -49,31 +51,24 @@ sudo reboot
 
 ### conda installation
 ```
-bash Anaconda3-4.3.1-Linux-x86_64.sh
 
-# ctrl+d and su root again
 
-~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes
+
 ```
 
 ### for basic ff, entry rl_env
 ```
 
-~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl
+sudo apt-get install aptitude -y && sudo apt-get -y install g++ && sudo apt-get -y install vim && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev git yasm libjpeg-turbo8-dev htop tmux && git config --global push.default "current"
 
-sudo apt-get install aptitude -y && sudo apt-get -y install g++ && sudo apt-get -y install vim && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev git yasm libjpeg-turbo8-dev && git config --global push.default "current"
+bash Anaconda3-4.3.1-Linux-x86_64.sh
 
-tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari]
+# ctrl+d and su root again
 
-# fialed gym but tested ok
+~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes && ~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1
 
-cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && source deactivate
+source deactivate && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl && tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari] && cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && cd opencv-2.4.13 && rm -r release && mkdir release && cd release/ && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local .. && make clean && make -j40 && make install && cp lib/cv2.so ~/anaconda3/envs/song_1/include/
 
-```
-
-### for opencv, ffmpeg supported
-```
-cd opencv-2.4.13 && mkdir release && cd release/ && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local .. && make clean && make -j40 && make install && cp lib/cv2.so ~/anaconda3/envs/song_1/include/
 ```
 
 ### for opencv, ffmpeg not supported

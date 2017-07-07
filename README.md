@@ -49,12 +49,6 @@ sudo chmod a+r /usr/local/cuda/lib64/libcudnn*
 sudo reboot
 ```
 
-### conda installation
-```
-
-
-
-```
 
 ### for basic ff, entry rl_env
 ```
@@ -62,8 +56,6 @@ sudo reboot
 sudo apt-get install aptitude -y && sudo apt-get -y install g++ && sudo apt-get -y install vim && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev git yasm libjpeg-turbo8-dev htop tmux && git config --global push.default "current"
 
 bash Anaconda3-4.3.1-Linux-x86_64.sh
-
-# ctrl+d and su root again
 
 ~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes && ~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1
 

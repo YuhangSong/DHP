@@ -1,14 +1,14 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 6
 cluster_main = cluster_current
 
 '''
     Description: which project you want to run
     Availible: g, f
 '''
-project = 'g'
+project = 'f'
 
 '''
     Description: set True if you are debugging
@@ -19,7 +19,7 @@ project = 'g'
           it is clear that the results is not for analysis
         2,the directory to store results data will be cleaned
 '''
-debugging = True
+debugging = False
 
 if debugging is True:
 
@@ -32,7 +32,7 @@ if debugging is True:
 '''
     Description: if restore model
 '''
-if_restore_model = True
+if_restore_model = False
 
 if if_restore_model is True:
 
@@ -46,17 +46,17 @@ if if_restore_model is True:
 '''
 
 basic_log_dir = project+"_91"
-log_dir = "run_online_test_0_5"
+log_dir = "run_online_nf_10_15"
 
 
 '''
     Description:if separate game_dic
 '''
-if_separate_game_dic = False
+if_separate_game_dic = True
 
-if if_separate_game_dic :
-    separate_start_game_index_from = 0  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = 5  #  set the start game index, set to -1 to be extrame
+if if_separate_game_dic:
+    separate_start_game_index_from = 10  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 15  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -89,7 +89,7 @@ if_mix_exp = False
 if_reward_auto_normalize = False
 
 
-if project is 'f':
+if project is 'g':
 
     '''
         Description: specific settings for project g
@@ -126,7 +126,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'data_processor'
+    mode = 'on_line'
 
     '''
         Description: if learning v in the model,
@@ -164,7 +164,7 @@ elif project is 'f':
     '''
         Description: config env
     '''
-    data_tensity = 10
+    data_tensity = 20
     view_range_lon = 110
     view_range_lat = 113
     final_discount_to = 10**(-4)
@@ -175,7 +175,7 @@ elif project is 'f':
     reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
     if_normalize_v_lable = True
 
-    if mode is 'off_line':
+    if mode is 'on_line':
 
         '''
             Description: specific settings for off_line mode
@@ -272,32 +272,21 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
-cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
-cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
-num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
-num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,16]
+cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83','192.168.226.139'] # main cluster has to be first
+cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'       ,'Worker2'] # main cluster has to be first
+cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'             ,'s'] # main cluster has to be first
+num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1              ,-1]
+num_workers_one_run_proper_dic = [8               , 32              , 32               , 8             ,8                ,16              ,16]
 num_workers_one_run_max = num_workers_one_run_max_dic[cluster_current]
 num_workers_one_run_proper = num_workers_one_run_proper_dic[cluster_current]
 
 if project is 'g':
 
-    from g_game_dic import g_game_dic_all
-    game_dic_all = g_game_dic_all
+    pass
 
 if project is 'f':
 
     use_move_view_lib = 'ziyu'
-
-    if data_base is 'vr_new':
-        from f_game_dic import f_game_dic_new_all
-        game_dic = f_game_dic_new_all # specific game dic
-    elif data_base is 'vr':
-        from f_game_dic import f_game_dic_all
-        game_dic = f_game_dic_all # specific game dic
-
-    if if_separate_game_dic :
-        game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
 
     my_sigma = (11.75+13.78)/2
     import math
@@ -345,3 +334,4 @@ task_plus = cluster_current * num_workers_total_global
 task_chief = cluster_main * num_workers_total_global
 task_plus = cluster_current * num_workers_total_global
 task_chief = cluster_main * num_workers_total_global
+print(game_dic)

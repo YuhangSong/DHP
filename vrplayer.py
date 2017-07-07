@@ -6,7 +6,7 @@ import math
 from scipy.misc import imsave
 import subprocess
 from read_yuv import yuv_import
-from config import cluster_name, cluster_current
+from config import cluster_current
 import PIL.Image as Image
 from numpy import *
 

@@ -44,8 +44,12 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
+<<<<<<< Updated upstream
 basic_log_dir = project+"_50"
 log_dir = "run_on_line_baseline_keep"
+=======
+basic_log_dir = project+"_test"
+>>>>>>> Stashed changes
 # log_dir = "run_off_line_on_vr_new"
 
 

@@ -1,4 +1,5 @@
 import cv2
+import cv2.cv as cv
 from gym.spaces.box import Box
 import numpy as np
 import numpy
@@ -26,9 +27,11 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
+from vrplayer import get_pic
 from move_view_lib import move_view
 from suppor_lib import *
 import tensorflow as tf
+import os
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -102,7 +105,22 @@ class env_li():
                                         view_center_lat=self.cur_lat,
                                         temp_dir=self.temp_dir,
                                         file_='../../'+self.data_base+'/' + self.env_id + '.yuv')
+    def get_image(self):
 
+        '''interface to get view'''
+        my_observation = get_pic(  input_width=self.video_size_width,
+                                    input_height=self.video_size_heigth,
+                                    view_fov_x=self.view_range_lon,
+                                    view_fov_y=self.view_range_lat,
+                                    cur_frame=self.cur_frame,
+                                    is_render=False,
+                                    output_width=960,
+                                    output_height=960,
+                                    view_center_lon=self.cur_lon,
+                                    view_center_lat=self.cur_lat,
+                                    temp_dir=self.temp_dir,
+                                    file_='../../'+self.data_base+'/' + self.env_id + '.yuv')
+        return my_observation
     def config(self):
 
         '''function to load config'''
@@ -181,6 +199,8 @@ class env_li():
 
         '''init video and get paramters'''
         video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
+        # print('mu lu:')
+        # print(os.path.exists('../../'+self.data_base+'/' + self.env_id + '.mp4'))
         self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
         self.frame_total = video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
         self.video_size_width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
@@ -341,7 +361,7 @@ class env_li():
 
 
         print('=============================data process end, programe terminate=============================')
-        print(t)
+        # print(t)
 
     def log_thread_config(self):
 
@@ -600,6 +620,10 @@ class env_li():
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 self.mo_dic_on_cur_episode += [mo]
 
+                # print("------------------------")
+                # print("the video_size_width is %s\nthe video_size_heigth is %s"%(self.video_size_width,self.video_size_heigth))
+                # print("------------------------")
+                # print(stop)
             '''smooth reward'''
             if self.last_action is not None:
 
@@ -633,7 +657,48 @@ class env_li():
 
             '''after pull the position, get observation'''
             '''update observation_now'''
+            # print(self.get_observation().shape)
+            # iceclear
+            # picture = self.get_image()
+            # # print(picture.shape)
+            # from scipy import misc
+            # import time
+            # if not os.path.exists('/home/xuntian2/hly/F_N/Faster-RCNN_TF/data/demo/'+self.env_id):
+            #     os.mkdir(r'/home/xuntian2/hly/F_N/Faster-RCNN_TF/data/demo/'+self.env_id)
+            # if not os.path.exists('/home/xuntian2/hly/F_N/Faster-RCNN_TF/data/demo/'+self.env_id+'/'+str(self.subject)):
+            #     os.mkdir(r'/home/xuntian2/hly/F_N/Faster-RCNN_TF/data/demo/'+self.env_id+'/'+str(self.subject))
+            # misc.imsave('/home/xuntian2/hly/F_N/Faster-RCNN_TF/data/demo/'+self.env_id+'/'+str(self.subject)+'/'+self.env_id+"_"+str(self.cur_step)+".jpg",picture)
             self.get_observation()
+
+            # capture = cv.CaptureFromFile('../../'+self.data_base+'/'+self.env_id+'.mp4')
+            # nbFrames = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_COUNT))
+            # width = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH))
+            # height = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT))
+            # fps = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)/10)
+            # codec = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FOURCC)
+            #
+            # # print('../../'+self.data_base+'/'+self.env_id+'.mp4')
+            # # print(fps)
+            #
+            # wait = int(1000/fps) #Compute the time to wait between each frame query
+            # # print(wait)
+            # duration = (nbFrames * fps) / 1000 #Compute duration
+            #
+            # # print ('Num. Frames = ', nbFrames)
+            # # print ('Frame Rate = ', fps, 'fps')
+            #
+            # writer=cv.CreateVideoWriter('/media/yuhangsong/My Passport/online_model/ff/gf_project'+self.env_id+'/'+self.env_id+".mp4",int(codec), fps, (width,height), 1) #Create writer with same parameters
+            # cv.SetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES,self.cur_frame) #Set the number of frames
+            #
+            # frame = cv.QueryFrame(capture)
+            # # print cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_POS_FRAMES)
+            # cv.WriteFrame(writer, frame)
+            # cv.WaitKey(wait)
+
+
+
+
+            # print(stop)
 
             '''normally, we donot judge done when we in this'''
             done = False

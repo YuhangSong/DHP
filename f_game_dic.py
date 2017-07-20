@@ -118,3 +118,20 @@ f_game_dic_new_all=[
     'WesternSichuan',
     'Yacht',
 ]
+f_game_dic_new_test=[
+    'BlueWorld',
+    'BTSRun',
+    'CMLauncher2',
+    'Dancing',
+    'Guitar',
+    'InsideCar',
+    'KingKong',
+    'SpaceWar',
+    'SpaceWar2',
+    'Sunset',
+    'Symphony',
+    'WaitingForLove',
+    'Waterfall',
+    'StarryPolar',
+    'RioOlympics'
+]

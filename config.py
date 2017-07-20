@@ -1,7 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
+cluster_current = 3
 cluster_main = cluster_current
 
 '''
@@ -44,12 +44,16 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-<<<<<<< Updated upstream
-basic_log_dir = project+"_50"
-log_dir = "run_on_line_baseline_keep"
-=======
-basic_log_dir = project+"_test"
->>>>>>> Stashed changes
+# <<<<<<< Updated upstream
+# <<<<<<< Updated upstream
+# basic_log_dir = project+"_50"
+# =======
+basic_log_dir = project+"_to_record_pre_scan_path_test"
+# >>>>>>> Stashed changes
+log_dir = "run_on_line_model"
+# =======
+# basic_log_dir = project+"_test"
+# >>>>>>> Stashed changes
 # log_dir = "run_off_line_on_vr_new"
 
 
@@ -59,10 +63,14 @@ basic_log_dir = project+"_test"
 if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 3  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = -1  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 46  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 47  #  set the start game index, set to -1 to be extrame
 
+'''
+    Description :if only_run_on_test_dict
+'''
 
+if_only_run_on_test_dict = False
 '''
     Description: set model structure
 '''
@@ -162,8 +170,8 @@ elif project is 'f':
         Description: config env
     '''
     data_tensity = 10
-    view_range_lon = 110
-    view_range_lat = 113
+    view_range_lon = 65.5
+    view_range_lat = 65.5*0.75
     final_discount_to = 10**(-4)
     from numpy import zeros
     observation_space = zeros((42, 42, 1))
@@ -191,7 +199,9 @@ elif project is 'f':
                        minglang_mp4_to_jpg
                        minglang_obdl_cfg
         '''
-        data_processor_id = 'minglang_obdl_cfg'
+        # data_processor_id = 'minglang_obdl_cfg'
+
+        data_processor_id = 'iceclear'
 
         if data_processor_id is 'compute_consi':
 
@@ -226,7 +236,7 @@ elif project is 'f':
         '''
             Description: if you want to run baseline of the on_line prediction
         '''
-        if_run_baseline = True
+        if_run_baseline = False
 
         if if_run_baseline is True:
 
@@ -241,7 +251,7 @@ elif project is 'f':
                     keep: to keep the direction of last action
                     random: to select the action of direction and v randomly
             '''
-            baseline_type = 'keep'
+            baseline_type = 'random'
 
             '''
                 Description: v used when runing the baseline
@@ -303,7 +313,9 @@ if if_separate_game_dic :
     if separate_start_game_index_to is -1:
         separate_start_game_index_to = len(game_dic)
     game_dic = game_dic[separate_start_game_index_from:separate_start_game_index_to]
-
+if if_only_run_on_test_dict:
+    from f_game_dic import f_game_dic_new_test
+    game_dic = f_game_dic_new_test
 if debugging is True:
     status = "temp_run"
     game_dic = game_dic[debugging_range[0]:debugging_range[1]]

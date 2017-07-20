@@ -87,6 +87,11 @@ sudo apt-get install aptitude
 
 sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig git Python-scipy htop tmux six txaio websocket docker g++ vim
 
+# gmbrl
+~/anaconda3/bin/conda create -n gmbrl_4 python=2 -y && source activate gmbrl_4 && wget http://download.pytorch.org/whl/cu80/torch-0.1.12.post2-cp27-none-linux_x86_64.whl && pip install torch-0.1.12.post2-cp27-none-linux_x86_64.whl && pip install torchvision && pip install tensorflow_gpu && sudo apt-get install -y tmux htop cmake golang libjpeg-dev && pip install "gym[atari]" && pip install universe && pip install six && pip install tensorflow && conda install -y numpy && conda install -y scipy && pip install opencv-python && pip install scipy
+
+
+
 这时，已经进入song_1虚拟环境（控制台会显示），如果没有，自行学习conda虚拟环境怎么用
 
 下面1,2，3,4可以同时进行，两个不冲突

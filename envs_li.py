@@ -565,7 +565,7 @@ class env_li():
                     '''overwrite v ,if v<0,action turn to the opposite'''
                     self.v_expectation_used_in_baseline = self.v_used_in_baseline * self.data_per_step / math.pi *180.0
                     self.v_stdev_used_in_baseline = self.v_expectation_used_in_baseline
-                    v = numpy.random.normal(self.v_expectation_used_in_baseline,self.v_stdev_used_in_baseline)
+                    v = numpy.random.normal(selfwith.v_expectation_used_in_baseline,self.v_stdev_used_in_baseline)
                     if v < 0:
                         action = (action + 4) % 8
                         v = 0 - v
@@ -618,7 +618,20 @@ class env_li():
                 FOV_scale = self.view_range_lat*1.0/self.view_range_lon
                 mo_calculator = MeanOverlap(self.video_size_width,self.video_size_heigth,self.view_range_lon,FOV_scale)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
+                # print ("the pre center is ({}, {})".format(self.cur_lon,self.cur_lat))
+                # print ("the ground-truth center is ({},{})".format(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]))
+                # print("-------------------------------------------------------------------")
                 self.mo_dic_on_cur_episode += [mo]
+                # print("self.predicting is{}".format(self.predicting))
+                # print("-------------------------------")
+                ''' record scan path'''
+                if self.predicting is True:
+                    from config import final_log_dir
+                    # with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
+                    #     f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
+                    with open(final_log_dir+"{}_{}_scan_path.txt".format(self.env_id,self.subject),"a") as f:
+                        f.write("pre_lon, pre_lat, gt_lon, gt_lat:\t{}\t{}\t{}\t{}\n".format(self.cur_lon,self.cur_lat,self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]))
+
 
                 # print("------------------------")
                 # print("the video_size_width is %s\nthe video_size_heigth is %s"%(self.video_size_width,self.video_size_heigth))

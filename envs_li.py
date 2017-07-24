@@ -220,8 +220,7 @@ class env_li():
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
         if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            from config import num_workers_global,cluster_current,cluster_main
-            if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+            if (self.task==0):
                 print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 self.log_thread = True
             else:

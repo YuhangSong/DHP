@@ -59,30 +59,8 @@ def run(args, server):
     def init_fn(ses):
         logger.info("==========run init_fn============")
         ses.run(init_all_op)
-        from config import project
-        if project is 'f':
-            from config import mode
-            if mode is 'on_line':
-                from config import if_restore_model
-                if if_restore_model:
-                    from config import model_to_restore
-                    logger.info("'restore model from:'+restore_path")
-                    restore_path = 'model_to_restore/'+model_to_restore
-                    print('not support!!!')
-                    # pre_train_saver.restore(ses,
-                    #                         restore_path)
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
-
-    '''whether call init var to avoid the bug'''
-    if not ((project is 'f') and (mode is 'on_line')):
-        '''project f and mode on_line not support GTN, so not have this problem'''
-        if args.task is not config.task_chief:
-            if config.project is 'g':
-                print('this is g project, bug on ver init, since the graph is different across threads')
-                tf.Session(server.target, config=config_tf).run(init_all_op)
-            elif config.project is 'f':
-                print('this is f project, no bug on ver init, since the praph is exactly same across threads')
 
     '''determine is_chief'''
     if (project is 'f') and (mode is 'on_line'):
@@ -90,8 +68,9 @@ def run(args, server):
         is_chief = True
     else:
         '''normally, is_chief is determined by if the task is a cheif task (see config.py)'''
-        is_chief = (args.task == config.task_chief)
-
+        is_chief = (args.task == 0)
+        
+    tf.Session(server.target, config=config_tf).run(init_all_op)
     sv = tf.train.Supervisor(is_chief=is_chief,
                              logdir=logdir,
                              saver=saver,
@@ -133,33 +112,36 @@ def cluster_spec(num_workers, num_ps, env_id=None, subject=None):
     More tensorflow setup for data parallelism
     """
     from config import project, mode
-    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
-        cluster = {}
-        port = 12222
 
-        all_ps = []
-
-        host = config.cluster_host[config.cluster_main]
-        for _ in range(num_ps):
-            all_ps.append('{}:{}'.format(host, port))
-            port += 1
-        cluster['ps'] = all_ps
-
-        all_workers = []
-        for host in config.cluster_host:
-            for _ in range(num_workers):
-                all_workers.append('{}:{}'.format(host, port))
-                port += 1
-        cluster['worker'] = all_workers
-
-        return cluster
-    elif (project is 'f') and (mode is 'on_line'):
+    if (project is 'f') and (mode is 'on_line'):
         env_id_num = config.game_dic.index(env_id)
         position_offset = 12222
         position = (env_id_num * config.num_subjects + subject) * 2 + position_offset
         cluster = {}
         cluster['ps'] = ['127.0.0.1:'+str(position)]
         cluster['worker'] = ['127.0.0.1:'+str(position+1)]
+        return cluster
+
+    else:
+
+        cluster = {}
+        port = 12222
+
+        all_ps = []
+
+        host = config.cluster_host[config.cluster_current]
+        for _ in range(num_ps):
+            all_ps.append('{}:{}'.format(host, port))
+            port += 1
+        cluster['ps'] = all_ps
+
+        all_workers = []
+        host = config.cluster_host[config.cluster_current]
+        for _ in range(num_workers):
+            all_workers.append('{}:{}'.format(host, port))
+            port += 1
+        cluster['worker'] = all_workers
+
         return cluster
 
 def main(_):
@@ -181,11 +163,13 @@ Setting up Tensorflow for data parallel work
                              'rewarders to use (e.g. -r vnc://localhost:5900+15900,vnc://localhost:5901+15901)')
 
     args = parser.parse_args()
+
     from config import project, mode
-    if (project is 'g') or ( (project is 'f') and ( (mode is 'off_line') or (mode is 'data_processor') ) ):
-        spec = cluster_spec(args.num_workers, 1)
-    elif (project is 'f') and (mode is 'on_line'):
+    if (project is 'f') and (mode is 'on_line'):
         spec = cluster_spec(args.num_workers, 1, args.env_id, args.subject)
+    else:
+        spec = cluster_spec(args.num_workers, 1)
+        
     cluster = tf.train.ClusterSpec(spec).as_cluster_def()
 
 

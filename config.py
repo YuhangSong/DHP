@@ -45,7 +45,7 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 
-basic_log_dir = project+"_91"
+basic_log_dir = project+"_100"
 log_dir = "run_online_nf_0_5"
 
 
@@ -164,7 +164,7 @@ elif project is 'f':
     '''
         Description: config env
     '''
-    data_tensity = 20
+    data_tensity = 30
     view_range_lon = 110
     view_range_lat = 113
     final_discount_to = 10**(-4)

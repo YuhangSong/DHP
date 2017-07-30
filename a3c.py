@@ -228,7 +228,7 @@ class A3C(object):
             self.log_thread = True
         else:
             '''only log if the task is on zero and cluster is the main cluster'''
-            if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+            if (self.task==0):
                 self.log_thread = True
             else:
                 self.log_thread = False
@@ -316,11 +316,11 @@ class A3C(object):
 
         from config import project, mode
         if not ((project is 'f') and (mode is 'on_line')):
-            if(self.task!=config.task_chief):
+            if(self.task!=0):
                 print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
                 time.sleep(5)
                 sess.run(self.sync)  # copy weights from shared to local
-            if(self.task==config.task_plus):
+            if(self.task==0):
                 print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
                 subprocess.call(["rm", "-r", 'temp/mix_exp/'])
                 subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])

@@ -1,8 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
-cluster_main = cluster_current
+cluster_current = 1
 
 '''
     Description: which project you want to run
@@ -44,9 +43,8 @@ if if_restore_model is True:
 '''
     Description: set your log dir to store results data
 '''
-
-basic_log_dir = project+"_91"
-log_dir = "run_online_test_0_5"
+basic_log_dir = project+"_101"
+log_dir = "fix"
 
 
 '''
@@ -126,7 +124,7 @@ elif project is 'f':
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'data_processor'
+    mode = 'off_line'
 
     '''
         Description: if learning v in the model,
@@ -272,7 +270,7 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
+cluster_host                   = ['192.168.226.67', '192.168.226.83', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
 cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
 cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
 num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
@@ -338,10 +336,3 @@ if status is "temp_run":
     subprocess.call(["rm", "-r", final_log_dir])
 
 num_games_global = len(game_dic)
-num_workers_global = 16
-num_workers_local = 1
-num_workers_total_global = num_games_global * num_workers_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global

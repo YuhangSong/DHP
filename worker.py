@@ -68,9 +68,11 @@ def run(args, server):
                     from config import model_to_restore
                     logger.info("'restore model from:'+restore_path")
                     restore_path = 'model_to_restore/'+model_to_restore
-                    print('not support!!!')
-                    # pre_train_saver.restore(ses,
-                    #                         restore_path)
+                    try:
+                        pre_train_saver.restore(ses,
+                                                restore_path)
+                    except Exception as e:
+                        pass
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 

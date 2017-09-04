@@ -67,20 +67,26 @@ def create_tmux_commands(session, logdir):
         base_cmd = [
             'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
             '--log-dir', logdir, '--env-id', config.game_dic[0],
-            '--num-workers', str(config.num_games_global)]
+            '--num-workers', str(config.num_workers_total_global)]
 
-        cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
+        '''main cluster has ps worker'''
+        if(config.cluster_current==config.cluster_main):
+            cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
+        else:
+            cmds_map = []
 
-        for i in range(config.num_games_global):
+        for i in range(config.num_workers_total_global):
+            if((i % config.num_workers_global) >= config.num_workers_local):
+                continue
             base_cmd = [
                 'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
                 '--log-dir', logdir,
-                '--env-id', config.game_dic[i],
-                '--num-workers', str(config.num_games_global)]
+                '--env-id', config.game_dic[i / config.num_workers_global],
+                '--num-workers', str(config.num_workers_total_global)]
             cmds_map += [new_tmux_cmd(session,
                                       "w-%d" % i,
                                       base_cmd + ["--job-name", "worker",
-                                                  "--task", str(i)])]
+                                                  "--task", str(i+config.task_plus)])]
 
         windows = [v[0] for v in cmds_map]
 

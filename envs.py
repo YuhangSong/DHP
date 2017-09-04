@@ -1,5 +1,3 @@
-import sys
-sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
 from gym.spaces.box import Box
 import numpy as np

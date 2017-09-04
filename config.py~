@@ -32,7 +32,7 @@ if debugging is True:
 '''
     Description: if restore model
 '''
-if_restore_model = True
+if_restore_model = False
 
 if if_restore_model is True:
 
@@ -45,7 +45,7 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 
-basic_log_dir = project+"_iceclear_test"
+basic_log_dir = project+"_iceclear_0.4"
 log_dir = "run_online_test"
 
 
@@ -113,14 +113,14 @@ elif project is 'f':
         Description: select data_base you are running on
         Availible: vr, vr_new
     '''
-    data_base = 'vr'
+    data_base = 'vr_new'
 
     if data_base is 'vr_new':
         from f_game_dic import f_game_dic_new_all, f_game_dic_new_test
         game_dic = f_game_dic_new_test # specific game dic
     elif data_base is 'vr':
-        from f_game_dic import f_game_dic_new_test
-        game_dic = f_game_dic_new_test # specific game dic
+        from f_game_dic import f_game_dic_all
+        game_dic = f_game_dic_all # specific game dic
 
     '''
         Description: select mode
@@ -223,7 +223,7 @@ elif project is 'f':
             Description: conditions to terminate and move on the on_line train
         '''
         train_to_reward = 0.2 # set to 1.0 to disable it
-        train_to_mo = 0.5 # set to 1.0 to disable it
+        train_to_mo = 0.4 # set to 1.0 to disable it
         train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
 
         '''

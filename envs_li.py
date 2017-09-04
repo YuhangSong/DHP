@@ -1,5 +1,3 @@
-import sys
-sys.path.append('/usr/local/lib/python2.7/site-packages')
 import cv2
 from gym.spaces.box import Box
 import numpy as np
@@ -31,6 +29,7 @@ from vrplayer import get_view
 from move_view_lib import move_view
 from suppor_lib import *
 import tensorflow as tf
+import imageio
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -51,6 +50,8 @@ class env_li():
 
     def __init__(self, env_id, task, subject=None, summary_writer=None):
 
+        self.step_count = 0
+        self.break_flag = 0
         '''only log if the task is on zero and cluster is the main cluster'''
         self.task = task
 
@@ -182,14 +183,18 @@ class env_li():
             self.mo_on_prediction_dic = []
 
         '''init video and get paramters'''
-        video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
-        self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
-        self.frame_total = video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
-        self.video_size_width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-        self.video_size_heigth = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        video = imageio.get_reader('../../'+self.data_base+'/' + self.env_id + '.mp4')
+        # print(video.get_meta_data())
+        self.frame_per_second = video.get_meta_data()['fps']
+        self.frame_total = video.get_meta_data()['nframes']
+        self.video_size_width = int(video.get_meta_data()['size'][0])
+        self.video_size_heigth = int(video.get_meta_data()['size'][1])
         self.second_total = self.frame_total / self.frame_per_second
-        self.data_per_frame = self.data_total / self.frame_total
-        self.data_per_second = self.data_total/self.second_total
+        self.data_per_frame = float(self.data_total) / float(self.frame_total)
+        # print(self.data_total)
+        # print(self.frame_total)
+        # print(self.data_per_frame)
+
         '''compute step lenth from data_tensity'''
         from config import data_tensity
         self.second_per_step = max(data_tensity/self.frame_per_second, data_tensity/self.data_per_frame/self.frame_per_second)
@@ -222,7 +227,8 @@ class env_li():
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
         if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            if (self.task==0):
+            from config import num_workers_global,cluster_current,cluster_main
+            if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
                 print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 self.log_thread = True
             else:
@@ -238,12 +244,6 @@ class env_li():
     def data_processor(self):
         from config import data_processor_id
         print('==========================data process start: '+data_processor_id+'================================')
-        if data_processor_id is'compute_consi':
-            cov_on_video,valid_circle_exp_per_frame=compute_consi(self.subjects,self.data_total,self.subjects_total)
-            store_consi(cov_on_video,valid_circle_exp_per_frame,self.env_id)
-        if data_processor_id is'compute_direction':
-            cov_on_video,valid_circle_exp_per_frame=compute_direction(self.subjects,self.data_total,self.subjects_total,self.data_per_second)
-            store_direction(cov_on_video,valid_circle_exp_per_frame,self.env_id)
         if data_processor_id is 'minglang_mp4_to_yuv':
             print('sssss')
             from config import game_dic_new_all
@@ -489,7 +489,7 @@ class env_li():
                 time.sleep(1)
 
     def step(self, action, v):
-
+        self.step_count = self.step_count + 1
         '''these will be returned, but not sure to updated'''
         if self.log_thread:
             self.log_thread_step()
@@ -604,7 +604,7 @@ class env_li():
                 from MeanOverlap import *
                 mo_calculator = MeanOverlap(self.video_size_width,
                                             self.video_size_heigth,
-                                            65.5,
+                                            65.5/2,
                                             3.0/4.0)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 self.mo_dic_on_cur_episode += [mo]
@@ -682,7 +682,58 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
+                        # if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
+                        if (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo):
+                            self.break_flag = 1
+
+                            '''if reward is trained to a acceptable range or trained episode exceed a range'''
+                            '''or is running baseline'''
+
+                            print('>>>>>train to an acceptable state')
+
+                            '''summary'''
+                            summary = tf.Summary()
+                            '''summary reward'''
+                            summary.value.add(tag=self.env_id+'on_cur_train/number_of_episodes',
+                                              simple_value=float(len(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_reward_per_step@',
+                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
+                            '''summary mo'''
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_mo_per_step@',
+                                              simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
+                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_mo_per_step@',
+                                              simple_value=float(np.mean(self.average_mo_dic_on_cur_train)))
+                            self.summary_writer.add_summary(summary, self.cur_training_step)
+                            self.summary_writer.flush()
+
+                            '''reset reward record'''
+                            self.sum_reward_dic_on_cur_train = []
+                            self.average_reward_dic_on_cur_train = []
+
+                            '''reset mo record'''
+                            self.sum_mo_dic_on_cur_train = []
+                            self.average_mo_dic_on_cur_train = []
+
+                            '''tell outside: we are going to predict on the next run'''
+                            self.predicting = True
+
+                            '''update'''
+                            self.cur_training_step += 1
+                            self.cur_predicting_step += 1
+
+                            if self.cur_predicting_step >= (self.step_total-2):
+
+                                '''on line terminating'''
+
+                                '''record the mo_mean for each subject'''
+                                self.save_mo_result()
+
+                                print('on line run meet end, terminate and write done signal')
+                                self.terminate_this_worker()
+                        elif (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
+                            self.break_flag = 2
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
                             '''or is running baseline'''
@@ -898,143 +949,4 @@ class env_li():
         else :
             self.record_mo_file_name = "on_line_model"
         with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
-            f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))
-def compute_consi(subjects,num_data_frame,num_subject):
-    print('compute_consi')
-    '''config'''
-    from config import NumDirectionForCluster,frame_gate,fov_degree
-    from config import compute_lat_inter,compute_lon_inter
-    from config import DirectionInter
-    ''''''
-    sum_on_video = np.zeros((NumDirectionForCluster))
-    count_on_video = 0
-    valid_circle_count = 0
-    ''''''
-    for data_frame_i in range(0 + frame_gate, num_data_frame - frame_gate - 1):
-        sum_on_frame = np.zeros((NumDirectionForCluster))
-        count_on_frame=0
-        valid_circle_count_last = valid_circle_count
-        for lon_i in range(-180, 180, compute_lon_inter):
-            for lat_i in range(-90, 90, compute_lat_inter):
-                theta_dic = []
-                for data_frame_i_in_i in range(data_frame_i - frame_gate, data_frame_i + frame_gate + 1):
-                    for subject_i in range(num_subject):
-                        distance = haversine(lon1=lon_i,
-                                             lat1=lat_i,
-                                             lon2=subjects[subject_i].data_frame[data_frame_i_in_i].p[0],
-                                             lat2=subjects[subject_i].data_frame[data_frame_i_in_i].p[1])
-                        if(distance<1.0*(fov_degree*math.pi/180.0)):
-                            if(subjects[subject_i].data_frame[data_frame_i_in_i].theta != 'null'):
-                                theta_dic += [subjects[subject_i].data_frame[data_frame_i_in_i].theta]
-                if(len(theta_dic)>=(NumDirectionForCluster)):
-                    direction_dic = np.zeros((NumDirectionForCluster))
-                    for i in range(NumDirectionForCluster):
-                        direction_dic[i] = 0
-                    detect = False
-                    for theta_i in range(len(theta_dic)):
-                        if((theta_dic[theta_i]>(360.0-DirectionInter/2.0)) or (theta_dic[theta_i]<=(0.0+DirectionInter/2.0))):
-                            direction_dic[0] += 1
-                            detect = True
-                        else:
-                            for direction_i in range(1, NumDirectionForCluster):
-                                if((direction_i*DirectionInter - DirectionInter/2.0)<theta_dic[theta_i]<=(direction_i*DirectionInter + DirectionInter/2.0)):
-                                    direction_dic[direction_i] += 1
-                                    detect = True
-                        if(detect==False):
-                            print('!!!!')
-                            print('!!!!')
-                            print('!!!!')
-                    # print(direction_dic)
-                    direction_dic = np.sort(direction_dic)
-                    # print(direction_dic)
-                    direction_dic = direction_dic / np.sum(direction_dic)
-
-                    sum_on_frame += direction_dic
-                    count_on_frame += 1
-                    valid_circle_count += 1
-
-
-        cov_on_frame = sum_on_frame / count_on_frame
-        sum_on_video += cov_on_frame
-        count_on_video += 1
-        valid_circle_count_thisframe = valid_circle_count - valid_circle_count_last
-        display_string = 'frame\t'+str(data_frame_i)+'\tvalid_circle\t'+str(valid_circle_count_thisframe)
-        for print_i in range(NumDirectionForCluster):
-            display_string += ('\t\t' + str(cov_on_frame[print_i]))
-        print(display_string)
-    cov_on_video = sum_on_video / count_on_video
-    valid_circle_exp_per_frame = valid_circle_count * 1.0 / count_on_video
-    print('compute_over')
-    return cov_on_video,valid_circle_exp_per_frame
-def store_consi(cov_on_video,valid_circle_exp_per_frame,game_dic):
-    print("store_consi_result")
-    '''config'''
-    from config import fov_degree,no_moving_gate,compute_lon_inter,compute_lat_inter
-    from config import frame_gate,MaxCenterNum,NumDirectionForCluster
-    print_string='\n'
-    print_string += '\tgame_id\t'+str(game_dic)+'\tMaxCenterNum\t'+str(MaxCenterNum)+'\tvalid_circle_exp_per_frame\t'+str(valid_circle_exp_per_frame)
-    display_string = ''
-    for print_i in range(NumDirectionForCluster):
-        print_string += ('\t' + str(cov_on_video[print_i]))
-        display_string += ('\t' + str(cov_on_video[print_i]))
-    print(display_string)
-    f = open('../result/consistence_result.txt','a')
-    f.write(print_string)
-    f.close()
-    print('store_over')
-def compute_direction(subjects,num_data_frame,num_subject,data_per_second):
-    print('compute_direction')
-    '''config'''
-    from config import NumDirectionForCluster,frame_gate,fov_degree
-    from config import compute_lat_inter,compute_lon_inter
-    from config import DirectionInter,speed_gate
-    from suppor_lib import compute_average_of_angle
-    ''''''
-    sum_on_video = 0
-    count_on_video = 0
-    valid_circle_count = 0
-    ''''''
-    for data_frame_i in range(0 + frame_gate, num_data_frame - frame_gate - 1):
-        sum_on_frame = 0
-        count_on_frame=0
-        valid_circle_count_last = valid_circle_count
-        for lon_i in range(-180, 180, compute_lon_inter):
-            for lat_i in range(-90, 90, compute_lat_inter):
-                theta_dic = []
-                for data_frame_i_in_i in range(data_frame_i - frame_gate, data_frame_i + frame_gate + 1):
-                    for subject_i in range(num_subject):
-                        distance = haversine(lon1=lon_i,
-                                             lat1=lat_i,
-                                             lon2=subjects[subject_i].data_frame[data_frame_i_in_i].p[0],
-                                             lat2=subjects[subject_i].data_frame[data_frame_i_in_i].p[1])
-                        if distance<1.0*(fov_degree*math.pi/180.0) and subjects[subject_i].data_frame[data_frame_i_in_i].v>speed_gate/data_per_second:
-                            if(subjects[subject_i].data_frame[data_frame_i_in_i].theta != 'null'):
-                                theta_dic += [subjects[subject_i].data_frame[data_frame_i_in_i].theta]
-                if(len(theta_dic)>=(NumDirectionForCluster)):
-                    from suppor_lib import compute_deviation_of_theta
-                    sum_on_frame += compute_deviation_of_theta(theta_dic)
-                    count_on_frame += 1
-                    valid_circle_count += 1
-
-        cov_on_frame = sum_on_frame / count_on_frame
-        sum_on_video += cov_on_frame
-        count_on_video += 1
-        valid_circle_count_thisframe = valid_circle_count - valid_circle_count_last
-        display_string = 'sum_on_frame\t'+str(cov_on_frame)+'\tvalid_circle\t'+str(valid_circle_count_thisframe)
-        print(display_string)
-    cov_on_video = sum_on_video / count_on_video
-    valid_circle_exp_per_frame = valid_circle_count * 1.0 / count_on_video
-    print('compute_over')
-    return cov_on_video,valid_circle_exp_per_frame
-def store_direction(cov_on_video,valid_circle_exp_per_frame,game_dic):
-    print("store_consi_result")
-    '''config'''
-    from config import fov_degree,no_moving_gate,compute_lon_inter,compute_lat_inter
-    from config import frame_gate,MaxCenterNum,NumDirectionForCluster
-    print_string='\n'
-    print_string += '\tgame_id\t'+str(game_dic)+'\tMaxCenterNum\t'+str(MaxCenterNum)+'\tvalid_circle_exp_per_frame\t'+str(valid_circle_exp_per_frame)
-    print_string += '\tStandard Deviation\t'+str(cov_on_video)
-    f = open('../result/direction_result.txt','a')
-    f.write(print_string)
-    f.close()
-    print('store_over')
+            f.write("%s\tsubject[%s]:\t%s\t%d\t%d\n"%(self.env_id,self.subject,mo_mean,self.step_count,self.break_flag))

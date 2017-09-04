@@ -76,21 +76,21 @@ f_game_dic_new_all=['A380',
 ]
 
 f_game_dic_new_test = [
-    'KingKong',
-    'SpaceWar2',
-    'StarryPolar',
-    'Dancing',
-    'Guitar',
-    'BTSRun',
-    'InsideCar',
-    'RioOlympics',
-    'SpaceWar',
-    'CMLauncher2',
-    'Waterfall',
-    'Sunset',
     'BlueWorld',
-    'Symphony',
-    'WaitingForLove'
+    # 'SpaceWar2',
+    # 'StarryPolar',
+    # 'Dancing',
+    # 'Guitar',
+    # 'BTSRun',
+    # 'InsideCar',
+    # 'RioOlympics',
+    # 'SpaceWar',
+    # 'CMLauncher2',
+    # 'Waterfall',
+    # 'Sunset',
+    # 'BlueWorld',
+    # 'Symphony',
+    # 'WaitingForLove'
 ]
 
 f_game_dic_all=[

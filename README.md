@@ -1,6 +1,6 @@
 # DHP
 
-### Code for paper [Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach](https://arxiv.org/abs/1710.10755)
+This repo provides code for all the results reported in DHP paper. See [Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach](https://arxiv.org/abs/1710.10755)
 
 ## Not ready yet!!
 

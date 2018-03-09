@@ -1,117 +1,129 @@
 # DHP
 
-This repo provides code for all the results reported in DHP paper. See [Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach.](https://arxiv.org/abs/1710.10755)
+This repository provides [**database**](#download-and-setup-pvs-hm-database), [**code**](#setup-an-environment-to-run-our-code) and [**results visualization**](#results-visualization) for reproducing all the reported results in the paper:
 
-## Not ready yet!!
+* [**Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://arxiv.org/abs/1710.10755)
+[*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
+[*Mai Xu* &#8224;&#8727;](http://shi.buaa.edu.cn/MaiXu/),
+[*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html).
+Submitted to [TPAMI](https://www.computer.org/web/tpami).
+By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
 
-### cuda and cudnn
-click cuda.deb
+<p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>
+
+Specifically, this repository includes extremely simple guidelines to:
+* [Download and setup the PVS-HMEM database](#download-and-setup-pvs-hm-database).
+* [Setup a friendly environment to run our code.](#setup-an-environment-to-run-our-code)
+* [Reproduce visualized results from the paper.](#results-visualization)
+
+## Download and setup PVS-HMEM database
+
+Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement database) database contains both **Head Movement** and **Eye Movement** data of **58** subjects on **76** panoramic videos.
+* *Blue dots* represent the **Head Movement**.
+* *Translucent blue circles* represent the **FoV**.
+* *Red dots* represent the **Eye Movement**.
+
+![](https://github.com/YuhangSong/DHP/blob/master/imgs/Snowfield_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Catwalks_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/A380_all.gif)
+:-------------------------:|:-------------------------:|:-------------------------:
+![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
+![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
+
+
+Follow command lines here to download and setup our PVS-HM database:
 ```
-sudo apt-get -y install freeglut3-dev build-essential libx11-dev libxmu-dev libxi-dev libgl1-mesa-glx libglu1-mesa libglu1-mesa-dev vim & echo "export PATH=/usr/local/cuda-8.0/bin:$PATH" >> /etc/profile & echo "export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:$LD_LIBRARY_PATH" >> /etc/profile & sudo ldconfig & source /etc/profile & nvidia-smi & cd ../NVIDIA_CUDA-8.0_Samples & make -j40
-cd ../rl_env
-tar -zxvf cudnn-8.0-linux-x64-v5.1.tgz
-sudo cp cuda/include/cudnn.h /usr/local/cuda/include/
-sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64/
-sudo chmod a+r /usr/local/cuda/include/cudnn.h
-sudo chmod a+r /usr/local/cuda/lib64/libcudnn*
-sudo reboot
-```
-
-
-### for basic ff, entry rl_env
-```
-
-# not su root
-
-sudo apt-get install openssh-server
-
-sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install libdbus-1-3:i386 libasound2:i386 libexpat1:i386 libfontconfig1:i386 libfreetype6:i386 libjpeg62:i386 libpng12-0:i386 libsm6:i386 libxdamage1:i386 libxext6:i386 libxfixes3:i386 libxinerama1:i386 libxrandr2:i386 libxrender1:i386 libxtst6:i386 zlib1g:i386 libc6:i386 && sudo dpkg -i teamviewer*.deb
-
-# su root
-
-sudo apt-get install aptitude -y && sudo apt-get -y install g++ && sudo apt-get -y install vim && sudo aptitude install build-essential libgtk2.0-dev libjpeg-dev libtiff4-dev libjasper-dev libopenexr-dev cmake python-dev python-numpy python-tk libtbb-dev libeigen2-dev yasm libfaac-dev libopencore-amrnb-dev libopencore-amrwb-dev libtheora-dev libvorbis-dev libxvidcore-dev libx264-dev libqt4-dev libqt4-opengl-dev sphinx-common texlive-latex-extra libv4l-dev libdc1394-22-dev libavcodec-dev libavformat-dev libswscale-dev git yasm libjpeg-turbo8-dev htop tmux && git config --global push.default "current"
-
-bash Anaconda3-4.3.1-Linux-x86_64.sh
-
-~/anaconda3/bin/conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && ~/anaconda3/bin/conda config --set show_channel_urls yes && ~/anaconda3/bin/conda create -n song_1 python=2 -y && source activate song_1
-
-source deactivate && source activate song_1 && pip install tensorflow-1.1.0-cp27-none-linux_x86_64.whl && tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.gz && echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile && source /etc/profile && source activate song_1 && cd gym && pip install -e .[atari] && cd .. && cd universe && pip install -e . && pip install matplotlib && cd .. && cd ffmpeg-3.2.4 && ./configure --enable-shared && make clean && make -j40 && make install && cd .. && cd opencv-2.4.13 && rm -r release && mkdir release && cd release/ && cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local .. && make clean && make -j40 && make install && cd ../../ && pip install torch-0.1.12.post2-cp27-none-linux_x86_64.whl && pip install torchvision && pip install lmdb scipy && cp remap ../ && chmod a+x ../remap &&
-
+mkdir -p dhp_env/
+cd dhp_env/
+wget https://drive.google.com/open?id=0B20VnLepDOl4aFhsT0x6YjA
+tar -xzvf dataset.tar.gz
 ```
 
-### for opencv, ffmpeg not supported
+## Setup an environment to run our code
+
+### Pre-requirements
+
+* [CUDA](https://developer.nvidia.com/cuda-downloads)
+* [Anaconda3](https://www.anaconda.com/download/) (Python 3.6)
+
+If you are not familiar with above things, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines.
+The code should also be runnable without a GPU, but I would not recommend it.
+
+### Requirements
+
+There will be command lines after the list, you don't have to install below requirements one by one.
+Besides, if you are not familiar with below things, I highly recommend you to just follow command lines after the list:
+* Python 3.6
+* [Pytorch](http://pytorch.org/)
+* [torchvision](https://github.com/pytorch/vision)
+* [numpy](http://www.numpy.org/)
+* [gym](https://github.com/openai/gym)
+* [imageio](https://imageio.github.io/)
+* [matplotlib](https://matplotlib.org/)
+* [pybullet](https://pypi.python.org/pypi/pybullet)
+* [opencv-python](https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_tutorials.html)
+
+Install above requirements with command lines:
 ```
-source activate song_1 && conda install -c menpo opencv=2 && source deactivate]
+# create env
+conda create -n grl_env
+
+# source in env
+source ~/.bashrc
+source activate dhp_env
+
+# install requirements
+pip install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp36-cp36m-manylinux1_x86_64.whl # if you are using CUDA 8.0, otherwise, refer to their official site: http://pytorch.org/
+pip install torchvision
+pip install visdom
+pip install numpy -I
+pip install gym[atari]
+pip install imageio
+pip install matplotlib
+pip install pybullet
+pip install opencv-python
+
+# clean dir and create dir
+mkdir -p dhp_env/project/
+cd dhp_env/project/
+git clone https://github.com/YuhangSong/DHP.git
+cd DHP
 ```
 
-1，
-   copy env/ff to your working dir
+Meet some issues? See [problems](https://github.com/YuhangSong/GTN#problems). If there isn't a solution, please don not hesitate to open an issue.
 
-2，enter song_1
+## Run our code
 
-   pip install tensorflow... (1.1 version)
-   
-   cd gym
-   
-   pip install -e .[all] # all install
+#### Start a `Visdom` server with
+```bash
+source ~/.bashrc
+source activate dhp_env
+python -m visdom.server
+```
+Visdom will serve `http://localhost:8097/` by default.
 
-   tar -C /usr/local -xzf go1.7.4.linux-amd64.tar.
-   
-   gedit /etc/profile
-   
-   write following:
-   
-      export PATH=$PATH:/usr/local/go/bin
-      
-   source /etc/profile
-   
-   go version
-   
-   see if the version is 1.7, if not：
-   
-      which go # should show XXXX
-      
-      mv -r XXXX /home/
-      
-      source /etc/profile
-      
-      go version
-      
-      check again it the version is 1.7
+#### Run DHP.
+```bash
+source ~/.bashrc
+source activate dhp_env
+CUDA_VISIBLE_DEVICES=0 python main.py
+```
 
-   cd universe
-   
-   pip install -e .
+#### Run other baselines.
+Give ```arguments.py``` a look, it is well commented.
 
-   pip install matplotlib
+## Results Visualization
 
-3，
+### Reward Function
 
-   tar ffmpeg
-   
-   cd ffmpeg
-   
-   ./configure --enable-shared
-   
-   make -j40
-   
-   make install
-   
-   unzip opencv-2.4.13.zip
-   
-   cd opencv-2.4.13
-   
-   mkdir release
-   
-   cd release/
-   
-   cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local ..
-   
-   make -j40
-   
-   make install
-   
-   cp lib/cv2.so ~/anaconda3/lib
-   
-4,
-   put remap in home, chmod to X 
+We propose a reward function that can capture transition of the attention.
+
+Our reward function            |  Baseline reward function       
+:-------------------------:|:-------------------------:
+<img src="imgs/our_transition.gif">  |  <img src="imgs/baseline_transition.gif">
+
+Specifically, in above example, the woman and the man are passing the basketball between each other, and subjects' attention are switching between them while they passing the basketball.
+Our reward function is able to capture these transitions of the attentions smoothly, while the baseline reward function makes the agent focus on the man all the time, even when the basketball is not in his hands.
+
+## Authors
+Yuhang Song            |  Mai Xu          |  Jianyi Wang
+:-------------------------:|:-------------------------:|:-------------------------:
+<img src="imgs/YuhangSong.png" width="200">  |  <img src="imgs/MaiXu.png" width="200">  |  <img src="imgs/JianyiWang.png" width="200">

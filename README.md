@@ -12,7 +12,7 @@ By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>
 
 Specifically, this repository includes extremely simple guidelines to:
-* [Download and setup the PVS-HMEM database](#download-and-setup-pvs-hm-database).
+* [Download and setup the PVS-HMEM database](https://www.dropbox.com/s/ml03dhphyhj0j6u/PVS-HMEM%20database.tar.gz?dl=0). (Please contact us for the password)
 * [Setup a friendly environment to run our code.](#setup-an-environment-to-run-our-code)
 * [Reproduce visualized results from the paper.](#results-visualization)
 

@@ -11,10 +11,15 @@ By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn
 
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>
 
-Specifically, this repository includes extremely simple guidelines to:
+Specifically, this repository includes guidelines to:
 * [Download and setup the PVS-HMEM database](https://www.dropbox.com/s/ml03dhphyhj0j6u/PVS-HMEM%20database.tar.gz?dl=0). (Please contact us for the password)
-* [Setup a friendly environment to run our code.](#setup-an-environment-to-run-our-code)
+* [Setup a environment to run our code.](#setup-an-environment-to-run-our-code)
 * [Reproduce visualized results from the paper.](#results-visualization)
+
+**Warning**: We have been working a updated version of DHP based on PyTorch with much more friendly setup procedures and strong GPU acceleration (The structure of the code is also cleaner).
+This project is currently maintained, but will be depreciated in the future.
+
+See [DHP-PyTorch](https://github.com/YuhangSong/DHP-pytorch) for the updated version. (Currently unavailable due to the copyright of our work)
 
 ## Download and setup PVS-HMEM database
 
@@ -28,7 +33,6 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
-
 Follow command lines here to download and setup our PVS-HM database:
 ```
 mkdir -p dhp_env/
@@ -41,19 +45,13 @@ tar -xzvf dataset.tar.gz
 
 ### Pre-requirements
 
-* [CUDA](https://developer.nvidia.com/cuda-downloads)
-* [Anaconda3](https://www.anaconda.com/download/) (Python 3.6)
-
-If you are not familiar with above things, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines.
-The code should also be runnable without a GPU, but I would not recommend it.
+If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
 
 ### Requirements
 
 There will be command lines after the list, you don't have to install below requirements one by one.
 Besides, if you are not familiar with below things, I highly recommend you to just follow command lines after the list:
 * Python 3.6
-* [Pytorch](http://pytorch.org/)
-* [torchvision](https://github.com/pytorch/vision)
 * [numpy](http://www.numpy.org/)
 * [gym](https://github.com/openai/gym)
 * [imageio](https://imageio.github.io/)
@@ -63,14 +61,6 @@ Besides, if you are not familiar with below things, I highly recommend you to ju
 
 Install above requirements with command lines:
 ```
-# create env
-conda create -n grl_env
-
-# source in env
-source ~/.bashrc
-source activate dhp_env
-
-# install requirements
 pip install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp36-cp36m-manylinux1_x86_64.whl # if you are using CUDA 8.0, otherwise, refer to their official site: http://pytorch.org/
 pip install torchvision
 pip install visdom

@@ -65,7 +65,7 @@ def create_tmux_commands(session, logdir):
         return cmds
     else:
         base_cmd = [
-            '', sys.executable, 'worker.py',
+            'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
             '--log-dir', logdir, '--env-id', config.game_dic[0],
             '--num-workers', str(config.num_workers_total_global)]
 
@@ -79,7 +79,7 @@ def create_tmux_commands(session, logdir):
             if((i % config.num_workers_global) >= config.num_workers_local):
                 continue
             base_cmd = [
-                '', sys.executable, 'worker.py',
+                'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
                 '--log-dir', logdir,
                 '--env-id', config.game_dic[i / config.num_workers_global],
                 '--num-workers', str(config.num_workers_total_global)]
@@ -113,7 +113,7 @@ def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subjec
         print(s)
 
     base_cmd = [
-        '', sys.executable, 'worker.py',
+        'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
         '--log-dir', logdir, '--env-id', config.game_dic[game_i_at],
         '--num-workers', str(1)]
 
@@ -121,7 +121,7 @@ def create_tmux_commands_auto(session, logdir, worker_running, game_i_at, subjec
                                                                                                  "--subject", str(subject_i_at)])]
 
     base_cmd = [
-        '', sys.executable, 'worker.py',
+        'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
         '--log-dir', logdir,
         '--env-id', config.game_dic[game_i_at],
         '--num-workers', str(1)]

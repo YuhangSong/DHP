@@ -228,12 +228,12 @@ class A3C(object):
             self.log_thread = True
         else:
             '''only log if the task is on zero and cluster is the main cluster'''
-            if (self.task%config.num_workers_global==0) and (config.cluster_current==config.cluster_main):
+            if (self.task==0):
                 self.log_thread = True
             else:
                 self.log_thread = False
 
-        worker_device = "/job:worker/task:{}/gpu:0".format(task)
+        worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
             with tf.variable_scope("global"):
                 self.network = LSTMPolicy(env.observation_space.shape, env.action_space.n, self.env_id)
@@ -289,11 +289,11 @@ class A3C(object):
 
             grads = tf.gradients(self.loss, pi.var_list)
 
-            # tf.summary.scalar(self.env_id+"/model/policy_loss", pi_loss / bs)
-            # tf.summary.scalar(self.env_id+"/model/value_loss", vf_loss / bs)
-            # tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
-            # tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
-            # tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
+            tf.summary.scalar(self.env_id+"/model/policy_loss", pi_loss / bs)
+            tf.summary.scalar(self.env_id+"/model/value_loss", vf_loss / bs)
+            tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
+            tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
+            tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
             if self.if_learning_v:
                 tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
 
@@ -316,11 +316,11 @@ class A3C(object):
 
         from config import project, mode
         if not ((project is 'f') and (mode is 'on_line')):
-            if(self.task!=config.task_chief):
+            if(self.task!=0):
                 print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
                 time.sleep(5)
                 sess.run(self.sync)  # copy weights from shared to local
-            if(self.task==config.task_plus):
+            if(self.task==0):
                 print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
                 subprocess.call(["rm", "-r", 'temp/mix_exp/'])
                 subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])

@@ -1,8 +1,7 @@
 '''
     Description: cluster config
 '''
-cluster_current = 0
-cluster_main = cluster_current
+cluster_current = 1
 
 '''
     Description: which project you want to run
@@ -45,18 +44,18 @@ if if_restore_model is True:
     Description: set your log dir to store results data
 '''
 
-basic_log_dir = project+"_iceclear_test"
-log_dir = "run_online_test"
+basic_log_dir = project+"_104_0921_02"
+log_dir = "fix"
 
 
 '''
     Description:if separate game_dic
 '''
-if_separate_game_dic = False
+if_separate_game_dic = True
 
 if if_separate_game_dic :
-    separate_start_game_index_from = 8  #  set the start game index, set to -1 to be extrame
-    separate_start_game_index_to = 14  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_from = 0  #  set the start game index, set to -1 to be extrame
+    separate_start_game_index_to = 8  #  set the start game index, set to -1 to be extrame
 
 
 '''
@@ -72,7 +71,7 @@ lstm_size = [288,128,32]
         20 is empirically good for single task
         larger value may benifit the multi-task performence
 '''
-update_step = 20
+update_step = 40 # 20
 
 '''
     Description: mix experiences from different workers
@@ -86,6 +85,7 @@ if_mix_exp = False
     Note:
         unavailible
 '''
+
 if_reward_auto_normalize = False
 
 
@@ -113,20 +113,21 @@ elif project is 'f':
         Description: select data_base you are running on
         Availible: vr, vr_new
     '''
-    data_base = 'vr'
+    data_base = 'vr_new'
 
     if data_base is 'vr_new':
-        from f_game_dic import f_game_dic_new_all, f_game_dic_new_test
-        game_dic = f_game_dic_new_test # specific game dic
+        from f_game_dic import f_game_dic_new_all, f_game_dic_new_test, f_game_dic_new_test_parallel
+        game_dic = f_game_dic_new_test  # specific game dic
+        #  game_dic = f_game_dic_new_test_parallel # specific game dic
     elif data_base is 'vr':
-        from f_game_dic import f_game_dic_new_test
-        game_dic = f_game_dic_new_test # specific game dic
+        from f_game_dic import f_game_dic_all
+        game_dic = f_game_dic_all # specific game dic
 
     '''
         Description: select mode
         Availible: off_line, on_line, data_processor
     '''
-    mode = 'on_line'
+    mode = 'off_line'
 
     '''
         Description: if learning v in the model,
@@ -155,7 +156,7 @@ elif project is 'f':
 
         '''config for log cc'''
         relative_predicted_fixation_num = 1.0
-        relative_log_cc_interval = 0.5
+        relative_log_cc_interval = 0.25 # 0.05 before
 
 
         # relative_predicted_fixation_num = 2.0 / 58.0
@@ -223,7 +224,7 @@ elif project is 'f':
             Description: conditions to terminate and move on the on_line train
         '''
         train_to_reward = 0.2 # set to 1.0 to disable it
-        train_to_mo = 0.5 # set to 1.0 to disable it
+        train_to_mo = 0.8 # set to 1.0 to disable it
         train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
 
         '''
@@ -257,7 +258,7 @@ elif project is 'f':
     Description: default config generated from above config
 '''
 
-cluster_host                   = ['192.168.226.67', '192.168.226.27', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
+cluster_host                   = ['192.168.226.67', '192.168.226.83', '192.168.226.139', '192.168.1.31','192.168.226.197','192.168.226.83'] # main cluster has to be first
 cluster_name                   = ['yuhangsong'    , 'Server'        , 'WorkerR'        , 'xuntian2'    ,'haochen'        ,'Worker4'] # main cluster has to be first
 cluster_home                   = ['yuhangsong'    , 's'             , 'irc207'         , 'xuntian2'    ,'s'              ,'s'] # main cluster has to be first
 num_workers_one_run_max_dic    = [8               , -1              , -1               , 8             ,16               ,-1]
@@ -274,9 +275,10 @@ if project is 'f':
 
     use_move_view_lib = 'ziyu'
 
-    my_sigma = (11.75+13.78)/2
+    # my_sigma = (11.75+13.78)/2
+    my_sigma = 7
     import math
-    sigma_half_fov = 51.0 / (math.sqrt(-2.0*math.log(0.5)))
+    sigma_half_fov = 7, # 51.0 / (math.sqrt(-2.0*math.log(0.5)))
     check_worker_done_time = 5
     if mode is 'off_line' or mode is 'data_processor':
         '''off line run all video together, should constrain the game_dic'''
@@ -313,10 +315,3 @@ if status is "temp_run":
     subprocess.call(["rm", "-r", final_log_dir])
 
 num_games_global = len(game_dic)
-num_workers_global = 16
-num_workers_local = 1
-num_workers_total_global = num_games_global * num_workers_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global
-task_plus = cluster_current * num_workers_total_global
-task_chief = cluster_main * num_workers_total_global

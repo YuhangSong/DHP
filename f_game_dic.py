@@ -76,22 +76,25 @@ f_game_dic_new_all=['A380',
 ]
 
 f_game_dic_new_test = [
-    'BlueWorld',
-    # 'SpaceWar2',
-    # 'StarryPolar',
-    # 'Dancing',
-    # 'Guitar',
-    # 'BTSRun',
-    # 'InsideCar',
-    # 'RioOlympics',
-    # 'SpaceWar',
-    # 'CMLauncher2',
-    # 'Waterfall',
-    # 'Sunset',
-    # 'BlueWorld',
-    # 'Symphony',
-    # 'WaitingForLove'
+    'WaitingForLove',
+    'SpaceWar',
+    'KingKong',
+    'SpaceWar2',
+    'Guitar',
+    'BTSRun',
+    'CMLauncher2',
+    'Symphony',
+    'RioOlympics',
+    'Dancing',
+    'StarryPolar',
+    'InsideCar',
+    'Sunset',
+    'Waterfall',
+    'BlueWorld'
 ]
+
+f_game_dic_new_test_parallel = [f_game_dic_new_test[3]] * 20
+
 
 f_game_dic_all=[
     'Pokemon',

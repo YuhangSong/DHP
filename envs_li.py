@@ -50,10 +50,8 @@ class env_li():
 
     def __init__(self, env_id, task, subject=None, summary_writer=None):
 
-        self.step_count = 0
-        self.break_flag = 0
         '''only log if the task is on zero and cluster is the main cluster'''
-        self.task = task
+        self.task = 0
 
         ''''''
         self.summary_writer = summary_writer
@@ -131,7 +129,7 @@ class env_li():
 
         '''set all temp dir for this worker'''
         if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            self.temp_dir = "temp/get_view/w_" + str(self.task) + '/'
+            self.temp_dir = "temp/get_view/w_" + str(self.task) + '/' + str(self.env_id) +'/'
         elif self.mode is 'on_line':
             self.temp_dir = "temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
         print(self.task)
@@ -183,17 +181,28 @@ class env_li():
             self.mo_on_prediction_dic = []
 
         '''init video and get paramters'''
-        video = imageio.get_reader('../../'+self.data_base+'/' + self.env_id + '.mp4')
-        # print(video.get_meta_data())
-        self.frame_per_second = video.get_meta_data()['fps']
-        self.frame_total = video.get_meta_data()['nframes']
-        self.video_size_width = int(video.get_meta_data()['size'][0])
-        self.video_size_heigth = int(video.get_meta_data()['size'][1])
+        # video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
+        # self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
+        # self.frame_total = video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
+        # self.video_size_width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        # self.video_size_heigth = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        filename = '../../'+self.data_base+'/' + self.env_id + '.mp4'
+        video = imageio.get_reader(filename,  'ffmpeg')
+
+        self.frame_per_second = video._meta['fps']
+        self.frame_total = video._meta['nframes']
+        self.frame_size = (video._meta['source_size'])
+        self.video_size_width = int(self.frame_size[0])
+        self.video_size_heigth = int(self.frame_size[1])
+
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.frame_per_second: ', self.frame_per_second)
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.frame_total: ', self.frame_total)
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.video_size_width : ', self.video_size_width)
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.video_size_heigth : ', self.video_size_heigth)
+        # print(myx)
         self.second_total = self.frame_total / self.frame_per_second
-        self.data_per_frame = float(self.data_total) / float(self.frame_total)
-        # print(self.data_total)
-        # print(self.frame_total)
-        # print(self.data_per_frame)
+        self.data_per_frame = self.data_total / self.frame_total
+
 
         '''compute step lenth from data_tensity'''
         from config import data_tensity
@@ -227,8 +236,7 @@ class env_li():
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
         if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            from config import num_workers_global,cluster_current,cluster_main
-            if (self.task%num_workers_global==0) and (cluster_current==cluster_main):
+            if (self.task==0):
                 print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 self.log_thread = True
             else:
@@ -364,6 +372,9 @@ class env_li():
                 '''cc record'''
                 self.agent_result_saver = []
                 self.agent_result_stack = []
+                '''scanpath location record'''
+                self.agent_scanpath_saver = []
+                self.agent_scanpath_stack = []
 
 
                 if self.mode is 'off_line': # yuhangsong here
@@ -425,18 +436,34 @@ class env_li():
         if self.if_log_scan_path:
             plt.figure(str(self.env_id)+'_scan_path')
             plt.clf()
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset1")
+        # print(td)
 
         if self.if_log_cc:
 
             if self.mode is 'off_line':
 
                 self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_result_saver): ", np.shape(self.agent_result_saver),self.step_total)
+                self.agent_scanpath_stack += [copy.deepcopy(self.agent_scanpath_saver)]
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_scanpath_saver): ", np.shape(self.agent_scanpath_saver),self.step_total)
+
                 self.agent_result_saver = []
+                self.agent_scanpath_saver = []
+
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset2")
+                # print(td)
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>len(self.agent_result_stack) + self.predicted_fixtions_num:    " + str(len(self.agent_result_stack)) +'  +  '+str(self.predicted_fixtions_num))
+                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>len(agent_scanpath_stack) + self.predicted_fixtions_num:    " + str(len(self.agent_scanpath_stack)) +'  +  '+str(self.predicted_fixtions_num))
 
                 if len(self.agent_result_stack) > self.predicted_fixtions_num:
 
+                    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset3")
+                    # print(td)
+
                     '''if stack full, pop out the oldest data'''
                     self.agent_result_stack.pop(0)
+                    self.agent_scanpath_stack.pop(0)
 
                     if self.episode%self.if_log_cc_interval is 0:
 
@@ -444,6 +471,8 @@ class env_li():
 
                         ccs_on_step_i = []
                         heatmaps_on_step_i = []
+                        all_scanpath_locations = []
+
                         for step_i in range(self.step_total-1):
 
                             '''generate predicted salmap'''
@@ -451,6 +480,14 @@ class env_li():
                             temp = np.sum(temp,axis=0)
                             temp = temp / np.max(temp)
                             heatmaps_on_step_i += [copy.deepcopy(temp)]
+                            print('>>>>>>>>>>>>>>>>>>>>np.shape(heatmaps_on_step_i): ', np.shape(heatmaps_on_step_i))
+
+                            'save the scanpath locations'
+                            sc_locations_one_step = np.asarray(self.agent_scanpath_stack)[:,step_i]
+                            all_scanpath_locations += [sc_locations_one_step]
+                            print("np.shape(sc_locations_one_step): ", np.shape(sc_locations_one_step))
+                            print('>>>>>>>>>>>>>>>>>>>>np.shape(all_scanpath_locations): ', np.shape(all_scanpath_locations))
+
                             from cc import calc_score
                             ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
                             print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
@@ -461,18 +498,56 @@ class env_li():
                             print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
                             self.max_cc = self.cur_cc
                             self.heatmaps_of_max_cc = heatmaps_on_step_i
+                            self.scanpath_of_max_cc = all_scanpath_locations
 
                             '''log'''
                             from config import final_log_dir
                             record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
+                            save_scanpath_dir = final_log_dir+'ff_best_scanpaths/'+self.env_id+'/'
+
                             subprocess.call(["rm", "-r", record_dir])
                             subprocess.call(["mkdir", "-p", record_dir])
+                            subprocess.call(["rm", "-r", save_scanpath_dir])
+                            subprocess.call(["mkdir", "-p", save_scanpath_dir])
+
                             for step_i in range(self.step_total-1):
                                 self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
                                                   path=record_dir,
                                                   name=str(step_i))
 
+                            'save the scanpath locations'
+                            self.save_groundtruth_txt_for_nss( value=self.scanpath_of_max_cc,
+                                                               path=save_scanpath_dir,
+                                                               name= 'Scanpath_all_frames')
+                            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset4")
                             self.write_best_cc()
+
+    def save_groundtruth_txt_for_nss(self,value,path,name):
+        # if os.path.exists(path) is True:
+        #     os.rmdir(path[:-1])
+        # if os.path.exists(path) is False:
+        #     os.mkdir(path)
+
+        f = open(path + name + '_lons' + '.txt','a') # 'w' mode will clear the formore data
+        'save the lons'
+        for x in range(self.step_total - 1):
+            print_string = ''
+            for y in range(self.subjects_total):
+                print_string += '\t' + str(value[x][y][0][0])
+                # print(">>>>>>>>>> str(value[x][y][0]: ", str(value[x][y][0][0]))
+            f.write(print_string + '\n')
+        f.close()
+
+        'save the lats'
+        f1 = open(path + name + '_lats' + '.txt','a')
+        for x in range(self.step_total - 1):
+            print_string1 = ''
+            for y in range(self.subjects_total):
+                print_string1 += '\t' + str(value[x][y][0][1])
+                # print(">>>>>>>>>> str(value[x][y][0]: ", str(value[x][y][0][1]))
+            f1.write(print_string1 + '\n')
+        f1.close
+
 
     def write_best_cc(self):
         from config import final_log_dir
@@ -488,8 +563,10 @@ class env_li():
                 print(str(Exception)+": "+str(e))
                 time.sleep(1)
 
+
+
     def step(self, action, v):
-        self.step_count = self.step_count + 1
+
         '''these will be returned, but not sure to updated'''
         if self.log_thread:
             self.log_thread_step()
@@ -682,58 +759,7 @@ class env_li():
 
                         '''if step is out of training range'''
 
-                        # if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
-                        if (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo):
-                            self.break_flag = 1
-
-                            '''if reward is trained to a acceptable range or trained episode exceed a range'''
-                            '''or is running baseline'''
-
-                            print('>>>>>train to an acceptable state')
-
-                            '''summary'''
-                            summary = tf.Summary()
-                            '''summary reward'''
-                            summary.value.add(tag=self.env_id+'on_cur_train/number_of_episodes',
-                                              simple_value=float(len(self.sum_reward_dic_on_cur_train)))
-                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_reward_per_step@',
-                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
-                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_reward_per_step@',
-                                              simple_value=float(np.mean(self.sum_reward_dic_on_cur_train)))
-                            '''summary mo'''
-                            summary.value.add(tag=self.env_id+'on_cur_train/average_@sum_mo_per_step@',
-                                              simple_value=float(np.mean(self.sum_mo_dic_on_cur_train)))
-                            summary.value.add(tag=self.env_id+'on_cur_train/average_@average_mo_per_step@',
-                                              simple_value=float(np.mean(self.average_mo_dic_on_cur_train)))
-                            self.summary_writer.add_summary(summary, self.cur_training_step)
-                            self.summary_writer.flush()
-
-                            '''reset reward record'''
-                            self.sum_reward_dic_on_cur_train = []
-                            self.average_reward_dic_on_cur_train = []
-
-                            '''reset mo record'''
-                            self.sum_mo_dic_on_cur_train = []
-                            self.average_mo_dic_on_cur_train = []
-
-                            '''tell outside: we are going to predict on the next run'''
-                            self.predicting = True
-
-                            '''update'''
-                            self.cur_training_step += 1
-                            self.cur_predicting_step += 1
-
-                            if self.cur_predicting_step >= (self.step_total-2):
-
-                                '''on line terminating'''
-
-                                '''record the mo_mean for each subject'''
-                                self.save_mo_result()
-
-                                print('on line run meet end, terminate and write done signal')
-                                self.terminate_this_worker()
-                        elif (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
-                            self.break_flag = 2
+                        if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
 
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
                             '''or is running baseline'''
@@ -905,13 +931,21 @@ class env_li():
 
         if self.if_log_cc:
             if self.mode is 'off_line':
-                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lon]],
+                # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here og_thread_step_self.agent_result_saver")
+                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lat]],
                                                                           mapwidth=self.heatmap_width,
                                                                           mapheight=self.heatmap_height))]
+                print(">>>>>>>>>>>np.shape(self.cur_lon),np.shape(self.cur_lat): ", (self.cur_lon),(self.cur_lat))
+                self.agent_scanpath_saver +=[copy.deepcopy(save_scanpath(self.cur_lon,self.cur_lat))]
+                print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_result_saver), np.shape(self.agent_scanpath_saver)', \
+                      np.shape(self.agent_result_saver), np.shape(self.agent_scanpath_saver))
+                # print('here2 debug now')
+                # print(myx)
             elif self.mode is 'on_line':
                 print('not implement')
                 import sys
                 sys.exit(0)
+
     def load_heatmaps(self, name):
 
         heatmaps = []
@@ -933,7 +967,7 @@ class env_li():
 
     def save_heatmap(self,heatmap,path,name):
         heatmap = heatmap * 255.0
-        cv2.imwrite(path+'/'+name+'.jpg',heatmap)
+        imageio.imwrite(path+'/'+name+'.jpg',heatmap)
 
     def save_mo_result(self):
 
@@ -949,4 +983,4 @@ class env_li():
         else :
             self.record_mo_file_name = "on_line_model"
         with open(final_log_dir+self.record_mo_file_name+"_mo_mean.txt","a") as f:
-            f.write("%s\tsubject[%s]:\t%s\t%d\t%d\n"%(self.env_id,self.subject,mo_mean,self.step_count,self.break_flag))
+            f.write("%s\tsubject[%s]:\t%s\n"%(self.env_id,self.subject,mo_mean))

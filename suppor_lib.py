@@ -178,6 +178,7 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 1.0
     return c * r
 
+
 def lonlat2Mercator(lon, lat):
 
     '''
@@ -202,6 +203,7 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+1
     elif heatmap_sigma is 'sigma_half_fov':
         from config import sigma_half_fov
         my_sigma_in_degree = sigma_half_fov
+    my_sigma_in_degree = 7
     fixation_total = np.shape(fixation)[0]
     x_degree_per_pixel = 360.0 / mapwidth
     y_degree_per_pixel = 180.0 / mapheight
@@ -226,6 +228,14 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+1
     salmap = salmap * (1.0 / np.amax(salmap))
     salmap = np.transpose(salmap)
     return salmap
+
+def save_scanpath(cur_lon,cur_lat):
+    pass
+    sal_location = np.zeros((1,2))
+    sal_location[0,0] = cur_lon
+    sal_location[0,1] = cur_lat
+    print(">>>>>>>>>>>>>>>>>>>>cur_lon,cur_lat: ",cur_lon, cur_lat)
+    return sal_location
 
 
 def constrain_degree_to_0_360(direction):

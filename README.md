@@ -39,21 +39,6 @@ tar -xzvf PVS-HM.tar.gz
 ```
 Note that it contains all MP4 files of our database, along with the HM & EM scanpath data ```FULLdata_per_video_frame.mat```.
 
-Use [ffmpeg](https://www.ffmpeg.org/) to convert them to YUV files (store the YUV files in the same folder as the database).
-We should have developed a script to do this, but since we are focusing on the new project, currently you will have to do it manually.
-If you can share your script to do this, a pull request is well appreciated.
-```
-ffmpeg -i in.mp4 out.yuv
-```
-
-Set the ```database_path``` in ```config.py``` to your database folder.
-
-The converted YUV files will take about 600 Gb.
-The reason we have to use YUV files is that, the remap function that get FoV from a 360 image is a binary file that takes YUV and output YUV.
-We have developed a Python version of remap, but it turns out to be even slower than just reading and writing YUV files into the disk (for more then 5 times).
-We are trying to see if remap is important to produce our results.
-If not, we are going to depreciate remap in the Pytorch version of DHP.
-
 ## Setup an environment to run our code
 
 If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
@@ -80,15 +65,62 @@ chmod +x ./remap
 # you may run ./remap here to make sure the remap is excuatble
 ```
 
-
 ## Run our code
 
-#### Run DHP.
+Please make sure you have:
+* More than 32 GB of RAM.
+* More then 600 GB space on the disk you store PVS-HM database.
+
+#### Offline-DHP.
+
+This section clarifies procedures to train and test offline-DHP.
+
+##### Train
+
+Set the ```database_path``` in ```config.py``` to your database folder.
+
+Before trainning offline-DHP, generate YUV files. Set ```mode = 'data_processor'``` and ```data_processor_id = 'mp4_to_yuv'``` in ```config.py``` and run:
 ```bash
 source ~/.bashrc
 source activate dhp_env
 python train.py
 ```
+The converted YUV files will take about 600 Gb.
+The reason we have to use YUV files is that, the remap function that get FoV from a 360 image is a binary file that takes YUV and output YUV.
+We have developed a Python version of remap, but it turns out to be even slower than just reading and writing YUV files into the disk (for more then 5 times).
+We are trying to see if remap is important to produce our results.
+If not, we are going to depreciate remap in the Pytorch version of DHP.
+
+Set ```mode = 'off_line'```, ```procedure = 'train'``` and ```if_log_results = False``` in ```config.py```, run following:
+```bash
+source ~/.bashrc
+source activate dhp_env
+python train.py
+```
+
+##### Test
+
+Before testing offline-DHP, generate groundtruth heatmaps. Set ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_heatmaps'``` in ```config.py``` and run:
+```bash
+source ~/.bashrc
+source activate dhp_env
+python train.py
+```
+
+Now you are ready to test offline-DHP.
+Set ```mode = 'off_line'```, ```procedure = 'test'``` and ```if_log_results = True``` in ```config.py```, then run following:
+```bash
+source ~/.bashrc
+source activate dhp_env
+python train.py
+```
+The code will generate and store predicted_heatmaps, predicted_scanpath and CC value.
+
+For results under more evaluation protocol. You may want to generate and store groundtruth_scanpaths with ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_scanpaths'```.
+
+## Some hints on using the code.
+
+* ```mode = 'data_processor'``` is a efficient way to process data under our TMUX manager, the code is in ```env_li.py```.
 
 ## Meet some issues?
 Please don not hesitate to open an issue.

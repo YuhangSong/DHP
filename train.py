@@ -57,7 +57,7 @@ def create_tmux_commands(session, logdir):
 
         return cmds
 
-    elif config.mode in ['off_line']:
+    elif config.mode in ['off_line','data_processor']:
 
         '''ps'''
         base_cmd = [

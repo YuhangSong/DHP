@@ -64,19 +64,19 @@ train_set=[
 test_set = [
     'WaitingForLove',
     'SpaceWar',
-    'KingKong',
-    'SpaceWar2',
-    'Guitar',
-    'BTSRun',
-    'CMLauncher2',
-    'Symphony',
-    'RioOlympics',
-    'Dancing',
-    'StarryPolar',
-    'InsideCar',
-    'Sunset',
-    'Waterfall',
-    'BlueWorld'
+    # 'KingKong',
+    # 'SpaceWar2',
+    # 'Guitar',
+    # 'BTSRun',
+    # 'CMLauncher2',
+    # 'Symphony',
+    # 'RioOlympics',
+    # 'Dancing',
+    # 'StarryPolar',
+    # 'InsideCar',
+    # 'Sunset',
+    # 'Waterfall',
+    # 'BlueWorld'
 ]
 
 num_subjects = 58

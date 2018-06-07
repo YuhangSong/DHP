@@ -27,7 +27,7 @@ def run(args, server):
     if config.mode in ['on_line']:
         '''f project and on_line mode is special, log_dir is sperate by game (g) and subject (s)'''
         logdir = os.path.join(args.log_dir, 'train_g_'+str(args.env_id)+'_s_'+str(args.subject))
-    elif config.mode in ['off_line']:
+    elif config.mode in ['off_line','data_processor']:
         '''normal log_dir'''
         logdir = os.path.join(args.log_dir, 'train')
     '''any way, log_dir is separate by work (task)'''
@@ -120,7 +120,7 @@ def cluster_spec(num_workers, env_id=None, subject=None):
         cluster['worker'] = ['127.0.0.1:'+str(position+1)]
         return cluster
 
-    elif config.mode in ['off_line']:
+    elif config.mode in ['off_line','data_processor']:
 
         cluster = {}
         port = 12222
@@ -162,7 +162,7 @@ Setting up Tensorflow for data parallel work
 
     if config.mode in ['on_line']:
         spec = cluster_spec(args.num_workers, args.env_id, args.subject)
-    elif config.mode in ['off_line']:
+    elif config.mode in ['off_line','data_processor']:
         spec = cluster_spec(args.num_workers)
 
     cluster = tf.train.ClusterSpec(spec).as_cluster_def()

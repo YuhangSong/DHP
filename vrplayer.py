@@ -11,7 +11,7 @@ from numpy import *
 import os
 
 def get_view(input_width,input_height,view_fov_x,view_fov_y,view_center_lat,view_center_lon,output_width,output_height,cur_frame,file_,is_render=False,temp_dir=""):
-    temp_1=temp_dir+"1.yuv"
+    temp_1=temp_dir+"/1.yuv"
     import config
     devnull = open(os.devnull, 'w')
     subprocess.call(["./remap", "-i", "rect", "-o", "view", "-m", str(input_height), "-b", str(input_width), "-w", str(output_width), "-h", str(output_height), "-x", str(view_fov_x), "-y", str(view_fov_y), "-p", str(view_center_lat), "-l", str(view_center_lon), "-z", "1", "-s", str(cur_frame), file_, temp_1],  stdout=devnull, stderr=devnull)

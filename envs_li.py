@@ -30,6 +30,7 @@ import tensorflow as tf
 import imageio
 import config
 import cc
+import MeanOverlap
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -96,9 +97,9 @@ class env_li():
 
         '''set all temp dir for this worker'''
         if (config.mode is 'off_line') or (config.mode is 'data_processor'):
-            self.temp_dir = config.log_dir+"/temp/get_view/w_" + str(self.task) + '/' + str(self.env_id) +'/'
+            self.temp_dir = config.log_dir+"/temp/get_view/w_" + str(self.task) + '/' + str(self.env_id)
         elif config.mode is 'on_line':
-            self.temp_dir = config.log_dir+"/temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
+            self.temp_dir = config.log_dir+"/temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject)
         '''clear temp dir for this worker'''
         subprocess.call(["rm", "-r", self.temp_dir])
         subprocess.call(["mkdir", "-p", self.temp_dir])
@@ -178,127 +179,190 @@ class env_li():
             self.data_processor()
 
         '''load ground-truth heat map'''
-        from config import heatmap_sigma
-        gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
         self.log_thread_config()
 
     def data_processor(self):
-        from config import data_processor_id
-        print('==========================data process start: '+data_processor_id+'================================')
-        if data_processor_id is 'minglang_mp4_to_yuv':
-            print('sssss')
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
-                if i >= 0 and i <= 0: #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    self.video = cv2.VideoCapture(file_in_1)
-                    input_width_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-                    input_height_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-                    self.mp4_to_yuv(input_width_1,input_height_1,file_in_1,file_out_1)
-                    print('end processing: ',file_out_1)
+        print('data process start: '+config.data_processor_id)
 
-            # print('len_game_dic_new_all: ',len(game_dic_new_all))
-            # print('get_view')
+        if config.data_processor_id in ['mp4_to_yuv']:
+            mp4_filename = config.database_path+'/' + self.env_id + '.mp4'
+            yuv_filename = config.database_path+'/' + self.env_id + '.yuv'
+            subprocess.call(['ffmpeg', '-i', mp4_filename, yuv_filename])
 
-            # print(game_dic_new_all)
+        if config.data_processor_id in ['generate_groundtruth_heatmaps']:
+            save_dir  = '{}/groundtruth_heatmaps/{}'.format(
+                config.log_dir,
+                self.env_id,
+            )
+            subprocess.call(["mkdir", "-p", save_dir])
 
-        if data_processor_id is 'minglang_mp4_to_jpg':
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
-                if i >= 1 and i <= len(game_dic_new_all): #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'.yuv'
+            heatmaps_cur_video = []
 
-                    video = cv2.VideoCapture(file_in_1)
-                    self.video = video
-                    self.frame_per_second = round(video.get(cv2.cv.CV_CAP_PROP_FPS))
-                    self.frame_total = round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+            for step_i in range(self.step_total):
+                data_i = int(round((step_i)*self.data_per_step))
 
-                    for frame_i in range(int(self.frame_total)):
+                '''generate groundtruth heatmaps'''
+                HM_positions_for_all_subjects_at_cur_step = []
+                for subject_i in range(self.subjects_total):
+                    HM_positions_for_all_subjects_at_cur_step += [self.subjects[subject_i].data_frame[data_i].p]
+                HM_positions_for_all_subjects_at_cur_step = np.stack(HM_positions_for_all_subjects_at_cur_step)
+                temp = suppor_lib.fixation2salmap(
+                    fixation=HM_positions_for_all_subjects_at_cur_step,
+                    mapwidth=self.heatmap_width,
+                    mapheight=self.heatmap_height,
+                )
+                heatmaps_cur_video += [temp]
+                print('heatmaps_cur_video: {}'.format(np.shape(heatmaps_cur_video)))
+            heatmaps_cur_video = np.stack(heatmaps_cur_video)
 
-                        try:
-                            rval, frame = self.video.read()
-                            # here minglang 1
-                            cv2.imwrite('/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'_'+str(frame_i)+'.jpg',frame)
-                            print(frame_i)
-                        except Exception, e:
-                            print('failed on this frame, continue')
-                            print Exception,":",e
-                            continue
+            '''save predicted heatmaps as image'''
+            self.save_heatmaps(
+                dir = save_dir,
+                heatmaps = heatmaps_cur_video,
+            )
 
-                    print('end processing: ',file_in_1,self.frame_per_second,self.frame_total)
+        if config.data_processor_id in ['generate_groundtruth_scanpaths']:
+            save_dir  = '{}/groundtruth_scanpaths/{}'.format(
+                config.log_dir,
+                self.env_id,
+            )
+            subprocess.call(["mkdir", "-p", save_dir])
 
-        if data_processor_id is 'minglang_obdl_cfg':
-            from config import game_dic_new_all
-            for i in range(len(game_dic_new_all)):
-                # print(game_dic_new_all[i])
+            scanpaths_cur_video = []
 
-                if i >= 100 and i <=  len(game_dic_new_all): #len(game_dic_new_all)
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
-                    # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
+            for step_i in range(self.step_total):
+                data_i = int(round((step_i)*self.data_per_step))
 
-                    # # get the paramters
-                    video = cv2.VideoCapture(file_in_1)
-                    self.video = video
-                    self.frame_per_second = int(round(video.get(cv2.cv.CV_CAP_PROP_FPS)))
-                    self.frame_total = int(round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)))
-                    NAME = game_dic_new_all[i]
-                    FRAMESCOUNT = self.frame_total
-                    FRAMERATE = self.frame_per_second
-                    IMAGEWIDTH = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-                    IMAGEHEIGHT = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+                '''generate groundtruth scanpaths'''
+                HM_positions_for_all_subjects_at_cur_step = []
+                for subject_i in range(self.subjects_total):
+                    HM_positions_for_all_subjects_at_cur_step += [self.subjects[subject_i].data_frame[data_i].p]
+                HM_positions_for_all_subjects_at_cur_step = np.stack(HM_positions_for_all_subjects_at_cur_step)
+                scanpaths_cur_video += [HM_positions_for_all_subjects_at_cur_step]
+                print('scanpaths_cur_video: {}'.format(np.stack(scanpaths_cur_video).shape))
+            scanpaths_cur_video = np.stack(scanpaths_cur_video)
 
-                    # write the paramters throuh cfg
-                    # conf = ConfigParser.ConfigParser()
-                    # cfgfile = open(CONFIG_FILE,'w')
-                    # # conf.add_section("")
+            '''save groundtruth scanpaths as npy, [subjects, steo, 2]'''
+            np.save(
+                '{}/all.npy'.format(
+                    save_dir
+                ),
+                scanpaths_cur_video,
+            )
 
-                    # write through txt
-                    f_config = open(CONFIG_FILE,"w")
-                    f_config.write("NAME\n")
-                    f_config.write(str(game_dic_new_all[i])+'\n')
-                    f_config.write("FRAMESCOUNT\n")
-                    f_config.write(str(FRAMESCOUNT)+'\n')
-                    f_config.write("FRAMERATE\n")
-                    f_config.write(str(FRAMERATE)+'\n')
-                    f_config.write("IMAGEWIDTH\n")
-                    f_config.write(str(IMAGEWIDTH)+'\n')
-                    f_config.write("IMAGEHEIGHT\n")
-                    f_config.write(str(IMAGEHEIGHT)+'\n')
-                    f_config.close()
+        # if data_processor_id is 'minglang_mp4_to_yuv':
+        #     print('sssss')
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #         if i >= 0 and i <= 0: #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             self.video = cv2.VideoCapture(file_in_1)
+        #             input_width_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        #             input_height_1 = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        #             self.mp4_to_yuv(input_width_1,input_height_1,file_in_1,file_out_1)
+        #             print('end processing: ',file_out_1)
+        #
+        #     # print('len_game_dic_new_all: ',len(game_dic_new_all))
+        #     # print('get_view')
+        #
+        #     # print(game_dic_new_all)
+        #
+        # if data_processor_id is 'minglang_mp4_to_jpg':
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #         if i >= 1 and i <= len(game_dic_new_all): #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'.yuv'
+        #
+        #             video = cv2.VideoCapture(file_in_1)
+        #             self.video = video
+        #             self.frame_per_second = round(video.get(cv2.cv.CV_CAP_PROP_FPS))
+        #             self.frame_total = round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+        #
+        #             for frame_i in range(int(self.frame_total)):
+        #
+        #                 try:
+        #                     rval, frame = self.video.read()
+        #                     # here minglang 1
+        #                     cv2.imwrite('/media/minglang/YuhangSong_1/ff/vr_bms_jpg/'+str(game_dic_new_all[i])+'_'+str(frame_i)+'.jpg',frame)
+        #                     print(frame_i)
+        #                 except Exception, e:
+        #                     print('failed on this frame, continue')
+        #                     print Exception,":",e
+        #                     continue
+        #
+        #             print('end processing: ',file_in_1,self.frame_per_second,self.frame_total)
+        #
+        # if data_processor_id is 'minglang_obdl_cfg':
+        #     from config import game_dic_new_all
+        #     for i in range(len(game_dic_new_all)):
+        #         # print(game_dic_new_all[i])
+        #
+        #         if i >= 100 and i <=  len(game_dic_new_all): #len(game_dic_new_all)
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             # file_out_1 = '/media/minglang/YuhangSong_1/ff/vr_yuv/'+"Let'sNotBeAloneTonight"+'.yuv'
+        #             # file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+"Let'sNotBeAloneTonight"+'.mp4'
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
+        #
+        #             # # get the paramters
+        #             video = cv2.VideoCapture(file_in_1)
+        #             self.video = video
+        #             self.frame_per_second = int(round(video.get(cv2.cv.CV_CAP_PROP_FPS)))
+        #             self.frame_total = int(round(video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)))
+        #             NAME = game_dic_new_all[i]
+        #             FRAMESCOUNT = self.frame_total
+        #             FRAMERATE = self.frame_per_second
+        #             IMAGEWIDTH = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
+        #             IMAGEHEIGHT = int(self.video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
+        #
+        #             # write the paramters throuh cfg
+        #             # conf = ConfigParser.ConfigParser()
+        #             # cfgfile = open(CONFIG_FILE,'w')
+        #             # # conf.add_section("")
+        #
+        #             # write through txt
+        #             f_config = open(CONFIG_FILE,"w")
+        #             f_config.write("NAME\n")
+        #             f_config.write(str(game_dic_new_all[i])+'\n')
+        #             f_config.write("FRAMESCOUNT\n")
+        #             f_config.write(str(FRAMESCOUNT)+'\n')
+        #             f_config.write("FRAMERATE\n")
+        #             f_config.write(str(FRAMERATE)+'\n')
+        #             f_config.write("IMAGEWIDTH\n")
+        #             f_config.write(str(IMAGEWIDTH)+'\n')
+        #             f_config.write("IMAGEHEIGHT\n")
+        #             f_config.write(str(IMAGEHEIGHT)+'\n')
+        #             f_config.close()
+        #
+        #         #one video and one cfg in one file
+        #         if i >= 0 and i <= len(game_dic_new_all): #len(game_dic_new_all)
+        #             cfg_file = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/obdl_vr_new/'+str(game_dic_new_all[i])
+        #             os.makedirs(cfg_file)
+        #             file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
+        #             shutil.copy(file_in_1,cfg_file)
+        #             CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
+        #             shutil.copy(CONFIG_FILE,cfg_file)
+        #             print("os.makedirs(cfg_file)")
 
-                #one video and one cfg in one file
-                if i >= 0 and i <= len(game_dic_new_all): #len(game_dic_new_all)
-                    cfg_file = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/obdl_vr_new/'+str(game_dic_new_all[i])
-                    os.makedirs(cfg_file)
-                    file_in_1 = '/media/minglang/YuhangSong_1/ff/vr_new/'+str(game_dic_new_all[i])+'.mp4'
-                    shutil.copy(file_in_1,cfg_file)
-                    CONFIG_FILE = '/media/minglang/YuhangSong_1/ff/obdl_vr_new/'+str(game_dic_new_all[i])+'.cfg'
-                    shutil.copy(CONFIG_FILE,cfg_file)
-                    print("os.makedirs(cfg_file)")
 
-
-        print('=============================data process end, programe terminate=============================')
-        print(t)
+        raise Exception('data process end, programe terminate.')
 
     def log_thread_config(self):
 
-        self.if_log_scan_path = config.if_log_scan_path
-        self.if_log_cc = config.if_log_cc
+        self.if_log_scan_path_real_time = config.if_log_scan_path_real_time
+        self.if_log_results = config.if_log_results
 
-        if self.if_log_cc:
+        if self.if_log_results:
 
             if config.mode is 'off_line':
                 '''cc record'''
@@ -310,7 +374,7 @@ class env_li():
 
                 if config.mode is 'off_line':
                     self.predicted_fixtions_num = config.predicted_fixation_num
-                    self.if_log_cc_interval = config.log_cc_interval
+                    self.if_log_results_interval = config.log_results_interval
 
     def reset(self):
 
@@ -354,11 +418,11 @@ class env_li():
 
     def log_thread_reset(self):
 
-        if self.if_log_scan_path:
+        if self.if_log_scan_path_real_time:
             plt.figure(str(self.env_id)+'_scan_path')
             plt.clf()
 
-        if self.if_log_cc:
+        if self.if_log_results:
 
             if np.array(self.agent_heatmap_saver_cur_episode).shape[0] == 0:
                 return
@@ -377,7 +441,7 @@ class env_li():
                     self.agent_heatmap_saver_multiple_episodes.pop(0)
                     self.agent_scanpath_saver_multiple_episodes.pop(0)
 
-                    if self.episode%self.if_log_cc_interval is 0:
+                    if self.episode%self.if_log_results_interval is 0:
 
                         print('computing CC')
 
@@ -385,7 +449,7 @@ class env_li():
                         heatmaps_cur_video = []
                         all_scanpath_locations = []
 
-                        for step_i in range(np.stack(self.agent_heatmap_saver_multiple_episodes).shape[1]):
+                        for step_i in range(self.step_total):
 
                             '''generate predicted salmap'''
                             temp = np.stack(self.agent_heatmap_saver_multiple_episodes)[:,step_i]
@@ -414,52 +478,31 @@ class env_li():
                             self.heatmaps_of_max_cc_cur_video = np.stack(heatmaps_cur_video)
                             self.scanpath_of_max_cc_cur_video = np.stack(all_scanpath_locations)
 
-                            '''log'''
-                            save_heatmap_dir  = config.log_dir+'ff_best_heatmaps/'+self.env_id+'/'
-                            save_scanpath_dir = config.log_dir+'ff_best_scanpaths/'+self.env_id+'/'
+                            save_heatmap_dir  = '{}/predicted_heatmaps/{}'.format(
+                                config.log_dir,
+                                self.env_id,
+                            )
+                            save_scanpath_dir = '{}/predicted_scanpath/{}'.format(
+                                config.log_dir,
+                                self.env_id,
+                            )
                             subprocess.call(["mkdir", "-p", save_heatmap_dir])
                             subprocess.call(["mkdir", "-p", save_scanpath_dir])
 
-                            for step_i in range(self.heatmaps_of_max_cc_cur_video.shape[0]):
-                                self.save_heatmap(
-                                    heatmap = self.heatmaps_of_max_cc_cur_video[step_i],
-                                    path    = save_heatmap_dir,
-                                    name    = str(step_i),
-                                )
+                            '''save predicted heatmaps as image'''
+                            self.save_heatmaps(
+                                dir = save_heatmap_dir,
+                                heatmaps = self.heatmaps_of_max_cc_cur_video,
+                            )
 
-                            print('minglang check it your self: {}'.format(self.scanpath_of_max_cc_cur_video.shape))
-                            # 'save the scanpath locations'
-                            # self.save_groundtruth_txt_for_nss(
-                            #     value = self.scanpath_of_max_cc_cur_video,
-                            #     path  = save_scanpath_dir,
-                            #     name  = 'Scanpath_all_frames',
-                            # )
-
-    def save_groundtruth_txt_for_nss(self,value,path,name):
-        # if os.path.exists(path) is True:
-        #     os.rmdir(path[:-1])
-        # if os.path.exists(path) is False:
-        #     os.mkdir(path)
-
-        f = open(path + name + '_lons' + '.txt','a') # 'w' mode will clear the formore data
-        'save the lons'
-        for x in range(self.step_total - 1):
-            print_string = ''
-            for y in range(self.subjects_total):
-                print_string += '\t' + str(value[x][y][0][0])
-                # print(">>>>>>>>>> str(value[x][y][0]: ", str(value[x][y][0][0]))
-            f.write(print_string + '\n')
-        f.close()
-
-        'save the lats'
-        f1 = open(path + name + '_lats' + '.txt','a')
-        for x in range(self.step_total - 1):
-            print_string1 = ''
-            for y in range(self.subjects_total):
-                print_string1 += '\t' + str(value[x][y][0][1])
-                # print(">>>>>>>>>> str(value[x][y][0]: ", str(value[x][y][0][1]))
-            f1.write(print_string1 + '\n')
-        f1.close
+                            '''save predicted scanpath
+                            shape: [agent, step, 2]'''
+                            np.save(
+                                '{}/all.npy'.format(
+                                    save_scanpath_dir
+                                ),
+                                self.scanpath_of_max_cc_cur_video.shape,
+                            )
 
     def step(self, action, v):
 
@@ -493,7 +536,7 @@ class env_li():
         v_lable = 0.0
 
         '''if any of update frame or update data is failed'''
-        if(update_frame_success==False)or(update_data_success==False):
+        if (update_frame_success==False) or (update_data_success==False):
 
             '''terminating'''
             self.reset()
@@ -563,24 +606,20 @@ class env_li():
                     mapwidth=self.heatmap_width,
                     mapheight=self.heatmap_height,
                 )
-                from cc import calc_score
-                reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
+                reward = cc.calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
 
             if config.mode is 'on_line':
 
                 '''compute MO'''
-                from MeanOverlap import *
-                mo_calculator = MeanOverlap(self.video_size_width,
+                mo_calculator = MeanOverlap.MeanOverlap(self.video_size_width,
                                             self.video_size_heigth,
                                             65.5/2,
                                             3.0/4.0)
                 mo = mo_calculator.calc_mo_deg((self.cur_lon,self.cur_lat),(self.subjects[0].data_frame[self.cur_data].p[0],self.subjects[0].data_frame[self.cur_data].p[1]),is_centered = True)
                 self.mo_dic_on_cur_episode += [mo]
 
-            '''smooth reward'''
+            '''smooth reward, if we have last_action'''
             if self.last_action is not None:
-
-                '''if we have last_action'''
 
                 '''compute smooth reward'''
                 action_difference = abs(action-self.last_action)
@@ -593,69 +632,33 @@ class env_li():
             '''record'''
             self.reward_dic_on_cur_episode += [reward]
 
+            '''All reward and scores has been computed, we now consider if we want to drawback the position'''
+            if config.mode in ['on_line']:
 
-            '''
-                All reward and scores has been computed, we now consider if we want to drawback the position
-            '''
-            if (config.mode is 'on_line'):
+                if self.predicting:
 
-                if self.if_run_baseline is True:
-
-                    '''
-                        if run baseline, should draw back
-                    '''
-                    print('>>>>>>Draw position back>>>>>>>')
+                    '''if we are predicting we are actually feeding the model so that we can produce
+                    a prediction with the experiences already experienced by the human.'''
                     self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
                     self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
 
-                if (self.predicting is True) or (self.if_run_baseline is True):
-
-                    '''
-                        if we are predicting we are actually feeding the model so that we can produce
-                        a prediction with the experiences already experienced by the human.
-                    '''
-                    print('>>>>>>Draw position back>>>>>>>')
-                    self.cur_lon = self.subjects[0].data_frame[self.cur_data].p[0]
-                    self.cur_lat = self.subjects[0].data_frame[self.cur_data].p[1]
-
-            '''
-                after pull the position, get observation
-                update observation_now
-            '''
+            '''after pull the position, get observation
+            update observation_now'''
             self.get_observation()
 
-            '''
-                normally, we donot judge done when we in this
-            '''
+            '''normally, we donot judge done when we in this'''
             done = False
 
-            '''
-                core part for online
-            '''
-            if config.mode is 'on_line':
+            '''core part for online'''
+            if config.mode in ['on_line']:
 
-                if (self.if_run_baseline is True):
+                if not self.predicting:
 
-                    '''if running baseline, we are always predicting'''
-                    self.predicting = True
-
-                    '''we predict until the last step'''
-                    self.cur_predicting_step = self.step_total - 4
-
-
-                if self.predicting is False:
-
-                    '''if is training'''
                     if self.cur_step > self.cur_training_step:
 
                         '''if step is out of training range'''
-
                         if (np.mean(self.reward_dic_on_cur_episode) > self.train_to_reward) or (np.mean(self.mo_dic_on_cur_episode) > self.train_to_mo) or (len(self.sum_reward_dic_on_cur_train)>self.train_to_episode):
-
                             '''if reward is trained to a acceptable range or trained episode exceed a range'''
-                            '''or is running baseline'''
-
-                            print('>>>>>train to an acceptable state')
 
                             '''summary'''
                             summary = tf.Summary()
@@ -689,10 +692,8 @@ class env_li():
                             self.cur_training_step += 1
                             self.cur_predicting_step += 1
 
-                            if self.cur_predicting_step >= (self.step_total-2):
-
+                            if self.cur_predicting_step >= (self.step_total-1):
                                 '''on line terminating'''
-
                                 '''record the mo_mean for each subject'''
                                 self.save_mo_result()
 
@@ -700,8 +701,7 @@ class env_li():
                                 self.terminate_this_worker()
 
                         else:
-
-                            '''is reward has not been trained to a acceptable range'''
+                            '''if has not been trained to a acceptable range'''
 
                             '''record reward in this episode run before reset to start point'''
                             self.average_reward_dic_on_cur_train += [np.mean(self.reward_dic_on_cur_episode)]
@@ -810,7 +810,7 @@ class env_li():
 
     def log_thread_step(self):
 
-        if self.if_log_scan_path:
+        if self.if_log_scan_path_real_time:
             plt.figure(str(self.env_id)+'_scan_path')
             plt.scatter(self.cur_lon, self.cur_lat, c='r')
             plt.scatter(-180, -90)
@@ -819,7 +819,7 @@ class env_li():
             plt.scatter(180, 90)
             plt.pause(0.00001)
 
-        if self.if_log_cc:
+        if self.if_log_results:
             if config.mode in ['off_line']:
                 self.agent_heatmap_saver_cur_episode += [suppor_lib.fixation2salmap(
                     fixation  = np.array([[self.cur_lon,self.cur_lat]]),
@@ -830,33 +830,46 @@ class env_li():
                     [self.cur_lon,self.cur_lat]
                 )]
             elif config.mode is 'on_line':
-                raise Exception('Do not set if_log_cc=True when using online mode')
+                raise Exception('Do not set if_log_results=True when using online mode')
 
-    def load_heatmaps(self, name):
+    def save_heatmaps(self, dir, heatmaps):
+        heatmaps = (heatmaps * 255.0).astype(int)
+        for step_i in range(self.step_total):
+            imageio.imwrite(
+                '{}/{}.jpg'.format(
+                    dir,
+                    step_i,
+                ),
+                heatmaps[step_i]
+            )
+
+    def load_heatmaps(self, dir):
 
         heatmaps = []
-        for step in range(self.step_total):
-
+        for step_i in range(self.step_total):
             try:
-                file_name =  config.database_path+'/'+name+'/'+self.env_id+'_'+str(step)+'.jpg'
-                temp = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+                temp = cv2.imread(
+                    '{}/{}.jpg'.format(
+                        config.log_dir,
+                        self.env_id,
+                        step_i,
+                    ),
+                    cv2.CV_LOAD_IMAGE_GRAYSCALE,
+                )
                 temp = cv2.resize(temp,(self.heatmap_width, self.heatmap_height))
                 temp = temp / 255.0
                 heatmaps += [temp]
             except Exception,e:
-                print Exception,":",e
-                continue
+                raise Exception(Exception,":",e)
 
-        print('load heatmaps: '+name+' done, size: '+str(np.shape(heatmaps)))
+        heatmaps = np.stack(heatmaps)
+        print('load heatmaps from '+dir+' done, size: '+str(np.shape(heatmaps)))
 
         return heatmaps
 
-    def save_heatmap(self,heatmap,path,name):
-        heatmap = (heatmap * 255.0).astype(int)
-        imageio.imwrite(path+'/'+name+'.jpg',heatmap)
-
     def save_mo_result(self):
 
+        raise Exception('Dirty code....')
         '''
             Description: save mo result to result dir
         '''

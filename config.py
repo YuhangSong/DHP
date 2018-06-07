@@ -5,7 +5,7 @@ if_restore_model = True
 if if_restore_model is True:
     model_to_restore = "model_to_restore/model.ckpt-8496809"
 
-log_dir = "../results/reproduce_2/"
+log_dir = "../results/reproduce_4"
 '''if clear the logdir before running'''
 clear_run = False
 import subprocess
@@ -36,7 +36,7 @@ update_step = 40
 Description: select mode
 Availible: off_line, on_line, data_processor
 '''
-mode = 'off_line'
+mode = 'data_processor'
 
 if mode in ['off_line']:
     procedure = 'train'
@@ -50,6 +50,8 @@ if mode in ['off_line']:
         game_dic = dataset_config.test_set
 elif mode in ['on_line']:
     game_dic = dataset_config.test_set
+elif mode in ['data_processor']:
+    game_dic = dataset_config.train_set + dataset_config.test_set
 
 num_games = len(game_dic)
 
@@ -59,17 +61,16 @@ this is because we use discrete control
 '''
 direction_num = 8
 
-if_log_scan_path = False
-if_log_cc = True
+if_log_scan_path_real_time = False
+if_log_results = False
 
-if if_log_cc is True:
+if if_log_results is True:
 
     '''number of workflow to produce salmap,
     you set it to any value, but we set it to num_subjects,
     refer to Section xx in https://arxiv.org/abs/1710.10755'''
     predicted_fixation_num = dataset_config.num_subjects
-    # predicted_fixation_num = 2
-    log_cc_interval = 5
+    log_results_interval = 5
 
 '''
     Description: config env
@@ -99,12 +100,16 @@ elif mode is 'data_processor':
 
     '''
         Description: what data_processor you are doing
-        Availible: minglang_mp4_to_yuv
-                   compute_consi
-                   minglang_mp4_to_jpg
-                   minglang_obdl_cfg
+        Availible:
+                    mp4_to_yuv (yuhang)
+                    generate_groundtruth_heatmaps (yuhang)
+                    generate_groundtruth_scanpaths (yuhang)
+                    minglang_mp4_to_yuv (minglang)
+                    compute_consi (haochen)
+                    minglang_mp4_to_jpg (minglang)
+                    minglang_obdl_cfg (minglang)
     '''
-    data_processor_id = 'minglang_obdl_cfg'
+    data_processor_id = 'generate_groundtruth_heatmaps'
 
     if data_processor_id is 'compute_consi':
 

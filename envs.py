@@ -16,14 +16,12 @@ import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt, log
 import math
 import copy
-from mpl_toolkits.mplot3d import Axes3D
 import scipy
 import scipy.cluster.hierarchy as sch
 from scipy.cluster.vq import vq,kmeans,whiten
 
 import subprocess
 import urllib
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
@@ -112,21 +110,10 @@ class env_f():
 
 def create_env(env_id, client_id, remotes, task=0, subject=None, summary_writer=None, **kwargs):
     import config
-    if config.project is 'g':
-        spec = gym.spec(env_id)
-        if spec.tags.get('flashgames', False):
-            return create_flash_env(env_id, client_id, remotes, **kwargs)
-        elif spec.tags.get('atari', False) and spec.tags.get('vnc', False):
-            return create_vncatari_env(env_id, client_id, remotes, **kwargs)
-        else:
-            # Assume atari.
-            assert "." not in env_id  # universe environments have dots in names.
-            return create_atari_env(env_id)
-    elif config.project is 'f':
-        return env_f(env_id = env_id,
-                     task = task,
-                     subject = subject,
-                     summary_writer=summary_writer)
+    return env_f(env_id = env_id,
+                 task = task,
+                 subject = subject,
+                 summary_writer=summary_writer)
 
 def create_flash_env(env_id, client_id, remotes, **_):
     env = gym.make(env_id)

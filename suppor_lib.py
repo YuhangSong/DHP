@@ -64,7 +64,7 @@ def get_num_subjects(data):
     num_subject = np.shape(data)[1] / 2
     return num_subject
 
-def get_subjects(data, subject_id):
+def get_subjects(data, subject_id=0):
 
     '''get essiancial config'''
     num_subject = np.shape(data)[1] / 2
@@ -228,15 +228,6 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+1
     salmap = salmap * (1.0 / np.amax(salmap))
     salmap = np.transpose(salmap)
     return salmap
-
-def save_scanpath(cur_lon,cur_lat):
-    pass
-    sal_location = np.zeros((1,2))
-    sal_location[0,0] = cur_lon
-    sal_location[0,1] = cur_lat
-    print(">>>>>>>>>>>>>>>>>>>>cur_lon,cur_lat: ",cur_lon, cur_lat)
-    return sal_location
-
 
 def constrain_degree_to_0_360(direction):
     return (direction+360.0) if (direction<0) else (direction+0.0)

@@ -16,20 +16,20 @@ import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt, log
 import math
 import copy
-from mpl_toolkits.mplot3d import Axes3D
 import scipy
 import scipy.cluster.hierarchy as sch
 from scipy.cluster.vq import vq,kmeans,whiten
 import subprocess
 import urllib
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from vrplayer import get_view
-from move_view_lib import move_view
-from suppor_lib import *
+import move_view_lib
+import suppor_lib
 import tensorflow as tf
 import imageio
+import config
+import cc
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -50,13 +50,8 @@ class env_li():
 
     def __init__(self, env_id, task, subject=None, summary_writer=None):
 
-        '''only log if the task is on zero and cluster is the main cluster'''
-        self.task = 0
-
-        ''''''
+        self.task = task
         self.summary_writer = summary_writer
-
-        '''get id contains only name of the video'''
         self.env_id = env_id
         from config import game_dic
         self.env_id_num = game_dic.index(self.env_id)
@@ -65,102 +60,64 @@ class env_li():
         self.reward_estimator = reward_estimator
 
         from config import mode
-        self.mode = mode
+        config.mode = mode
 
         self.subject = subject
 
         '''load config'''
         self.config()
 
-        '''create view_mover'''
-        from config import use_move_view_lib
-        self.use_move_view_lib = use_move_view_lib
-        if self.use_move_view_lib is 'new':
-            from move_view_lib_new import view_mover
-            self.view_mover = view_mover()
-
         '''reset'''
         self.observation = self.reset()
-
-        # self.terminate_this_worker()
-
-        # self.max_cc = self.env_id_num
-        # self.write_best_cc()
-        # print(s)
 
     def get_observation(self):
 
         '''interface to get view'''
-        self.cur_observation = get_view(input_width=self.video_size_width,
-                                        input_height=self.video_size_heigth,
-                                        view_fov_x=self.view_range_lon,
-                                        view_fov_y=self.view_range_lat,
-                                        cur_frame=self.cur_frame,
-                                        is_render=False,
-                                        output_width=np.shape(self.observation_space)[0],
-                                        output_height=np.shape(self.observation_space)[1],
-                                        view_center_lon=self.cur_lon,
-                                        view_center_lat=self.cur_lat,
-                                        temp_dir=self.temp_dir,
-                                        file_='../../'+self.data_base+'/' + self.env_id + '.yuv')
+        self.cur_observation = get_view(
+            input_width=self.video_size_width,
+            input_height=self.video_size_heigth,
+            view_fov_x=self.view_range_lon,
+            view_fov_y=self.view_range_lat,
+            cur_frame=self.cur_frame,
+            is_render=False,
+            output_width=np.shape(self.observation_space)[0],
+            output_height=np.shape(self.observation_space)[1],
+            view_center_lon=self.cur_lon,
+            view_center_lat=self.cur_lat,
+            temp_dir=self.temp_dir,
+            file_=config.database_path+'/' + self.env_id + '.yuv'
+        )
 
     def config(self):
-
-        '''function to load config'''
-        print("=================config=================")
-
-        from config import data_base
-        self.data_base = data_base
-
-        if self.mode is 'on_line':
-            from config import if_run_baseline
-            self.if_run_baseline = if_run_baseline
-            if self.if_run_baseline is True:
-                from config import baseline_type, v_used_in_baseline
-                self.baseline_type = baseline_type
-                self.v_used_in_baseline = v_used_in_baseline
-
-        from config import if_learning_v
-        self.if_learning_v = if_learning_v
 
         '''observation_space'''
         from config import observation_space
         self.observation_space = observation_space
 
         '''set all temp dir for this worker'''
-        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            self.temp_dir = "temp/get_view/w_" + str(self.task) + '/' + str(self.env_id) +'/'
-        elif self.mode is 'on_line':
-            self.temp_dir = "temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
-        print(self.task)
-        print(self.temp_dir)
+        if (config.mode is 'off_line') or (config.mode is 'data_processor'):
+            self.temp_dir = config.log_dir+"/temp/get_view/w_" + str(self.task) + '/' + str(self.env_id) +'/'
+        elif config.mode is 'on_line':
+            self.temp_dir = config.log_dir+"/temp/get_view/g_" + str(self.env_id) + '_s_' + str(self.subject) + '/'
         '''clear temp dir for this worker'''
         subprocess.call(["rm", "-r", self.temp_dir])
         subprocess.call(["mkdir", "-p", self.temp_dir])
 
-        print("env set to: "+str(self.env_id))
-
-        '''frame bug'''
-        '''some bug in the frame read for some video,='''
+        '''some bug in the frame read for some videos'''
         if(self.env_id=='Dubai'):
             self.frame_bug_offset = 540
-        elif(self.env_id=='MercedesBenz'):
-            self.frame_bug_offset = 10
-        elif(self.env_id=='Cryogenian'):
-            self.frame_bug_offset = 10
         else:
-            self.frame_bug_offset = 0
+            self.frame_bug_offset = 10
 
-        '''get subjects'''
-        '''load in mat data of head movement'''
-        matfn = '../../'+self.data_base+'/FULLdata_per_video_frame.mat'
-        data_all = sio.loadmat(matfn)
-        data = data_all[self.env_id]
-        self.subjects_total, self.data_total, self.subjects, _ = get_subjects(data,0)
+        self.subjects_total, self.data_total, self.subjects, _ = suppor_lib.get_subjects(
+            data = sio.loadmat(
+                config.database_path+'/FULLdata_per_video_frame.mat'
+            )[self.env_id],
+        )
 
         self.reward_dic_on_cur_episode = []
 
-        if self.mode is 'on_line':
+        if config.mode is 'on_line':
             self.subjects_total = 1
             self.subjects = self.subjects[self.subject:self.subject+1]
             self.cur_training_step = 0.0
@@ -181,28 +138,18 @@ class env_li():
             self.mo_on_prediction_dic = []
 
         '''init video and get paramters'''
-        # video = cv2.VideoCapture('../../'+self.data_base+'/' + self.env_id + '.mp4')
-        # self.frame_per_second = video.get(cv2.cv.CV_CAP_PROP_FPS)
-        # self.frame_total = video.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT)
-        # self.video_size_width = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH))
-        # self.video_size_heigth = int(video.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))
-        filename = '../../'+self.data_base+'/' + self.env_id + '.mp4'
+        filename = config.database_path+'/' + self.env_id + '.mp4'
         video = imageio.get_reader(filename,  'ffmpeg')
 
-        self.frame_per_second = video._meta['fps']
-        self.frame_total = video._meta['nframes']
+        self.frame_per_second = float(video._meta['fps'])
+        self.frame_total = float(video._meta['nframes'])
         self.frame_size = (video._meta['source_size'])
         self.video_size_width = int(self.frame_size[0])
         self.video_size_heigth = int(self.frame_size[1])
 
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.frame_per_second: ', self.frame_per_second)
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.frame_total: ', self.frame_total)
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.video_size_width : ', self.video_size_width)
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>: self.video_size_heigth : ', self.video_size_heigth)
-        # print(myx)
+        self.data_total = float(self.data_total)
         self.second_total = self.frame_total / self.frame_per_second
         self.data_per_frame = self.data_total / self.frame_total
-
 
         '''compute step lenth from data_tensity'''
         from config import data_tensity
@@ -211,7 +158,7 @@ class env_li():
         self.data_per_step = self.data_per_frame * self.frame_per_step
 
         '''compute step_total'''
-        self.step_total = int(self.data_total / self.data_per_step) + 1
+        self.step_total = int(self.data_total / self.data_per_step)
 
         '''set fov range'''
         from config import view_range_lon, view_range_lat
@@ -220,14 +167,14 @@ class env_li():
 
         self.episode = 0
 
-        self.max_cc = 0.0
-        self.cur_cc = 0.0
+        self.max_cc_cur_video = 0.0
+        self.cc_cur_video = 0.0
 
         '''salmap'''
         self.heatmap_height = 180
         self.heatmap_width = 360
 
-        if self.mode is 'data_processor':
+        if config.mode is 'data_processor':
             self.data_processor()
 
         '''load ground-truth heat map'''
@@ -235,19 +182,7 @@ class env_li():
         gt_heatmap_dir = 'gt_heatmap_sp_' + heatmap_sigma
         self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
 
-        if (self.mode is 'off_line') or (self.mode is 'data_processor'):
-            if (self.task==0):
-                print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
-                self.log_thread = True
-            else:
-                self.log_thread = False
-        elif self.mode is 'on_line':
-            print('>>>>>>>>>>>>>>>>>>>>this is a log thread<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            self.log_thread = True
-
-        '''update settings for log_thread'''
-        if self.log_thread:
-            self.log_thread_config()
+        self.log_thread_config()
 
     def data_processor(self):
         from config import data_processor_id
@@ -360,30 +295,22 @@ class env_li():
 
     def log_thread_config(self):
 
-        from config import if_log_scan_path
-        self.if_log_scan_path = if_log_scan_path
-
-        from config import if_log_cc
-        self.if_log_cc = if_log_cc
+        self.if_log_scan_path = config.if_log_scan_path
+        self.if_log_cc = config.if_log_cc
 
         if self.if_log_cc:
 
-            if self.mode is 'off_line':
+            if config.mode is 'off_line':
                 '''cc record'''
-                self.agent_result_saver = []
-                self.agent_result_stack = []
+                self.agent_heatmap_saver_cur_episode = []
+                self.agent_heatmap_saver_multiple_episodes = []
                 '''scanpath location record'''
-                self.agent_scanpath_saver = []
-                self.agent_scanpath_stack = []
+                self.agent_scanpath_saver_cur_episode = []
+                self.agent_scanpath_saver_multiple_episodes = []
 
-
-                if self.mode is 'off_line': # yuhangsong here
-                    from config import relative_predicted_fixation_num
-                    self.predicted_fixtions_num = int(self.subjects_total * relative_predicted_fixation_num)
-                    print('predicted_fixtions_num is '+str(self.predicted_fixtions_num))
-                    from config import relative_log_cc_interval
-                    self.if_log_cc_interval = int(self.predicted_fixtions_num * relative_log_cc_interval)
-                    print('log_cc_interval is '+str(self.if_log_cc_interval))
+                if config.mode is 'off_line':
+                    self.predicted_fixtions_num = config.predicted_fixation_num
+                    self.if_log_cc_interval = config.log_cc_interval
 
     def reset(self):
 
@@ -393,7 +320,7 @@ class env_li():
 
         self.reward_dic_on_cur_episode = []
 
-        if self.mode is 'on_line':
+        if config.mode is 'on_line':
             self.mo_dic_on_cur_episode = []
 
         '''episode add'''
@@ -409,25 +336,19 @@ class env_li():
         subject_dic_code = []
         for i in range(self.subjects_total):
             subject_dic_code += [i]
-        if self.mode is 'off_line':
+        if config.mode is 'off_line':
             subject_code = np.random.choice(a=subject_dic_code)
-        elif self.mode is 'on_line':
+        elif config.mode is 'on_line':
             subject_code = 0
         self.cur_lon = self.subjects[subject_code].data_frame[0].p[0]
         self.cur_lat = self.subjects[subject_code].data_frame[0].p[1]
-
-        '''reset view_mover'''
-        if self.use_move_view_lib is 'new':
-            self.view_mover.init_position(Latitude=self.cur_lat,
-                                          Longitude=self.cur_lon)
 
         '''set observation_now to the first frame'''
         self.get_observation()
 
         self.last_observation = None
 
-        if self.log_thread:
-            self.log_thread_reset()
+        self.log_thread_reset()
 
         return self.cur_observation
 
@@ -436,91 +357,83 @@ class env_li():
         if self.if_log_scan_path:
             plt.figure(str(self.env_id)+'_scan_path')
             plt.clf()
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset1")
-        # print(td)
 
         if self.if_log_cc:
 
-            if self.mode is 'off_line':
+            if np.array(self.agent_heatmap_saver_cur_episode).shape[0] == 0:
+                return
 
-                self.agent_result_stack += [copy.deepcopy(self.agent_result_saver)]
-                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_result_saver): ", np.shape(self.agent_result_saver),self.step_total)
-                self.agent_scanpath_stack += [copy.deepcopy(self.agent_scanpath_saver)]
-                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_scanpath_saver): ", np.shape(self.agent_scanpath_saver),self.step_total)
+            if config.mode is 'off_line':
 
-                self.agent_result_saver = []
-                self.agent_scanpath_saver = []
+                self.agent_heatmap_saver_multiple_episodes += [np.array(self.agent_heatmap_saver_cur_episode)]
+                self.agent_scanpath_saver_multiple_episodes += [np.array(self.agent_scanpath_saver_cur_episode)]
 
-                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset2")
-                # print(td)
-                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>len(self.agent_result_stack) + self.predicted_fixtions_num:    " + str(len(self.agent_result_stack)) +'  +  '+str(self.predicted_fixtions_num))
-                print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>len(agent_scanpath_stack) + self.predicted_fixtions_num:    " + str(len(self.agent_scanpath_stack)) +'  +  '+str(self.predicted_fixtions_num))
+                self.agent_heatmap_saver_cur_episode = []
+                self.agent_scanpath_saver_cur_episode = []
 
-                if len(self.agent_result_stack) > self.predicted_fixtions_num:
-
-                    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset3")
-                    # print(td)
+                if len(self.agent_heatmap_saver_multiple_episodes) > self.predicted_fixtions_num:
 
                     '''if stack full, pop out the oldest data'''
-                    self.agent_result_stack.pop(0)
-                    self.agent_scanpath_stack.pop(0)
+                    self.agent_heatmap_saver_multiple_episodes.pop(0)
+                    self.agent_scanpath_saver_multiple_episodes.pop(0)
 
                     if self.episode%self.if_log_cc_interval is 0:
 
-                        print('compute cc..................')
+                        print('computing CC')
 
                         ccs_on_step_i = []
-                        heatmaps_on_step_i = []
+                        heatmaps_cur_video = []
                         all_scanpath_locations = []
 
-                        for step_i in range(self.step_total-1):
+                        for step_i in range(np.stack(self.agent_heatmap_saver_multiple_episodes).shape[1]):
 
                             '''generate predicted salmap'''
-                            temp = np.asarray(self.agent_result_stack)[:,step_i]
+                            temp = np.stack(self.agent_heatmap_saver_multiple_episodes)[:,step_i]
                             temp = np.sum(temp,axis=0)
                             temp = temp / np.max(temp)
-                            heatmaps_on_step_i += [copy.deepcopy(temp)]
-                            print('>>>>>>>>>>>>>>>>>>>>np.shape(heatmaps_on_step_i): ', np.shape(heatmaps_on_step_i))
+                            heatmaps_cur_video += [temp]
 
                             'save the scanpath locations'
-                            sc_locations_one_step = np.asarray(self.agent_scanpath_stack)[:,step_i]
+                            sc_locations_one_step = np.stack(self.agent_scanpath_saver_multiple_episodes)[:,step_i]
                             all_scanpath_locations += [sc_locations_one_step]
-                            print("np.shape(sc_locations_one_step): ", np.shape(sc_locations_one_step))
-                            print('>>>>>>>>>>>>>>>>>>>>np.shape(all_scanpath_locations): ', np.shape(all_scanpath_locations))
 
-                            from cc import calc_score
-                            ccs_on_step_i += [copy.deepcopy(calc_score(self.gt_heatmaps[step_i], heatmaps_on_step_i[step_i]))]
-                            print('cc on step '+str(step_i)+' is '+str(ccs_on_step_i[step_i]))
+                            ccs_on_step_i += [(cc.calc_score(
+                                gtsAnn = self.gt_heatmaps[step_i],
+                                resAnn = heatmaps_cur_video[step_i],
+                            ))]
+                            print('cc on step {} is {}'.format(
+                                step_i,
+                                ccs_on_step_i[step_i],
+                            ))
 
-                        self.cur_cc = np.mean(np.asarray(ccs_on_step_i))
-                        print('cur_cc is '+str(self.cur_cc))
-                        if self.cur_cc > self.max_cc:
-                            print('new max cc found: '+str(self.cur_cc)+', recording cc and heatmaps')
-                            self.max_cc = self.cur_cc
-                            self.heatmaps_of_max_cc = heatmaps_on_step_i
-                            self.scanpath_of_max_cc = all_scanpath_locations
+                        self.cc_cur_video = np.mean(np.stack(ccs_on_step_i))
+                        print('cc_cur_video is '+str(self.cc_cur_video))
+                        if self.cc_cur_video > self.max_cc_cur_video:
+                            print('new max cc found: '+str(self.cc_cur_video)+', recording cc and heatmaps')
+                            self.max_cc_cur_video = self.cc_cur_video
+                            self.heatmaps_of_max_cc_cur_video = np.stack(heatmaps_cur_video)
+                            self.scanpath_of_max_cc_cur_video = np.stack(all_scanpath_locations)
 
                             '''log'''
-                            from config import final_log_dir
-                            record_dir = final_log_dir+'ff_best_heatmaps/'+self.env_id+'/'
-                            save_scanpath_dir = final_log_dir+'ff_best_scanpaths/'+self.env_id+'/'
-
-                            subprocess.call(["rm", "-r", record_dir])
-                            subprocess.call(["mkdir", "-p", record_dir])
-                            subprocess.call(["rm", "-r", save_scanpath_dir])
+                            save_heatmap_dir  = config.log_dir+'ff_best_heatmaps/'+self.env_id+'/'
+                            save_scanpath_dir = config.log_dir+'ff_best_scanpaths/'+self.env_id+'/'
+                            subprocess.call(["mkdir", "-p", save_heatmap_dir])
                             subprocess.call(["mkdir", "-p", save_scanpath_dir])
 
-                            for step_i in range(self.step_total-1):
-                                self.save_heatmap(heatmap=self.heatmaps_of_max_cc[step_i],
-                                                  path=record_dir,
-                                                  name=str(step_i))
+                            for step_i in range(self.heatmaps_of_max_cc_cur_video.shape[0]):
+                                self.save_heatmap(
+                                    heatmap = self.heatmaps_of_max_cc_cur_video[step_i],
+                                    path    = save_heatmap_dir,
+                                    name    = str(step_i),
+                                )
 
-                            'save the scanpath locations'
-                            self.save_groundtruth_txt_for_nss( value=self.scanpath_of_max_cc,
-                                                               path=save_scanpath_dir,
-                                                               name= 'Scanpath_all_frames')
-                            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here_log_thread_reset4")
-                            self.write_best_cc()
+                            print('minglang check it your self: {}'.format(self.scanpath_of_max_cc_cur_video.shape))
+                            # 'save the scanpath locations'
+                            # self.save_groundtruth_txt_for_nss(
+                            #     value = self.scanpath_of_max_cc_cur_video,
+                            #     path  = save_scanpath_dir,
+                            #     name  = 'Scanpath_all_frames',
+                            # )
 
     def save_groundtruth_txt_for_nss(self,value,path,name):
         # if os.path.exists(path) is True:
@@ -548,28 +461,9 @@ class env_li():
             f1.write(print_string1 + '\n')
         f1.close
 
-
-    def write_best_cc(self):
-        from config import final_log_dir
-        record_dir = final_log_dir+'ff_best_cc/'+self.env_id+'/'
-        while True:
-            try:
-                subprocess.call(["rm", "-r", record_dir])
-                subprocess.call(["mkdir", "-p", record_dir])
-                np.savez(record_dir+'best_cc.npz',
-                         best_cc=[self.max_cc])
-                break
-            except Exception, e:
-                print(str(Exception)+": "+str(e))
-                time.sleep(1)
-
-
-
     def step(self, action, v):
 
-        '''these will be returned, but not sure to updated'''
-        if self.log_thread:
-            self.log_thread_step()
+        self.log_thread_step()
 
         '''varible for record state is stored, for they will be updated'''
         self.last_step = self.cur_step
@@ -606,12 +500,11 @@ class env_li():
             reward = 0.0
             mo = 0.0
             done = True
-            if self.if_learning_v:
-                v_lable = 0.0
+            v_lable = 0.0
 
         else:
 
-            if self.mode is 'on_line':
+            if config.mode is 'on_line':
 
                 if self.if_run_baseline is True:
 
@@ -635,12 +528,14 @@ class env_li():
                         v = 0 - v
 
             '''get direction reward and ground-truth v from data_base in last state'''
-            last_prob, distance_per_data = get_prob(lon=self.last_lon,
-                                                    lat=self.last_lat,
-                                                    theta=action * 45.0,
-                                                    subjects=self.subjects,
-                                                    subjects_total=self.subjects_total,
-                                                    cur_data=self.last_data)
+            last_prob, distance_per_data = suppor_lib.get_prob(
+                lon=self.last_lon,
+                lat=self.last_lat,
+                theta=action * 45.0,
+                subjects=self.subjects,
+                subjects_total=self.subjects_total,
+                cur_data=self.last_data,
+            )
             '''rescale'''
             distance_per_step = distance_per_data * self.data_per_step
             '''convert v to degree'''
@@ -649,33 +544,29 @@ class env_li():
             v_lable = degree_per_step
 
             '''move view, update cur_lon and cur_lat, the standard procedure of rl'''
-            if self.if_learning_v:
-                v_used_to_step = v
-            else:
-                v_used_to_step = v_lable
+            v_used_to_step = v
 
-            if self.use_move_view_lib is 'new':
-                self.cur_lon, self.cur_lat = self.view_mover.move_view(direction=action * 45.0,
-                                                                       degree_per_step=v_used_to_step)
-            elif self.use_move_view_lib is 'ziyu':
-                from move_view_lib import move_view
-                self.cur_lon, self.cur_lat = move_view(cur_lon=self.last_lon,
-                                                       cur_lat=self.last_lat,
-                                                       direction=action,
-                                                       degree_per_step=v_used_to_step)
+            self.cur_lon, self.cur_lat = move_view_lib.move_view(
+                cur_lon=self.last_lon,
+                cur_lat=self.last_lat,
+                direction=action,
+                degree_per_step=v_used_to_step,
+            )
             self.last_action = action
 
             '''produce reward'''
             if self.reward_estimator is 'trustworthy_transfer':
                 reward = last_prob
             elif self.reward_estimator is 'cc':
-                cur_heatmap = fixation2salmap(fixation=[[self.cur_lon, self.cur_lat]],
-                                              mapwidth=self.heatmap_width,
-                                              mapheight=self.heatmap_height)
+                cur_heatmap = suppor_lib.fixation2salmap(
+                    fixation=np.array([[self.cur_lon, self.cur_lat]]),
+                    mapwidth=self.heatmap_width,
+                    mapheight=self.heatmap_height,
+                )
                 from cc import calc_score
                 reward = calc_score(self.gt_heatmaps[self.cur_step], cur_heatmap)
 
-            if self.mode is 'on_line':
+            if config.mode is 'on_line':
 
                 '''compute MO'''
                 from MeanOverlap import *
@@ -706,7 +597,7 @@ class env_li():
             '''
                 All reward and scores has been computed, we now consider if we want to drawback the position
             '''
-            if (self.mode is 'on_line'):
+            if (config.mode is 'on_line'):
 
                 if self.if_run_baseline is True:
 
@@ -741,7 +632,7 @@ class env_li():
             '''
                 core part for online
             '''
-            if self.mode is 'on_line':
+            if config.mode is 'on_line':
 
                 if (self.if_run_baseline is True):
 
@@ -884,11 +775,10 @@ class env_li():
                             self.reset()
                             done = True
 
-
-        if self.mode is 'off_line':
-            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable
-        elif self.mode is 'on_line':
-            return self.cur_observation, reward, done, self.cur_cc, self.max_cc, v_lable, self.predicting
+        if config.mode is 'off_line':
+            return self.cur_observation, reward, done, self.cc_cur_video, self.max_cc_cur_video, v_lable
+        elif config.mode is 'on_line':
+            return self.cur_observation, reward, done, self.cc_cur_video, self.max_cc_cur_video, v_lable, self.predicting
 
     def terminate_this_worker(self):
 
@@ -919,7 +809,7 @@ class env_li():
             time.sleep(1000)
 
     def log_thread_step(self):
-        '''log_scan_path'''
+
         if self.if_log_scan_path:
             plt.figure(str(self.env_id)+'_scan_path')
             plt.scatter(self.cur_lon, self.cur_lat, c='r')
@@ -930,21 +820,17 @@ class env_li():
             plt.pause(0.00001)
 
         if self.if_log_cc:
-            if self.mode is 'off_line':
-                # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>here og_thread_step_self.agent_result_saver")
-                self.agent_result_saver += [copy.deepcopy(fixation2salmap(fixation=[[self.cur_lon,self.cur_lat]],
-                                                                          mapwidth=self.heatmap_width,
-                                                                          mapheight=self.heatmap_height))]
-                print(">>>>>>>>>>>np.shape(self.cur_lon),np.shape(self.cur_lat): ", (self.cur_lon),(self.cur_lat))
-                self.agent_scanpath_saver +=[copy.deepcopy(save_scanpath(self.cur_lon,self.cur_lat))]
-                print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>np.shape(self.agent_result_saver), np.shape(self.agent_scanpath_saver)', \
-                      np.shape(self.agent_result_saver), np.shape(self.agent_scanpath_saver))
-                # print('here2 debug now')
-                # print(myx)
-            elif self.mode is 'on_line':
-                print('not implement')
-                import sys
-                sys.exit(0)
+            if config.mode in ['off_line']:
+                self.agent_heatmap_saver_cur_episode += [suppor_lib.fixation2salmap(
+                    fixation  = np.array([[self.cur_lon,self.cur_lat]]),
+                    mapwidth  = self.heatmap_width,
+                    mapheight = self.heatmap_height,
+                )]
+                self.agent_scanpath_saver_cur_episode +=[np.array(
+                    [self.cur_lon,self.cur_lat]
+                )]
+            elif config.mode is 'on_line':
+                raise Exception('Do not set if_log_cc=True when using online mode')
 
     def load_heatmaps(self, name):
 
@@ -952,7 +838,7 @@ class env_li():
         for step in range(self.step_total):
 
             try:
-                file_name = '../../'+self.data_base+'/'+name+'/'+self.env_id+'_'+str(step)+'.jpg'
+                file_name =  config.database_path+'/'+name+'/'+self.env_id+'_'+str(step)+'.jpg'
                 temp = cv2.imread(file_name, cv2.CV_LOAD_IMAGE_GRAYSCALE)
                 temp = cv2.resize(temp,(self.heatmap_width, self.heatmap_height))
                 temp = temp / 255.0
@@ -966,7 +852,7 @@ class env_li():
         return heatmaps
 
     def save_heatmap(self,heatmap,path,name):
-        heatmap = heatmap * 255.0
+        heatmap = (heatmap * 255.0).astype(int)
         imageio.imwrite(path+'/'+name+'.jpg',heatmap)
 
     def save_mo_result(self):

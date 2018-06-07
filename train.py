@@ -7,26 +7,19 @@ import copy
 import time
 import numpy as np
 import subprocess
+import config
 
 parser = argparse.ArgumentParser(description="Run commands")
 
 def new_tmux_cmd(session, name, cmd):
     if isinstance(cmd, (list, tuple)):
         cmd = " ".join(str(v) for v in cmd)
-    return name, "tmux send-keys -t {}:{} '{}' Enter".format(session, name, cmd)
+    return name, "tmux send-keys -t {}:{} '{} && {}' Enter".format(session, name, 'source activate dhp_env', cmd)
 
 
 def create_tmux_commands(session, logdir):
 
-    '''
-    Coder: YuhangSong
-    Description: specific sequence of games to run
-    '''
-
-    '''for launching the TF workers'''
-    from config import project, mode
-    '''different from f on_line and others'''
-    if (project is 'f') and (mode is 'on_line'):
+    if config.mode in ['on_line']:
 
         '''genrate game done dic for first run, so that latter is auto started by the programe'''
         done_sinal_dic = []
@@ -63,24 +56,28 @@ def create_tmux_commands(session, logdir):
         ]
 
         return cmds
-    else:
+
+    elif config.mode in ['off_line']:
+
+        '''ps'''
         base_cmd = [
             'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
             '--log-dir', logdir, '--env-id', config.game_dic[0],
-            '--num-workers', str(config.num_games_global)]
-
+            '--num-workers', str(config.num_games)]
         cmds_map = [new_tmux_cmd(session, "ps", base_cmd + ["--job-name", "ps"])]
 
-        for i in range(config.num_games_global):
+        '''worker'''
+        for i in range(config.num_games):
             base_cmd = [
                 'CUDA_VISIBLE_DEVICES=', sys.executable, 'worker.py',
                 '--log-dir', logdir,
                 '--env-id', config.game_dic[i],
-                '--num-workers', str(config.num_games_global)]
-            cmds_map += [new_tmux_cmd(session,
-                                      "w-%d" % i,
-                                      base_cmd + ["--job-name", "worker",
-                                                  "--task", str(i)])]
+                '--num-workers', str(config.num_games)]
+            cmds_map += [new_tmux_cmd(
+                session,
+                "w-%d" % i,
+                base_cmd + ["--job-name", "worker", "--task", str(i)]
+            )]
 
         windows = [v[0] for v in cmds_map]
 
@@ -170,44 +167,39 @@ def run():
     args = parser.parse_args()
     session = "a3c"
 
-    cmds = create_tmux_commands(session, config.final_log_dir)
+    cmds = create_tmux_commands(session, config.log_dir)
     print("\n".join(cmds))
     os.system("\n".join(cmds))
 
-    from config import project, mode
-    if project is 'f':
+    if config.mode is 'on_line':
 
-        if mode is 'on_line':
+        try:
+            run_to = np.load(config.log_dir+'run_to.npz')['run_to']
+            game_i_at = run_to[0]
+            subject_i_at = run_to[1]
+            worker_running = run_to[2]
+            print('>>>>>Previous run_to found, init run_to:')
+            print('\t\tgame_i_at: '+str(game_i_at))
+            print('\t\tsubject_i_at: '+str(subject_i_at))
+            print('\t\tworker_running: '+str(worker_running))
+        except Exception, e:
+            worker_running = config.num_workers_one_run # this is fake to start the run
+            game_i_at=0
+            subject_i_at=0
+            print('>>>>>No previous run_to found, init run_to:')
+            print('\t\tgame_i_at: '+str(game_i_at))
+            print('\t\tsubject_i_at: '+str(subject_i_at))
+            print('\t\tworker_running: '+str(worker_running))
 
+        '''record run_to'''
+        while True:
             try:
-                from config import final_log_dir
-                run_to = np.load(final_log_dir+'run_to.npz')['run_to']
-                game_i_at = run_to[0]
-                subject_i_at = run_to[1]
-                worker_running = run_to[2]
-                print('>>>>>Previous run_to found, init run_to:')
-                print('\t\tgame_i_at: '+str(game_i_at))
-                print('\t\tsubject_i_at: '+str(subject_i_at))
-                print('\t\tworker_running: '+str(worker_running))
+                np.savez(config.log_dir+'run_to.npz',
+                         run_to=[game_i_at,subject_i_at,worker_running])
+                break
             except Exception, e:
-                worker_running = config.num_workers_one_run # this is fake to start the run
-                game_i_at=0
-                subject_i_at=0
-                print('>>>>>No previous run_to found, init run_to:')
-                print('\t\tgame_i_at: '+str(game_i_at))
-                print('\t\tsubject_i_at: '+str(subject_i_at))
-                print('\t\tworker_running: '+str(worker_running))
-
-            '''record run_to'''
-            while True:
-                try:
-                    from config import final_log_dir
-                    np.savez(final_log_dir+'run_to.npz',
-                             run_to=[game_i_at,subject_i_at,worker_running])
-                    break
-                except Exception, e:
-                    print(str(Exception)+": "+str(e))
-                    time.sleep(1)
+                print(str(Exception)+": "+str(e))
+                time.sleep(1)
 
 if __name__ == "__main__":
     run()

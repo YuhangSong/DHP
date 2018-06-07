@@ -24,11 +24,10 @@ class FastSaver(tf.train.Saver):
 
 def run(args, server):
 
-    from config import project, mode
-    if (project is 'f') and (mode is 'on_line'):
+    if config.mode in ['on_line']:
         '''f project and on_line mode is special, log_dir is sperate by game (g) and subject (s)'''
         logdir = os.path.join(args.log_dir, 'train_g_'+str(args.env_id)+'_s_'+str(args.subject))
-    else:
+    elif config.mode in ['off_line']:
         '''normal log_dir'''
         logdir = os.path.join(args.log_dir, 'train')
     '''any way, log_dir is separate by work (task)'''
@@ -63,13 +62,13 @@ def run(args, server):
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 
     '''determine is_chief'''
-    if (project is 'f') and (mode is 'on_line'):
-        '''f project and on_line mode is special, it has one worker for each ps, so it is always the cheif'''
+    if config.mode in ['on_line']:
+        '''on_line mode has one worker for each ps, so it is always the cheif'''
         is_chief = True
-    else:
-        '''normally, is_chief is determined by if the task is a cheif task (see config.py)'''
+    elif config.mode in ['off_line']:
+        '''off_line mode share model for all worker (videos)'''
         is_chief = (args.task == 0)
-        
+
     tf.Session(server.target, config=config_tf).run(init_all_op)
     sv = tf.train.Supervisor(is_chief=is_chief,
                              logdir=logdir,
@@ -107,13 +106,12 @@ def run(args, server):
     sv.stop()
     logger.info('reached %s steps. worker stopped.', global_step)
 
-def cluster_spec(num_workers, num_ps, env_id=None, subject=None):
+def cluster_spec(num_workers, env_id=None, subject=None):
     """
     More tensorflow setup for data parallelism
     """
-    from config import project, mode
 
-    if (project is 'f') and (mode is 'on_line'):
+    if config.mode in ['on_line']:
         env_id_num = config.game_dic.index(env_id)
         position_offset = 12222
         position = (env_id_num * config.num_subjects + subject) * 2 + position_offset
@@ -122,21 +120,19 @@ def cluster_spec(num_workers, num_ps, env_id=None, subject=None):
         cluster['worker'] = ['127.0.0.1:'+str(position+1)]
         return cluster
 
-    else:
+    elif config.mode in ['off_line']:
 
         cluster = {}
         port = 12222
+        host = '127.0.0.1'
 
         all_ps = []
-
-        host = config.cluster_host[config.cluster_current]
-        for _ in range(num_ps):
+        for _ in range(1):
             all_ps.append('{}:{}'.format(host, port))
             port += 1
         cluster['ps'] = all_ps
 
         all_workers = []
-        host = config.cluster_host[config.cluster_current]
         for _ in range(num_workers):
             all_workers.append('{}:{}'.format(host, port))
             port += 1
@@ -164,12 +160,11 @@ Setting up Tensorflow for data parallel work
 
     args = parser.parse_args()
 
-    from config import project, mode
-    if (project is 'f') and (mode is 'on_line'):
-        spec = cluster_spec(args.num_workers, 1, args.env_id, args.subject)
-    else:
-        spec = cluster_spec(args.num_workers, 1)
-        
+    if config.mode in ['on_line']:
+        spec = cluster_spec(args.num_workers, args.env_id, args.subject)
+    elif config.mode in ['off_line']:
+        spec = cluster_spec(args.num_workers)
+
     cluster = tf.train.ClusterSpec(spec).as_cluster_def()
 
 

@@ -138,10 +138,6 @@ class LSTMPolicy(object):
 
         with tf.variable_scope("GTN"):
 
-            if config.project is 'g':
-                '''convert env_id string to env_id num'''
-                env_id_num = config.game_dic_all.index(env_id_str)
-
             '''placeholder for x and step_size'''
             self.x = tf.placeholder(tf.float32, [None] + list(ob_space))
             self.step_size = tf.placeholder(tf.int32, [None])
@@ -207,31 +203,11 @@ class LSTMPolicy(object):
 
             consi_output = tf.reshape(right_out[0], [-1, sum(config.lstm_size[:config.consi_depth])])
 
-            if config.project is 'g':
-                print('g project has seperate layer for each game')
-                logits_all = range(len(config.game_dic_all))
-                sample_all = range(len(config.game_dic_all))
-                vf_all = range(len(config.game_dic_all))
-                for env_id_i_num in range(len(config.game_dic_all)):
-                    with tf.variable_scope("game_spec_layer_"+str(str(env_id_i_num))):
-                        ac_space_i = config.game_dic_all_ac_space[config.game_dic_all[env_id_i_num]]
-                        logits_all[env_id_i_num] = linear(consi_output, ac_space_i, "action", normalized_columns_initializer(0.01))
-                        sample_all[env_id_i_num] = categorical_sample(logits_all[env_id_i_num], ac_space_i)[0, :]
-                        vf_all[env_id_i_num] = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
-
-                self.logits = logits_all[env_id_num]
-                self.sample = sample_all[env_id_num]
-                self.vf = vf_all[env_id_num]
-            elif config.project is 'f':
-                print('f project share the whole model')
-                self.logits = linear(consi_output, ac_space, "action", normalized_columns_initializer(0.01))
-                self.sample = categorical_sample(self.logits, ac_space, exploration=True)[0, :]
-                self.sample_no_exploration = categorical_sample(self.logits, ac_space, exploration=False)[0, :]
-                self.vf = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
-                from config import if_learning_v
-                self.if_learning_v = if_learning_v
-                if self.if_learning_v is True:
-                    self.v = tf.reshape(tf.nn.softplus(linear(consi_output, 1, "v", normalized_columns_initializer(1.0))), [-1])
+            self.logits = linear(consi_output, ac_space, "action", normalized_columns_initializer(0.01))
+            self.sample = categorical_sample(self.logits, ac_space, exploration=True)[0, :]
+            self.sample_no_exploration = categorical_sample(self.logits, ac_space, exploration=False)[0, :]
+            self.vf = tf.reshape(linear(consi_output, 1, "value", normalized_columns_initializer(1.0)), [-1])
+            self.v = tf.reshape(tf.nn.softplus(linear(consi_output, 1, "v", normalized_columns_initializer(1.0))), [-1])
 
             self.var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
 
@@ -249,8 +225,7 @@ class LSTMPolicy(object):
         elif exploration is False:
             fetch_dic = [self.sample_no_exploration]
         fetch_dic += [self.vf, self.state_out]
-        if self.if_learning_v is True:
-            fetch_dic += [self.v]
+        fetch_dic += [self.v]
         return sess.run(fetch_dic, feed_dict)
 
     def value(self, ob, state_in):
@@ -260,6 +235,5 @@ class LSTMPolicy(object):
             feed_dict[self.c_in[consi_layer_id]] = state_in[consi_layer_id][0]
             feed_dict[self.h_in[consi_layer_id]] = state_in[consi_layer_id][1]
         fetch_dic = [self.vf]
-        if self.if_learning_v is True:
-            fetch_dic += [self.v]
+        fetch_dic += [self.v]
         return sess.run(fetch_dic, feed_dict)

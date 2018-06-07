@@ -131,7 +131,6 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
     length = 0
     rewards = 0.0
     next_predicting = False
-    from config import project, if_learning_v, mode
 
     while True:
 
@@ -142,26 +141,19 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
 
             predicting = next_predicting
 
-            if (project is 'f') and (mode is 'on_line'):
+            if config.mode in ['on_line']:
                 fetched = policy.act(last_state, last_features, exploration=False)
-            else:
+            elif config.mode in ['off_line']:
                 fetched = policy.act(last_state, last_features, exploration=True)
 
             action, value_, features = fetched[0], fetched[1], fetched[2]
-
-            if if_learning_v:
-                v = fetched[3][0]
-            else:
-                v = 0.0
+            v = fetched[3][0]
 
             # argmax to convert from one-hot
-            if project is 'g':
-                state, reward, terminal, info = env.step(action.argmax())
-            elif project is 'f':
-                if mode is 'off_line':
-                    state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
-                elif mode is 'on_line':
-                    state, reward, terminal, info, v_lable, next_predicting = env.step(action.argmax(), v)
+            if config.mode in ['off_line']:
+                state, reward, terminal, info, v_lable = env.step(action.argmax(), v)
+            elif config.mode is ['on_line']:
+                state, reward, terminal, info, v_lable, next_predicting = env.step(action.argmax(), v)
 
             # collect the experience
             rollout.add(last_state, action, reward, value_, terminal, last_features, v_lable)
@@ -181,25 +173,13 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
                 summary_writer.add_summary(summary, policy.global_step.eval())
                 summary_writer.flush()
 
-            if project is 'g':
-                timestep_limit = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
-                if terminal or length >= timestep_limit:
-                    terminal_end = True
-                    if length >= timestep_limit or not env.metadata.get('semantics.autoreset'):
-                        last_state = env.reset()
-                    last_features = policy.get_initial_features()
-                    print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
-                    length = 0
-                    rewards = 0.0
-                    break
-            elif project is 'f':
-                if terminal:
-                    terminal_end = True
-                    last_features = policy.get_initial_features()
-                    print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
-                    length = 0
-                    rewards = 0.0
-                    break
+            if terminal:
+                terminal_end = True
+                last_features = policy.get_initial_features()
+                print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
+                length = 0
+                rewards = 0.0
+                break
 
         if not terminal_end:
             rollout.r = policy.value(last_state, last_features)[0][0]
@@ -220,18 +200,8 @@ class A3C(object):
         self.env = env
         self.task = task
         self.env_id = env_id
-        from config import if_learning_v
-        self.if_learning_v = if_learning_v
 
-        from config import project, mode
-        if (project is 'f') and (mode is 'on_line'):
-            self.log_thread = True
-        else:
-            '''only log if the task is on zero and cluster is the main cluster'''
-            if (self.task==0):
-                self.log_thread = True
-            else:
-                self.log_thread = False
+        self.log_thread = True
 
         worker_device = "/job:worker/task:{}/cpu:0".format(task)
         with tf.device(tf.train.replica_device_setter(1, worker_device=worker_device)):
@@ -250,8 +220,7 @@ class A3C(object):
             self.adv = tf.placeholder(tf.float32, [None], name="adv")
             self.r = tf.placeholder(tf.float32, [None], name="r")
             self.step_forward = tf.placeholder(tf.int32, [None], name="step_forward")
-            if self.if_learning_v:
-                self.v_lable = tf.placeholder(tf.float32, [None], name="v_lable")
+            self.v_lable = tf.placeholder(tf.float32, [None], name="v_lable")
 
             log_prob_tf = tf.nn.log_softmax(pi.logits)
             prob_tf = tf.nn.softmax(pi.logits)
@@ -268,15 +237,11 @@ class A3C(object):
             entropy = - tf.reduce_sum(prob_tf * log_prob_tf)
 
             # v loss
-            if self.if_learning_v:
-                v_loss = 0.5 * tf.reduce_sum(tf.square(pi.v - self.v_lable))
+            v_loss = 0.5 * tf.reduce_sum(tf.square(pi.v - self.v_lable))
 
             bs = tf.to_float(tf.shape(pi.x)[0])
 
-            if self.if_learning_v:
-                self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01 + 0.5 * v_loss
-            else:
-                self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01
+            self.loss = pi_loss + 0.5 * vf_loss - entropy * 0.01 + 0.5 * v_loss
 
             # config.update_step represents the number of "local steps":  the number of timesteps
             # we run the policy before we update the parameters.
@@ -294,8 +259,7 @@ class A3C(object):
             tf.summary.scalar(self.env_id+"/model/entropy", entropy / bs)
             tf.summary.scalar(self.env_id+"/model/grad_global_norm", tf.global_norm(grads))
             tf.summary.scalar(self.env_id+"/model/var_global_norm", tf.global_norm(pi.var_list))
-            if self.if_learning_v:
-                tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
+            tf.summary.scalar(self.env_id+"/model/v_loss", v_loss / bs)
 
             self.summary_op = tf.summary.merge_all()
             grads, _ = tf.clip_by_global_norm(grads, 40.0)
@@ -314,16 +278,11 @@ class A3C(object):
 
     def start(self, sess, summary_writer):
 
-        from config import project, mode
-        if not ((project is 'f') and (mode is 'on_line')):
+        if config.mode in ['off_line']:
             if(self.task!=0):
                 print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
                 time.sleep(5)
                 sess.run(self.sync)  # copy weights from shared to local
-            if(self.task==0):
-                print('>>>>this is the first task on this cluster, rebuild a clean mix_exp_temp_dir')
-                subprocess.call(["rm", "-r", 'temp/mix_exp/'])
-                subprocess.call(["mkdir", "-p", 'temp/mix_exp/'])
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer
@@ -353,10 +312,11 @@ class A3C(object):
 
         should_compute_summary = (self.log_thread and (self.local_steps % 11 == 0))
 
+        fetches = [self.global_step]
         if should_compute_summary:
-            fetches = [self.summary_op, self.train_op, self.global_step]
-        else:
-            fetches = [self.train_op, self.global_step]
+            fetches += [self.summary_op]
+        if not ((config.mode in ['off_line']) and (config.procedure in ['test'])):
+            fetches += [self.train_op]
 
         '''get batch_size'''
         batch_size = np.shape(batch.si)[0]
@@ -369,75 +329,6 @@ class A3C(object):
         batch_features=batch.features
         batch_v_lable=batch.v_lable
 
-        # print('\tload ok for task:\t'+str(self.task)+'\tsized:\t'+str(np.shape(batch.si)[0]))
-        #
-        # if config.if_mix_exp is True:
-        #
-        #     print("===========================mix exp==============================")
-        #
-        #     '''save'''
-        #     file_name = config.mix_exp_temp_dir + str(self.task) + '.npz'
-        #
-        #     try:
-        #         np.savez(file_name,
-        #                  batch_si=batch.si,
-        #                  batch_a=batch.a,
-        #                  batch_adv=batch.adv,
-        #                  batch_r=batch.r,
-        #                  batch_features_0=batch.features_0,
-        #                  batch_features_1=batch.features_1)
-        #
-        #     except Exception:
-        #         print('\tsave failed, go over\t')
-        #
-        #     '''load exp from other exp'''
-        #     for task_i in range(config.num_workers_total_global):
-        #
-        #         if(task_i==self.task):
-        #             continue
-        #
-        #         else:
-        #
-        #             file_name = config.mix_exp_temp_dir + str(task_i) + '.npz'
-        #
-        #             try:
-        #                 data = np.load(file_name)
-        #
-        #             except Exception:
-        #                 print('\tload failed for task:\t'+str(task_i)+'\tgo over\t')
-        #                 continue
-        #
-        #             try:
-        #                 '''temp data, for this could be wrong'''
-        #                 batch_si_temp = np.concatenate((batch_si, data['batch_si']), axis=0)
-        #                 batch_a_temp = np.concatenate((batch_a, data['batch_a']), axis=0)
-        #                 batch_adv_temp = np.concatenate((batch_adv, data['batch_adv']), axis=0)
-        #                 batch_r_temp = np.concatenate((batch_r, data['batch_r']), axis=0)
-        #                 batch_features_0_temp = np.concatenate((batch_features_0, data['batch_features_0']), axis=0)
-        #                 batch_features_1_temp = np.concatenate((batch_features_1, data['batch_features_1']), axis=0)
-        #
-        #                 '''if not wrong'''
-        #                 batch_si = batch_si_temp
-        #                 batch_a = batch_a_temp
-        #                 batch_adv = batch_adv_temp
-        #                 batch_r = batch_r_temp
-        #                 batch_features_0 = batch_features_0_temp
-        #                 batch_features_1 = batch_features_1_temp
-        #
-        #                 print('\tload ok for task:\t'+str(task_i)+'\tsized:\t'+str(np.shape(data['batch_si'])[0]))
-        #                 data.close()
-        #
-        #             except Exception:
-        #                 print('\twrong data in task:\t'+str(task_i)+'\tgo over\t')
-        #                 data.close()
-        #                 continue
-        #
-        #     print('\tload all sized:\t'+str(np.shape(batch_si)[0]))
-        #     print("==================================================================")
-        # '''
-        # ##################################################################
-        # '''
-
         feed_dict = {
             self.local_network.x: batch_si,
             self.ac: batch_a,
@@ -447,8 +338,7 @@ class A3C(object):
             self.step_forward: [1]*batch_size,
         }
 
-        if self.if_learning_v:
-            feed_dict[self.v_lable] = batch_v_lable
+        feed_dict[self.v_lable] = batch_v_lable
 
         '''remap state'''
         for consi_layer_id in range(config.consi_depth):
@@ -461,6 +351,6 @@ class A3C(object):
         fetched = sess.run(fetches, feed_dict=feed_dict)
 
         if should_compute_summary:
-            self.summary_writer.add_summary(tf.Summary.FromString(fetched[0]), fetched[-1])
+            self.summary_writer.add_summary(tf.Summary.FromString(fetched[1]), fetched[0])
             self.summary_writer.flush()
         self.local_steps += 1

@@ -33,72 +33,65 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
-Follow command lines here to download and setup our PVS-HM database:
+Download our PVS-HM database from [DropBox link](xx), then extract it with:
 ```
-mkdir -p dhp_env/
-cd dhp_env/
-wget https://drive.google.com/open?id=0B20VnLepDOl4aFhsT0x6YjA
-tar -xzvf dataset.tar.gz
+tar -xzvf PVS-HM.tar.gz
 ```
+Note that it contains all MP4 files of our database, along with the HM & EM scanpath data ```FULLdata_per_video_frame.mat```.
+
+Use [ffmpeg](https://www.ffmpeg.org/) to convert them to YUV files (store the YUV files in the same folder as the database).
+We should have developed a script to do this, but since we are focusing on the new project, currently you will have to do it manually.
+If you can share your script to do this, a pull request is well appreciated.
+```
+ffmpeg -i in.mp4 out.yuv
+```
+
+Set the ```database_path``` in ```config.py``` to your database folder.
+
+The converted YUV files will take about 600 Gb.
+The reason we have to use YUV files is that, the remap function that get FoV from a 360 image is a binary file that takes YUV and output YUV.
+We have developed a Python version of remap, but it turns out to be even slower than just reading and writing YUV files into the disk (for more then 5 times).
+We are trying to see if remap is important to produce our results.
+If not, we are going to depreciate remap in the Pytorch version of DHP.
 
 ## Setup an environment to run our code
 
-### Pre-requirements
-
 If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
 
-### Requirements
-
-There will be command lines after the list, you don't have to install below requirements one by one.
-Besides, if you are not familiar with below things, I highly recommend you to just follow command lines after the list:
-* Python 3.6
-* [numpy](http://www.numpy.org/)
-* [gym](https://github.com/openai/gym)
-* [imageio](https://imageio.github.io/)
-* [matplotlib](https://matplotlib.org/)
-* [pybullet](https://pypi.python.org/pypi/pybullet)
-* [opencv-python](https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_tutorials.html)
-
-Install above requirements with command lines:
+Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
 ```
-pip install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp36-cp36m-manylinux1_x86_64.whl # if you are using CUDA 8.0, otherwise, refer to their official site: http://pytorch.org/
-pip install torchvision
-pip install visdom
-pip install numpy -I
-pip install gym[atari]
-pip install imageio
-pip install matplotlib
-pip install pybullet
-pip install opencv-python
+source ~/.bashrc
 
-# clean dir and create dir
-mkdir -p dhp_env/project/
-cd dhp_env/project/
-git clone https://github.com/YuhangSong/DHP.git
-cd DHP
+# create env
+conda create -n dhp_env python=2.7
+
+# active env
+source activate dhp_env
+
+# install packages
+pip install gym tensorflow universe
+
+# clone project
+git clone https://github.com/YuhangSong/DHP-TensorFlow.git
+
+# make remap excuatble
+cd DHP-TensorFlow
+chmod +x ./remap
+# you may run ./remap here to make sure the remap is excuatble
 ```
 
-Meet some issues? See [problems](https://github.com/YuhangSong/GTN#problems). If there isn't a solution, please don not hesitate to open an issue.
 
 ## Run our code
-
-#### Start a `Visdom` server with
-```bash
-source ~/.bashrc
-source activate dhp_env
-python -m visdom.server
-```
-Visdom will serve `http://localhost:8097/` by default.
 
 #### Run DHP.
 ```bash
 source ~/.bashrc
 source activate dhp_env
-CUDA_VISIBLE_DEVICES=0 python main.py
+python train.py
 ```
 
-#### Run other baselines.
-Give ```arguments.py``` a look, it is well commented.
+## Meet some issues?
+Please don not hesitate to open an issue.
 
 ## Results Visualization
 

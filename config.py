@@ -1,9 +1,9 @@
 '''set this path to the folder containing YUV, MP4 and MAT of our database'''
 database_path = '/media/yuhangsong/YuhangSong_1/env/ff/vr_new'
 
-if_restore_model = True
+if_restore_model = False
 if if_restore_model is True:
-    model_to_restore = "model_to_restore/model.ckpt-8496809"
+    model_to_restore = "../results/reproduce_4/train/model.ckpt-4745.data-00000-of-00001"
 
 log_dir = "../results/reproduce_4"
 '''if clear the logdir before running'''

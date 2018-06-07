@@ -56,8 +56,12 @@ def run(args, server):
     pre_train_saver = FastSaver(variables_to_restore)
 
     def init_fn(ses):
-        logger.info("==========run init_fn============")
+        logger.info("Initializing all parameters.")
         ses.run(init_all_op)
+        pre_train_saver.restore(
+            ses,
+            "THE_PATH_TO_YOUR_MODEL/model.ckpt-4986751",
+        )
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 

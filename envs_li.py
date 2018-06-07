@@ -179,7 +179,11 @@ class env_li():
             self.data_processor()
 
         '''load ground-truth heat map'''
-        self.gt_heatmaps = self.load_heatmaps(gt_heatmap_dir)
+        load_dir  = '{}/groundtruth_heatmaps/{}'.format(
+            config.log_dir,
+            self.env_id,
+        )
+        self.gt_heatmaps = self.load_heatmaps(load_dir)
 
         self.log_thread_config()
 
@@ -219,7 +223,7 @@ class env_li():
 
             '''save predicted heatmaps as image'''
             self.save_heatmaps(
-                dir = save_dir,
+                save_dir = save_dir,
                 heatmaps = heatmaps_cur_video,
             )
 
@@ -491,7 +495,7 @@ class env_li():
 
                             '''save predicted heatmaps as image'''
                             self.save_heatmaps(
-                                dir = save_heatmap_dir,
+                                save_dir = save_heatmap_dir,
                                 heatmaps = self.heatmaps_of_max_cc_cur_video,
                             )
 
@@ -832,26 +836,25 @@ class env_li():
             elif config.mode is 'on_line':
                 raise Exception('Do not set if_log_results=True when using online mode')
 
-    def save_heatmaps(self, dir, heatmaps):
+    def save_heatmaps(self, save_dir, heatmaps):
         heatmaps = (heatmaps * 255.0).astype(int)
         for step_i in range(self.step_total):
             imageio.imwrite(
                 '{}/{}.jpg'.format(
-                    dir,
+                    save_dir,
                     step_i,
                 ),
                 heatmaps[step_i]
             )
 
-    def load_heatmaps(self, dir):
+    def load_heatmaps(self, load_dir):
 
         heatmaps = []
         for step_i in range(self.step_total):
             try:
                 temp = cv2.imread(
                     '{}/{}.jpg'.format(
-                        config.log_dir,
-                        self.env_id,
+                        load_dir,
                         step_i,
                     ),
                     cv2.CV_LOAD_IMAGE_GRAYSCALE,
@@ -863,7 +866,7 @@ class env_li():
                 raise Exception(Exception,":",e)
 
         heatmaps = np.stack(heatmaps)
-        print('load heatmaps from '+dir+' done, size: '+str(np.shape(heatmaps)))
+        print('load heatmaps from '+load_dir+' done, size: '+str(np.shape(heatmaps)))
 
         return heatmaps
 

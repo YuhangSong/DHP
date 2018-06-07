@@ -4,6 +4,7 @@ from math import radians, cos, sin, asin, sqrt, log
 import math
 import copy
 import scipy
+import config
 
 def calc_angle(x_point_s,y_point_s,x_point_e,y_point_e):
 
@@ -151,9 +152,8 @@ def get_prob(lon, lat, theta, subjects, subjects_total, cur_data):
     prob_dic_normalized = prob_dic / prob_sum
 
     distance_per_data = 0.0
-    from config import if_normalize_v_lable
     for i in range(subjects_total):
-        if if_normalize_v_lable:
+        if config.if_normalize_v_lable:
             distance_per_data += prob_dic_normalized[i] * subjects[i].data_frame[cur_data].v
         else:
             distance_per_data += prob_dic[i] * subjects[i].data_frame[cur_data].v
@@ -194,15 +194,7 @@ def lonlat2Mercator(lon, lat):
     return x, y
 
 
-def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = (11.75+13.78)/2, sp = True):
-
-    from config import heatmap_sigma
-    if heatmap_sigma is 'my_sigma':
-        from config import my_sigma
-        my_sigma_in_degree = my_sigma
-    elif heatmap_sigma is 'sigma_half_fov':
-        from config import sigma_half_fov
-        my_sigma_in_degree = sigma_half_fov
+def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = 7, sp = True):
     my_sigma_in_degree = 7
     fixation_total = np.shape(fixation)[0]
     x_degree_per_pixel = 360.0 / mapwidth

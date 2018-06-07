@@ -176,7 +176,6 @@ def env_runner(env, env_id, policy, num_local_steps, summary_writer, log_thread)
             if terminal:
                 terminal_end = True
                 last_features = policy.get_initial_features()
-                print("Episode finished. Sum of rewards: %f. Length: %d" % (rewards, length))
                 length = 0
                 rewards = 0.0
                 break

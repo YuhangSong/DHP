@@ -15,28 +15,11 @@ if clear_run:
     subprocess.call(["rm", "-r", log_dir])
 subprocess.call(["mkdir", "-p", log_dir])
 
-'''set model structure'''
-conv_depth = 4
-# consi_depth is from another work of mine:
-# https://arxiv.org/abs/1710.10036,
-# ignore it (keep it 1), if you are not interested
-consi_depth = 1
-# if set consi_depth=1, only lstm_size[0] matters
-lstm_size = [288,128,32]
-
-'''
-Description: how many steps do you want to run before update the model
-Note:
-    20 is empirically good for single task
-    larger value may benifit the multi-task performence
-'''
-update_step = 40
-
 '''
 Description: select mode
 Availible: off_line, on_line, data_processor
 '''
-mode = 'data_processor'
+mode = 'off_line'
 
 if mode in ['off_line']:
     procedure = 'train'
@@ -72,87 +55,65 @@ if if_log_results is True:
     predicted_fixation_num = dataset_config.num_subjects
     log_results_interval = 5
 
-'''
-    Description: config env
-'''
+# availible: trustworthy_transfer, cc
+reward_estimator = 'trustworthy_transfer'
+
+# set to 1.0 to disable reward smooth
+reward_smooth_discount_to = 1.0
+
+if_normalize_v_lable = True
+
+if mode is 'data_processor':
+    '''
+        Description: what data_processor you are doing
+        Availible:
+            mp4_to_yuv (yuhang)
+            generate_groundtruth_heatmaps (yuhang)
+            generate_groundtruth_scanpaths (yuhang)
+            minglang_mp4_to_yuv (minglang)
+            compute_consi (haochen)
+            minglang_mp4_to_jpg (minglang)
+            minglang_obdl_cfg (minglang)
+    '''
+    data_processor_id = 'generate_groundtruth_heatmaps'
+
+elif mode is 'on_line':
+    '''terminate condition for online training'''
+
+    # set to 1.0 to disable it
+    train_to_reward = 0.2
+
+    # set to 1.0 to disable it
+    train_to_mo = 0.8
+
+    # too big would make some train hard to end, for some subjects is too hard to learn
+    train_to_episode = 500
+
+    '''following are default settings'''
+    check_worker_done_time = 5
+    worker_done_signal_dir = 'temp/worker_done_signal_dir/'
+    worker_done_signal_file = 'worker_done_signal.npz'
+
 data_tensity = 10.0
 view_range_lon = 110
 view_range_lat = 113
 final_discount_to = 10**(-4)
-from numpy import zeros
-observation_space = zeros((42, 42, 1))
-reward_estimator = 'trustworthy_transfer' # availible: trustworthy_transfer, cc
-heatmap_sigma = 'sigma_half_fov' # availible: my_sigma, sigma_half_fov
-reward_smooth_discount_to = 1.0 # set to 1.0 to disable reward smooth
-if_normalize_v_lable = True
 
-if mode is 'off_line':
+'''set model structure'''
+conv_depth = 4
+# consi_depth is from another work of mine:
+# https://arxiv.org/abs/1710.10036,
+# ignore it (keep it 1), if you are not interested
+consi_depth = 1
+# if set consi_depth=1, only lstm_size[0] matters
+lstm_size = [288,128,32]
 
-    '''
-        Description: specific settings for off_line mode
-    '''
+'''
+Description: how many steps do you want to run before update the model
+Note: 20 is empirically good for single task,
+larger value may benifit the multi-task performence
+'''
+update_step = 40
 
-elif mode is 'data_processor':
-
-    '''
-        Description: specific settings for data_processor mode
-    '''
-
-    '''
-        Description: what data_processor you are doing
-        Availible:
-                    mp4_to_yuv (yuhang)
-                    generate_groundtruth_heatmaps (yuhang)
-                    generate_groundtruth_scanpaths (yuhang)
-                    minglang_mp4_to_yuv (minglang)
-                    compute_consi (haochen)
-                    minglang_mp4_to_jpg (minglang)
-                    minglang_obdl_cfg (minglang)
-    '''
-    data_processor_id = 'generate_groundtruth_heatmaps'
-
-    if data_processor_id is 'compute_consi':
-
-        if project is 'f' and mode is 'data_processor':
-
-            '''
-                Description: compute_consi config
-            '''
-
-            fov_degree = 6
-            no_moving_gate = 0.0001
-            compute_lon_inter = fov_degree / 2
-            compute_lat_inter = fov_degree / 2
-            frame_gate = 20
-            MaxCenterNum = 4
-            NumDirectionForCluster = 8
-            DirectionInter = 360 / NumDirectionForCluster
-
-elif mode is 'on_line':
-
-    '''
-        Description: specific settings for on_line mode
-    '''
-
-    '''
-        Description: conditions to terminate and move on the on_line train
-    '''
-    train_to_reward = 0.2 # set to 1.0 to disable it
-    train_to_mo = 0.8 # set to 1.0 to disable it
-    train_to_episode = 500 # too big would make some train hard to end, for some subjects is too hard to learn
-
-# my_sigma = (11.75+13.78)/2
-my_sigma = 7
-import math
-sigma_half_fov = 7, # 51.0 / (math.sqrt(-2.0*math.log(0.5)))
-check_worker_done_time = 5
-if mode is 'on_line':
-    num_workers_one_run = num_workers_one_run_proper
-    if debugging is True:
-        num_workers_one_run = 2
-    if data_base is 'vr':
-        num_subjects = 40
-    elif data_base is 'vr_new':
-        num_subjects = 58
-    worker_done_signal_dir = 'temp/worker_done_signal_dir/'
-    worker_done_signal_file = 'worker_done_signal.npz'
+import numpy as np
+observation_space = np.zeros((42, 42, 1)) # related to model structure, do not change this

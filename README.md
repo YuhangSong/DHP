@@ -68,7 +68,7 @@ chmod +x ./remap
 ## Run our code
 
 Please make sure you have:
-* More than 32 GB of RAM.
+* More than 64 GB of RAM.
 * More then 600 GB space on the disk you store PVS-HM database.
 
 #### Offline-DHP.
@@ -91,6 +91,7 @@ We have developed a Python version of remap, but it turns out to be even slower 
 We are trying to see if remap is important to produce our results.
 If not, we are going to depreciate remap in the Pytorch version of DHP.
 
+Now you are ready to test offline-DHP.
 Set ```mode = 'off_line'```, ```procedure = 'train'``` and ```if_log_results = False``` in ```config.py```, run following:
 ```bash
 source ~/.bashrc

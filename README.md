@@ -109,6 +109,8 @@ python train.py
 ```
 
 Now you are ready to test offline-DHP.
+Note that the model is stored and restored automatically.
+Thus, as long as you did not change the ```log_dir``` in ```config.py```, previous trained model will be restored.
 Set ```mode = 'off_line'```, ```procedure = 'test'``` and ```if_log_results = True``` in ```config.py```, then run following:
 ```bash
 source ~/.bashrc

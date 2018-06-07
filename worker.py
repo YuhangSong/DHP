@@ -52,16 +52,9 @@ def run(args, server):
     init_all_op = tf.global_variables_initializer()
     saver = FastSaver(variables_to_save)
 
-    variables_to_restore = [v for v in tf.all_variables() if v.name.startswith("global")]
-    pre_train_saver = FastSaver(variables_to_restore)
-
     def init_fn(ses):
         logger.info("Initializing all parameters.")
         ses.run(init_all_op)
-        pre_train_saver.restore(
-            ses,
-            "THE_PATH_TO_YOUR_MODEL/model.ckpt-4986751",
-        )
 
     config_tf = tf.ConfigProto(device_filters=["/job:ps", "/job:worker/task:{}/cpu:0".format(args.task)])
 

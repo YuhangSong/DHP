@@ -1,10 +1,6 @@
 '''set this path to the folder containing YUV, MP4 and MAT of our database'''
 database_path = '/media/yuhangsong/YuhangSong_1/env/ff/vr_new'
 
-if_restore_model = False
-if if_restore_model is True:
-    model_to_restore = "../results/reproduce_4/train/model.ckpt-4745.data-00000-of-00001"
-
 log_dir = "../results/reproduce_4"
 '''if clear the logdir before running'''
 clear_run = False
@@ -22,7 +18,7 @@ Availible: off_line, on_line, data_processor
 mode = 'off_line'
 
 if mode in ['off_line']:
-    procedure = 'train'
+    procedure = 'test'
     # Note that for online settings, there is no separation for training and teseting
 
 import dataset_config

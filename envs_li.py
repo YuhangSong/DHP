@@ -837,7 +837,7 @@ class env_li():
                 raise Exception('Do not set if_log_results=True when using online mode')
 
     def save_heatmaps(self, save_dir, heatmaps):
-        heatmaps = (heatmaps * 255.0).astype(int)
+        heatmaps = (heatmaps * 255.0).astype(np.uint8)
         for step_i in range(self.step_total):
             imageio.imwrite(
                 '{}/{}.jpg'.format(

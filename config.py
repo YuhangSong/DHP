@@ -1,7 +1,7 @@
 '''set this path to the folder containing YUV, MP4 and MAT of our database'''
 database_path = '/media/yuhangsong/YuhangSong_1/env/ff/vr_new'
 
-log_dir = "../results/reproduce_4"
+log_dir = "../results/reproduce_5"
 '''if clear the logdir before running'''
 clear_run = False
 import subprocess
@@ -18,7 +18,7 @@ Availible: off_line, on_line, data_processor
 mode = 'off_line'
 
 if mode in ['off_line']:
-    procedure = 'test'
+    procedure = 'train'
     # Note that for online settings, there is no separation for training and teseting
 
 import dataset_config

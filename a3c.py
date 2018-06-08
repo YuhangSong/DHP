@@ -314,8 +314,7 @@ class A3C(object):
         fetches = [self.global_step]
         if should_compute_summary:
             fetches += [self.summary_op]
-        if not ((config.mode in ['off_line']) and (config.procedure in ['test'])):
-            fetches += [self.train_op]
+        fetches += [self.train_op]
 
         '''get batch_size'''
         batch_size = np.shape(batch.si)[0]

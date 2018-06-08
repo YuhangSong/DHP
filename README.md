@@ -98,6 +98,10 @@ source ~/.bashrc
 source activate dhp_env
 python train.py
 ```
+During the first few episode, you may find the CPU usage is extremely low, this is due to the sub-process is competing on remap function, which exchange data with disk.
+Later on, the CPU usage will increase.
+
+<p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/cpu.gif"/></p>
 
 ##### Test
 

@@ -12,7 +12,7 @@ By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>
 
 Specifically, this repository includes guidelines to:
-* [Download and setup the PVS-HMEM database](https://www.dropbox.com/s/ml03dhphyhj0j6u/PVS-HMEM%20database.tar.gz?dl=0). (Please contact us for the password)
+* [Download the PVS-HMEM database](#download-PVS-HMEM-database).
 * [Setup a environment to run our code.](#setup-an-environment-to-run-our-code)
 * [Reproduce visualized results from the paper.](#results-visualization)
 
@@ -21,7 +21,7 @@ This project is currently maintained, but will be depreciated in the future.
 
 See [DHP-PyTorch](https://github.com/YuhangSong/DHP-pytorch) for the updated version. (Currently unavailable due to the copyright of our work)
 
-## Download and setup PVS-HMEM database
+## Download PVS-HMEM database
 
 Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement database) database contains both **Head Movement** and **Eye Movement** data of **58** subjects on **76** panoramic videos.
 * *Blue dots* represent the **Head Movement**.
@@ -33,7 +33,9 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
-Download our PVS-HM database from [DropBox link](xx), then extract it with:
+Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset).
+Please feel free to [contact us](mailto:yuhangsong2017@gmail.com, maixu@buaa.edu.cn, IceClearWJY@buaa.edu.cn, MinglangQiao@buaa.edu.cn, huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
+Then extract it with:
 ```
 tar -xzvf PVS-HM.tar.gz
 ```
@@ -124,6 +126,20 @@ python train.py
 The code will generate and store predicted_heatmaps, predicted_scanpath and CC value.
 
 For results under more evaluation protocol. You may want to generate and store groundtruth_scanpaths with ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_scanpaths'```.
+
+##### Load our trained model
+
+To load our trained model, download our model from [DropBox link](xx), extract it to the path ```../results/```, and set ```log_dir = "../results/our_model"```.
+As has been said, the model in the ```log_dir``` will be automatically loaded.
+
+##### Visualize training from TensorBoard
+
+The code log multiple curves to help analysis the training process, type:
+```
+tensorboard --logdir <PATH>
+```
+where ```<PATH>``` is the ```log_dir``` in ```config.py```.
+<p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/tensotboard.gif"/></p>
 
 ## Some hints on using the code.
 

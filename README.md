@@ -47,6 +47,8 @@ If you are not familiar with things in this section, refer to [my personal basic
 
 Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
 ```
+sudo apt-get install tmux
+
 source ~/.bashrc
 
 # create env
@@ -77,11 +79,11 @@ Please make sure you have:
 
 This section clarifies procedures to train and test offline-DHP.
 
-##### Train
+##### Prepare
 
 Set the ```database_path``` in ```config.py``` to your database folder.
 
-Before trainning offline-DHP, generate YUV files. Set ```mode = 'data_processor'``` and ```data_processor_id = 'mp4_to_yuv'``` in ```config.py``` and run:
+Generate YUV files. Set ```mode = 'data_processor'``` and ```data_processor_id = 'mp4_to_yuv'``` in ```config.py``` and run:
 ```bash
 source ~/.bashrc
 source activate dhp_env
@@ -93,7 +95,19 @@ We have developed a Python version of remap, but it turns out to be even slower 
 We are trying to see if remap is important to produce our results.
 If not, we are going to depreciate remap in the Pytorch version of DHP.
 
-Now you are ready to test offline-DHP.
+Note that ```train.py``` is a script that starts multiple process managed by tmux.
+Thus, after running ```train.py```, you can use ```tmux attach=session -t a3c``` to see how each process goes.
+More about tmux can be found [here](https://github.com/tmux/tmux).
+
+Generate groundtruth heatmaps. Set ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_heatmaps'``` in ```config.py``` and run:
+```bash
+source ~/.bashrc
+source activate dhp_env
+python train.py
+```
+
+##### Train
+
 Set ```mode = 'off_line'```, ```procedure = 'train'``` and ```if_log_results = False``` in ```config.py```, run following:
 ```bash
 source ~/.bashrc
@@ -107,14 +121,6 @@ Later on, the CPU usage will increase.
 
 ##### Test
 
-Before testing offline-DHP, generate groundtruth heatmaps. Set ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_heatmaps'``` in ```config.py``` and run:
-```bash
-source ~/.bashrc
-source activate dhp_env
-python train.py
-```
-
-Now you are ready to test offline-DHP.
 Note that the model is stored and restored automatically.
 Thus, as long as you did not change the ```log_dir``` in ```config.py```, previous trained model will be restored.
 Set ```mode = 'off_line'```, ```procedure = 'test'``` and ```if_log_results = True``` in ```config.py```, then run following:
@@ -125,11 +131,22 @@ python train.py
 ```
 The code will generate and store predicted_heatmaps, predicted_scanpath and CC value.
 
+If you are seeing
+```
+Starting training at step=<your-previous-global-step>
+```
+then the model is restored successfully.
+If you are seeing
+```
+Starting training at step=0
+```
+then you have not restored it successfully, refer to [a corresponding issue](###restore-model-failed)
+
 For results under more evaluation protocol. You may want to generate and store groundtruth_scanpaths with ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_scanpaths'```.
 
 ##### Load our trained model
 
-To load our trained model, download our model from [DropBox link](xx), extract it to the path ```../results/```, and set ```log_dir = "../results/our_model"```.
+To load our trained model, download our model from [DropBox link](xx), extract it to the path ```../results/```, and set ```log_dir = "../results/reproduce_5"```.
 As has been said, the model in the ```log_dir``` will be automatically loaded.
 
 ##### Visualize training from TensorBoard
@@ -144,9 +161,41 @@ where ```<PATH>``` is the ```log_dir``` in ```config.py```.
 ## Some hints on using the code.
 
 * ```mode = 'data_processor'``` is a efficient way to process data under our TMUX manager, the code is in ```env_li.py```.
+* Some features we used in TensorFlow will be depreciated in a future version, we are using ```tf.__version__=1.6.0``` to run our code.
+* Reinforcement Learning based methods are inherently stochastic, and we cannot guarantee producing exact the same numbers as those reported in our DHP paper. But if you do more runs, we are confident to say you can see consistent results.
 
 ## Meet some issues?
+
 Please don not hesitate to open an issue.
+Some known issues & fixations are:
+
+#### Restore model failed.
+
+Navigate to ```w-0``` to see if this worker is working properly, because this worker is responsible for restoring model from disk, while other worker just async with it.
+Then check ```<log_dir>/train/checkpoint```, it should look like:
+```
+model_checkpoint_path: "model.ckpt-5362890"
+all_model_checkpoint_paths: "model.ckpt-5359910"
+all_model_checkpoint_paths: "model.ckpt-5360655"
+all_model_checkpoint_paths: "model.ckpt-5361444"
+all_model_checkpoint_paths: "model.ckpt-5362210"
+all_model_checkpoint_paths: "model.ckpt-5362890"
+```
+the ```model_checkpoint_path``` points to the latest checkpoint, the ```all_model_checkpoint_paths``` points to all available checkpoints.
+Please make what is listed here matches the files lies in ```<log_dir>/train/```.
+
+Then you will see a likely reason for restore failure is that the recent ckpt file is not stored completely when you killed the program, but it has been listed as available and should-be-restored in the checkpoint file.
+Thus, you can simply remove corresponding ckpt file, along with modifying codes in checkpoint file.
+
+For example, in about case, change ```<log_dir>/train/checkpoint``` to:
+```
+model_checkpoint_path: "model.ckpt-5362210"
+all_model_checkpoint_paths: "model.ckpt-5359910"
+all_model_checkpoint_paths: "model.ckpt-5360655"
+all_model_checkpoint_paths: "model.ckpt-5361444"
+all_model_checkpoint_paths: "model.ckpt-5362210"
+```
+and delete ```<log_dir>/train/model.ckpt-5362890``` will remove the most recent ckpt at 5362890 and restore the ckpt at 5362210.
 
 ## Results Visualization
 

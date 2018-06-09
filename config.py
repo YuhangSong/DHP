@@ -18,7 +18,7 @@ Availible: off_line, on_line, data_processor
 mode = 'off_line'
 
 if mode in ['off_line']:
-    procedure = 'train'
+    procedure = 'test'
     # Note that for online settings, there is no separation for training and teseting
 
 import dataset_config
@@ -41,7 +41,7 @@ this is because we use discrete control
 direction_num = 8
 
 if_log_scan_path_real_time = False
-if_log_results = False
+if_log_results = True
 
 if if_log_results is True:
 

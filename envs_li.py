@@ -160,6 +160,8 @@ class env_li():
 
         '''compute step_total'''
         self.step_total = int(self.data_total / self.data_per_step)
+        # for the last few frames, we get imcomplete data or YUV, since there are small error computing step_total, simply remove them
+        self.step_total_offset = 5
 
         '''set fov range'''
         from config import view_range_lon, view_range_lat
@@ -204,7 +206,7 @@ class env_li():
 
             heatmaps_cur_video = []
 
-            for step_i in range(self.step_total):
+            for step_i in range(self.step_total-self.step_total_offset):
                 data_i = int(round((step_i)*self.data_per_step))
 
                 '''generate groundtruth heatmaps'''
@@ -236,7 +238,7 @@ class env_li():
 
             scanpaths_cur_video = []
 
-            for step_i in range(self.step_total):
+            for step_i in range(self.step_total-self.step_total_offset):
                 data_i = int(round((step_i)*self.data_per_step))
 
                 '''generate groundtruth scanpaths'''
@@ -453,7 +455,7 @@ class env_li():
                         heatmaps_cur_video = []
                         all_scanpath_locations = []
 
-                        for step_i in range(self.step_total):
+                        for step_i in range(self.step_total-self.step_total_offset):
 
                             '''generate predicted salmap'''
                             temp = np.stack(self.agent_heatmap_saver_multiple_episodes)[:,step_i]
@@ -696,7 +698,7 @@ class env_li():
                             self.cur_training_step += 1
                             self.cur_predicting_step += 1
 
-                            if self.cur_predicting_step >= (self.step_total-1):
+                            if self.cur_predicting_step >= (self.step_total-self.step_total_offset-1):
                                 '''on line terminating'''
                                 '''record the mo_mean for each subject'''
                                 self.save_mo_result()
@@ -838,7 +840,7 @@ class env_li():
 
     def save_heatmaps(self, save_dir, heatmaps):
         heatmaps = (heatmaps * 255.0).astype(np.uint8)
-        for step_i in range(self.step_total):
+        for step_i in range(self.step_total-self.step_total_offset):
             imageio.imwrite(
                 '{}/{}.jpg'.format(
                     save_dir,
@@ -850,7 +852,7 @@ class env_li():
     def load_heatmaps(self, load_dir):
 
         heatmaps = []
-        for step_i in range(self.step_total):
+        for step_i in range(self.step_total-self.step_total_offset):
             try:
                 temp = cv2.imread(
                     '{}/{}.jpg'.format(

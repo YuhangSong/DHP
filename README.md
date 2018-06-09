@@ -43,6 +43,8 @@ Note that it contains all MP4 files of our database, along with the HM & EM scan
 
 ## Setup an environment to run our code
 
+The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.
+
 If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
 
 Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
@@ -173,7 +175,7 @@ Some known issues & fixations are:
 
 #### Restore model failed.
 
-Navigate to ```w-0``` to see if this worker is working properly, because this worker is responsible for restoring model from disk, while other worker just async with it.
+Navigate to ```w-0``` in tmux to see if this worker is working properly, because this worker is responsible for restoring model from disk, while other worker just async with it.
 Then check ```<log_dir>/train/checkpoint```, it should look like:
 ```
 model_checkpoint_path: "model.ckpt-5362890"

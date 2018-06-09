@@ -34,7 +34,7 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
 Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset).
-Please feel free to [contact us](mailto:yuhangsong2017@gmail.com, maixu@buaa.edu.cn, IceClearWJY@buaa.edu.cn, MinglangQiao@buaa.edu.cn, huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
+Please feel free to contact us [click-on-the-link](mailto:yuhangsong2017@gmail.com, maixu@buaa.edu.cn, IceClearWJY@buaa.edu.cn, MinglangQiao@buaa.edu.cn, huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
 Then extract it with:
 ```
 tar -xzvf PVS-HM.tar.gz

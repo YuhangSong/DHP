@@ -66,7 +66,13 @@ def run(args, server):
         '''off_line mode share model for all worker (videos)'''
         is_chief = (args.task == 0)
 
-    tf.Session(server.target, config=config_tf).run(init_all_op)
+    if is_chief:
+        print('>>>> this is task cheif, initialize variables')
+        tf.Session(server.target, config=config_tf).run(init_all_op)
+    else:
+        print('>>>> this is not task cheif, wait for a while')
+        time.sleep(10)
+
     sv = tf.train.Supervisor(is_chief=is_chief,
                              logdir=logdir,
                              saver=saver,

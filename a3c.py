@@ -279,9 +279,8 @@ class A3C(object):
 
         if config.mode in ['off_line']:
             if(self.task!=0):
-                print('>>>>this is not task cheif, async from global network before start interaction and training, wait for the cheif thread before async')
-                time.sleep(5)
-                sess.run(self.sync)  # copy weights from shared to local
+                print('>>>> this is not task cheif, async from global network before start interaction and training')
+                sess.run(self.sync)
 
         self.runner.start_runner(sess, summary_writer)
         self.summary_writer = summary_writer

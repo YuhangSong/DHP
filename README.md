@@ -139,7 +139,7 @@ The code log multiple curves to help analysis the training process, type:
 tensorboard --logdir <PATH>
 ```
 where ```<PATH>``` is the ```log_dir``` in ```config.py```.
-<p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/tensotboard.gif"/></p>
+<p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/tensorboard.gif"/></p>
 
 ## Some hints on using the code.
 

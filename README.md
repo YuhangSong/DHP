@@ -34,7 +34,7 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
 Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset).
-Please feel free to contact us [click-on-the-link](mailto:yuhangsong2017@gmail.com, maixu@buaa.edu.cn, IceClearWJY@buaa.edu.cn, MinglangQiao@buaa.edu.cn, huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
+Please feel free to [contact us by clicking here](mailto:yuhangsong2017@gmail.com,maixu@buaa.edu.cn,IceClearWJY@buaa.edu.cn,MinglangQiao@buaa.edu.cn,huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
 Then extract it with:
 ```
 tar -xzvf PVS-HM.tar.gz
@@ -166,6 +166,7 @@ where ```<PATH>``` is the ```log_dir``` in ```config.py```.
 
 ## Meet some issues?
 
+<<<<<<< HEAD
 Please don not hesitate to open an issue.
 Some known issues & fixations are:
 
@@ -196,6 +197,10 @@ all_model_checkpoint_paths: "model.ckpt-5361444"
 all_model_checkpoint_paths: "model.ckpt-5362210"
 ```
 and delete ```<log_dir>/train/model.ckpt-5362890``` will remove the most recent ckpt at 5362890 and restore the ckpt at 5362210.
+=======
+Please don not hesitate to open an issue. 
+We do not encourage you to contact us directly, opening an issue would be the best way to raise up your questions.
+>>>>>>> 9a6aba438814296f9c5f4e2a1f23aa4d5832c64c
 
 ## Results Visualization
 

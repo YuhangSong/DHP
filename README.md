@@ -4,7 +4,7 @@ This repository provides [**database**](#download-and-setup-pvs-hm-database), [*
 
 * [**Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://arxiv.org/abs/1710.10755)
 [*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
-[*Mai Xu* &#8224;&#8727;](http://shi.buaa.edu.cn/MaiXu/),
+[*Mai Xu* &#8224;&#8727;](http://45.77.201.133/html/Members/maixu.html),
 [*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html).
 Submitted to [TPAMI](https://www.computer.org/web/tpami).
 By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
@@ -215,6 +215,15 @@ Specifically, in above example, the woman and the man are passing the basketball
 Our reward function is able to capture these transitions of the attentions smoothly, while the baseline reward function makes the agent focus on the man all the time, even when the basketball is not in his hands.
 
 ## Authors
-Yuhang Song            |  Mai Xu          |  Jianyi Wang
+
+[Yuhang Song](https://yuhangsong.my.cam) | [Mai Xu](http://45.77.201.133/html/Members/maixu.html) | [Jianyi Wang](http://45.77.201.133/html/Members/jianyiwang.html) | [Zulin Wang](http://www.ee.buaa.edu.cn/info/1040/1130.htm)
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="imgs/YuhangSong.png" width="200">  |  <img src="imgs/MaiXu.png" width="200">  |  <img src="imgs/JianyiWang.png" width="200">
+<img src="imgs/YuhangSong.png" width="200">  |  <img src="imgs/MaiXu.png" width="200">  |  <img src="imgs/JianyiWang.png" width="200">  |  <img src="imgs/ZulinWang.png" width="200">
+
+## Special Thanks
+
+We would like to give special thanks to following researchers, for their valuable discussion and contribution to this work.
+
+[Ziyu Zhu](https://personalpage.my.cam) | [Haochen Wang](https://personalpage.my.cam) | [Chen Li](https://personalpage.my.cam) | [Lai Jiang](https://personalpage.my.cam)
+:-------------------------:|:-------------------------:|:-------------------------:
+<img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200"> | <img src="imgs/xx.png" width="200">

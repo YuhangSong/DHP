@@ -166,6 +166,35 @@ where ```<PATH>``` is the ```log_dir``` in ```config.py```.
 * Some features we used in TensorFlow will be depreciated in a future version, we are using ```tf.__version__=1.6.0``` to run our code.
 * Reinforcement Learning based methods are inherently stochastic, and we cannot guarantee producing exact the same numbers as those reported in our DHP paper. But if you do more runs, we are confident to say you can see consistent results.
 
+##### Summary your results after testing
+
+After you have test the model (setting ```if_log_results=True```), you can run
+```
+python summary.py
+```
+to summary the results.
+It will show results like:
+```
+WaitingForLove|cc|0.7042685046323598
+SpaceWar|cc|0.5894272979827889
+KingKong|cc|0.540897356844711
+SpaceWar2|cc|0.6233880089121158
+Guitar|cc|0.6216974696171442
+BTSRun|cc|0.5312920575202599
+CMLauncher2|cc|0.6347282964835593
+Symphony|cc|0.669106020987788
+RioOlympics|cc|0.7695397332776495
+Dancing|cc|0.6590623821187533
+StarryPolar|cc|0.6511584747528362
+InsideCar|cc|0.7628155513781555
+Sunset|cc|0.7349986526376743
+Waterfall|cc|0.6883913118465134
+BlueWorld|cc|0.7158131732815242
+Avg|0.6597722861515888
+```
+which should be able to reproduce the numbers reported in the paper.
+If you meet any problem reproduce the numbers, please do not hesitate to contact us, you feed back on the environment settings and parameter settings will be well appreciated, since we are trying to provide the community a solid proposal.
+
 ## Meet some issues?
 
 Please don not hesitate to open an issue.

@@ -484,14 +484,6 @@ class env_li():
                             self.heatmaps_of_max_cc_cur_video = np.stack(heatmaps_cur_video)
                             self.scanpath_of_max_cc_cur_video = np.stack(all_scanpath_locations)
 
-                            np.save(
-                                '{}/cc/{}/all.npy'.format(
-                                    config.log_dir,
-                                    self.env_id,
-                                ),
-                                self.max_cc_cur_video,
-                            )
-
                             save_heatmap_dir  = '{}/predicted_heatmaps/{}'.format(
                                 config.log_dir,
                                 self.env_id,
@@ -500,8 +492,13 @@ class env_li():
                                 config.log_dir,
                                 self.env_id,
                             )
+                            save_cc_dir = '{}/cc/{}'.format(
+                                config.log_dir,
+                                self.env_id,
+                            )
                             subprocess.call(["mkdir", "-p", save_heatmap_dir])
                             subprocess.call(["mkdir", "-p", save_scanpath_dir])
+                            subprocess.call(["mkdir", "-p", save_cc_dir])
 
                             '''save predicted heatmaps as image'''
                             self.save_heatmaps(
@@ -516,6 +513,13 @@ class env_li():
                                     save_scanpath_dir
                                 ),
                                 self.scanpath_of_max_cc_cur_video.shape,
+                            )
+
+                            np.save(
+                                '{}/all.npy'.format(
+                                    save_cc_dir
+                                ),
+                                self.max_cc_cur_video,
                             )
 
     def step(self, action, v):

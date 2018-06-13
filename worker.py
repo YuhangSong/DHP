@@ -100,14 +100,13 @@ def run(args, server):
         global_step = sess.run(trainer.global_step)
         logger.info("Starting training at step=%d", global_step)
 
-        not_reach_train_limit = True
-        if config.number_trained_steps > 0:
-            not_reach_train_limit = (global_step < config.number_trained_steps)
-
         '''keep runing'''
+        not_reach_train_limit = True
         while (not sv.should_stop()) and not_reach_train_limit:
             trainer.process(sess)
             global_step = sess.run(trainer.global_step)
+            if config.number_trained_steps > 0:
+                not_reach_train_limit = (global_step < config.number_trained_steps)
 
     '''Ask for all the services to stop.'''
     sv.stop()

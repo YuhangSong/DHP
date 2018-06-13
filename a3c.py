@@ -272,6 +272,7 @@ class A3C(object):
             # each worker has a different set of adam optimizer parameters
             opt = tf.train.AdamOptimizer(1e-4)
             self.train_op = tf.group(opt.apply_gradients(grads_and_vars), inc_step)
+            self.test_op = tf.group(inc_step)
             self.summary_writer = None
             self.local_steps = 0
 
@@ -313,7 +314,10 @@ class A3C(object):
         fetches = [self.global_step]
         if should_compute_summary:
             fetches += [self.summary_op]
-        fetches += [self.train_op]
+        if config.procedure in ['train']:
+            fetches += [self.train_op]
+        elif config.procedure in ['test']:
+            fetches += [self.test_op]
 
         '''get batch_size'''
         batch_size = np.shape(batch.si)[0]

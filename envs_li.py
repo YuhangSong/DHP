@@ -484,6 +484,14 @@ class env_li():
                             self.heatmaps_of_max_cc_cur_video = np.stack(heatmaps_cur_video)
                             self.scanpath_of_max_cc_cur_video = np.stack(all_scanpath_locations)
 
+                            np.save(
+                                '{}/cc/{}/all.npy'.format(
+                                    config.log_dir,
+                                    self.env_id,
+                                ),
+                                self.max_cc_cur_video,
+                            )
+
                             save_heatmap_dir  = '{}/predicted_heatmaps/{}'.format(
                                 config.log_dir,
                                 self.env_id,

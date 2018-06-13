@@ -113,7 +113,7 @@ def get_subjects(data, subject_id=0):
 
     return num_subject, num_data_frame, subjects, subjects[subject_id]
 
-def get_transfered_data(lon, lat, theta, data_frame, max_distance_on_position=1.0*math.pi, max_distance_on_degree=180.0, final_discount_to=10**(-4)):
+def get_transfered_data(lon, lat, theta, data_frame, max_distance_on_position=1.0*math.pi, max_distance_on_degree=180.0, final_discount_to=10**(-2)):
 
     distance_on_position = haversine(lon1=lon,
                                      lat1=lat,
@@ -202,8 +202,8 @@ def fixation2salmap(fixation, mapwidth, mapheight, my_sigma_in_degree = 7, sp = 
     salmap = np.zeros((mapwidth, mapheight))
     for x in range(mapwidth):
         for y in range(mapheight):
-            cur_lon = x * x_degree_per_pixel - 180.0
-            cur_lat = y * y_degree_per_pixel - 90.0
+            cur_lon = - x * x_degree_per_pixel + 180.0
+            cur_lat = - y * y_degree_per_pixel + 90.0
             for fixation_count in range(fixation_total):
                 cur_fixation_lon = fixation[fixation_count][0]
                 cur_fixation_lat = fixation[fixation_count][1]

@@ -168,7 +168,7 @@ where ```<PATH>``` is the ```log_dir``` in ```config.py```.
 
 ##### Summary your results after testing
 
-After you have test the model (setting ```if_log_results=True```), you can run
+After you have tested the model (setting ```if_log_results=True```), you can run
 ```
 python summary.py
 ```

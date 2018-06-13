@@ -18,8 +18,11 @@ Availible: off_line, on_line, data_processor
 mode = 'off_line'
 
 if mode in ['off_line']:
-    procedure = 'test'
     # Note that for online settings, there is no separation for training and teseting
+    procedure = 'test'
+    if procedure in 'train':
+        # train for 1.113M steps, set to -1 to make the training unlimited
+        number_trained_steps = 1.113 * (10^6)
 
 import dataset_config
 if mode in ['off_line']:

@@ -43,9 +43,6 @@ Note that it contains all MP4 files of our database, along with the HM & EM scan
 
 For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here](#details-of-the-mat-data-file) (Note that you do not have to read the details of the mat file if you just want to run our code and reproduce the numbers).
 
-The EM data is not studied in this paper but we have published the data to facilitate to community.
-Refer to [here](https://github.com/MinglangQiao/PVS-EM) for access to this part of the data and corresponding documents.
-
 ## Setup an environment to run our code
 
 The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.

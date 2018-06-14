@@ -40,6 +40,7 @@ Then extract it with:
 tar -xzvf PVS-HM.tar.gz
 ```
 Note that it contains all MP4 files of our database, along with the HM & EM scanpath data ```FULLdata_per_video_frame.mat```.
+For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here](#details-of-the-mat-data-file).
 
 ## Setup an environment to run our code
 
@@ -244,6 +245,10 @@ Our reward function            |  Baseline reward function
 
 Specifically, in above example, the woman and the man are passing the basketball between each other, and subjects' attention are switching between them while they passing the basketball.
 Our reward function is able to capture these transitions of the attentions smoothly, while the baseline reward function makes the agent focus on the man all the time, even when the basketball is not in his hands.
+
+## Details of the mat data file.
+
+(MinglangQiao)
 
 ## Authors
 

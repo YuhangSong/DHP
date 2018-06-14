@@ -1,7 +1,7 @@
 '''set this path to the folder containing YUV, MP4 and MAT of our database'''
 database_path = '/media/yuhangsong/YuhangSong_1/env/ff/vr_new'
 
-log_dir = "../results/reproduce_18"
+log_dir = "../results/reproduce_17"
 '''if clear the logdir before running'''
 clear_run = False
 import subprocess

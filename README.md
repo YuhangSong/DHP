@@ -6,7 +6,7 @@ This repository provides [**database**](#download-and-setup-pvs-hm-database), [*
 [*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
 [*Mai Xu* &#8224;&#8727;](http://45.77.201.133/html/Members/maixu.html),
 [*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html).
-Submitted to [TPAMI](https://www.computer.org/web/tpami).
+Submitted to [TPAMI](https://www.computer.org/web/tpami) with **Minor Revision** at the **2nd** round of review.
 By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
 
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>
@@ -33,14 +33,18 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
-Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset).
+Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset?preview=PVS-HM.tar.gz).
 Please feel free to [contact us by clicking here](mailto:yuhangsong2017@gmail.com,maixu@buaa.edu.cn,IceClearWJY@buaa.edu.cn,MinglangQiao@buaa.edu.cn,huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
 Then extract it with:
 ```
 tar -xzvf PVS-HM.tar.gz
 ```
 Note that it contains all MP4 files of our database, along with the HM & EM scanpath data ```FULLdata_per_video_frame.mat```.
-For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here](#details-of-the-mat-data-file).
+
+For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here](#details-of-the-mat-data-file) (Note that you do not have to read the details of the mat file if you just want to run our code and reproduce the numbers).
+
+The EM data is not studied in this paper but we have published the data to facilitate to community.
+Refer to [here](https://github.com/MinglangQiao/PVS-EM) for access to this part of the data and corresponding documents.
 
 ## Setup an environment to run our code
 
@@ -248,7 +252,7 @@ Our reward function is able to capture these transitions of the attentions smoot
 
 ## Details of the mat data file.
 
-(MinglangQiao)
+(MinglangQiao, please update this.)
 
 ## Authors
 

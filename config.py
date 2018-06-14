@@ -1,7 +1,7 @@
 '''set this path to the folder containing YUV, MP4 and MAT of our database'''
 database_path = '/media/yuhangsong/YuhangSong_1/env/ff/vr_new'
 
-log_dir = "../results/reproduce_17"
+log_dir = "../results/reproduce_18"
 '''if clear the logdir before running'''
 clear_run = False
 import subprocess
@@ -19,10 +19,13 @@ mode = 'off_line'
 
 if mode in ['off_line']:
     # Note that for online settings, there is no separation for training and teseting
-    procedure = 'test'
+    procedure = 'train'
     if procedure in 'train':
-        # train for 1.113M steps, set to -1 to make the training unlimited
+        # train for 1.113M steps
         number_trained_steps = 1.113 * (10^6)
+    elif procedure in ['test']:
+        # set to -1 to make it unlimited
+        number_trained_steps = -1
 
 import dataset_config
 if mode in ['off_line']:
@@ -44,7 +47,7 @@ this is because we use discrete control
 direction_num = 8
 
 if_log_scan_path_real_time = False
-if_log_results = True
+if_log_results = False
 
 if if_log_results is True:
 

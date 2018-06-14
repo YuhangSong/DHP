@@ -121,6 +121,8 @@ Later on, the CPU usage will increase.
 
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/cpu.gif"/></p>
 
+Note that we trained for ```number_trained_steps = 1.113 * (10^6)``` to produce our results in the paper, we later found that training too much (10 times as many as ```1.113 * (10^6)```) may make the agent converge to FCB.
+
 ##### Test
 
 Note that the model is stored and restored automatically.

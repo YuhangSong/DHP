@@ -44,6 +44,7 @@ tar -xzvf PVS-HM.tar.gz
 Note that it contains all MP4 files of our database, along with the HM & EM scanpath data ```FULLdata_per_video_frame.mat```.
 
 For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here](#details-of-the-mat-data-file) (Note that you do not have to read the details of the mat file if you just want to run our code and reproduce the numbers).
+For the EM data, please refer to [this](https://github.com/MinglangQiao/EM_Database/blob/master/README.md).
 
 ## Setup an environment to run our code
 
@@ -251,7 +252,7 @@ Our reward function is able to capture these transitions of the attentions smoot
 
 ## Details of the mat data file.
 
-The mat file includes 76 cells, which contains The HM data of all videos. Each cell provides the longitude and latitude of HM for 58 subjects, in total of 116 columns. The longitude and latitude are arranged alternately. For example, the first and second column include the latitude and longitude of the first subject, respectively. Note that the sampling rate is twice the video frame rate. The HM data takes the front center as origin, and the upper left as positive direction. So the value of longitude range from -180 to 180, and the latitude range from -90 to 90. For the EM data, please refer to [this](https://github.com/MinglangQiao/EM_Database/blob/master/README.md).
+The mat file includes 76 cells, which contains The HM data of all videos. Each cell provides the longitude and latitude of HM for 58 subjects, in total of 116 columns. The longitude and latitude are arranged alternately. For example, the first and second column include the latitude and longitude of the first subject, respectively. Note that the sampling rate is twice the video frame rate. The HM data takes the front center as origin, and the upper left as positive direction. So the value of longitude range from -180 to 180, and the latitude range from -90 to 90.
 
 ## Authors
 

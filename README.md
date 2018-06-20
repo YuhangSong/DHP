@@ -252,7 +252,7 @@ Our reward function is able to capture these transitions of the attentions smoot
 
 ## Details of the mat data file.
 
-The mat file includes 76 cells, which contains The HM data of all videos. Each cell provides the longitude and latitude of HM for 58 subjects, in total of 116 columns. The longitude and latitude are arranged alternately. For example, the first and second column include the latitude and longitude of the first subject, respectively. Note that the sampling rate is twice the video frame rate. The HM data takes the front center as origin, and the upper left as positive direction. So the value of longitude range from -180 to 180, and the latitude range from -90 to 90.
+The mat file includes 76 cells, which contains the HM data of all videos. Each cell provides the longitude and latitude of HM for 58 subjects, with a total of 116 columns. The longitude and latitude are arranged alternately. For example, the first and second column include the latitude and longitude of the first subject, respectively. Note that the sampling rate is twice the video frame rate. The HM data takes the front center as origin, and the upper left as positive direction. So the longitude ranges from -180 to 180, and the latitude ranges from -90 to 90.
 
 ## Authors
 

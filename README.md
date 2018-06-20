@@ -5,8 +5,8 @@ This repository provides [**database**](#download-and-setup-pvs-hm-database), [*
 * [**Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://arxiv.org/abs/1710.10755)
 [*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
 [*Mai Xu* &#8224;&#8727;](http://45.77.201.133/html/Members/maixu.html),
-[*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html).
-[*Minglang Qiao*](http://45.77.201.133/html/Members/minglangqiao.html)
+[*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html),
+[*Minglang Qiao*](http://45.77.201.133/html/Members/minglangqiao.html).
 
 Submitted to [TPAMI](https://www.computer.org/web/tpami) with **Minor Revision** at the **2nd** round of review.
 By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
@@ -255,7 +255,7 @@ The mat file includes 76 cells, which contains The HM data of all videos. Each c
 
 ## Authors
 
-[Yuhang Song](https://yuhangsong.my.cam) | [Mai Xu](http://45.77.201.133/html/Members/maixu.html) | [Jianyi Wang](http://45.77.201.133/html/Members/jianyiwang.html) | [Minglang Qiao](http://45.77.201.133/html/Members/minglangqiao.html) | [Zulin Wang](http://www.ee.buaa.edu.cn/info/1040/1130.htm)
+[Yuhang Song](https://yuhangsong.my.cam) | [Mai Xu](http://45.77.201.133/html/Members/maixu.html) | [Jianyi Wang](http://45.77.201.133/html/Members/jianyiwang.html) | [Minglang Qiao](http://45.77.201.133/html/Members/minglangqiao.html) | [Zulin Wang](http://www.ee.buaa.edu.cn/info/1040/1130.htm) |
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
 <img src="imgs/YuhangSong.png" width="200">  |  <img src="imgs/MaiXu.png" width="200">  |  <img src="imgs/JianyiWang.png" width="200">  |  <img src="imgs/ZulinWang.png" width="200">
 

@@ -51,8 +51,6 @@ For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here]
 
 ## Setup an environment to run our code
 
-The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.
-
 If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
 
 Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
@@ -282,3 +280,5 @@ We would like to give special thanks to following researchers, for their valuabl
 [Ziyu Zhu](https://personalpage.my.cam) | [Haochen Wang](https://personalpage.my.cam) | [Chen Li](https://personalpage.my.cam) | [Lai Jiang](https://personalpage.my.cam)
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
 <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200"> | <img src="imgs/xx.png" width="200">
+
+The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.

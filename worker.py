@@ -8,7 +8,7 @@ import argparse
 import logging
 import os
 from a3c import A3C
-from envs import create_env
+import envs
 import config
 import time
 
@@ -36,12 +36,12 @@ def run(args, server):
     logger.info("Events directory: %s_%s", logdir, args.task)
 
     '''create env'''
-    env = create_env(args.env_id,
-                     client_id=str(args.task),
-                     remotes=args.remotes,
-                     task=args.task,
-                     subject=args.subject,
-                     summary_writer=summary_writer)
+    env = envs.PanoramicEnv(
+        env_id = args.env_id,
+        task=args.task,
+        subject=args.subject,
+        summary_writer=summary_writer,
+    )
 
     '''create trainer'''
     trainer = A3C(env, args.env_id, args.task)

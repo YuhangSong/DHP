@@ -158,7 +158,7 @@ For results under more evaluation protocol. You may want to generate and store g
 
 ##### Load our trained model
 
-To load our trained model, download our model from [DropBox link](xx), extract it to the path ```../results/```, and set ```log_dir = "../results/reproduce_5"```.
+To load our trained model, download our model from [DropBox link](https://www.dropbox.com/s/o2e5l0bi3h3t6tm/reproduce_17.tar.gz?dl=0), extract it to the path ```../results/```, and set ```log_dir = "../results/reproduce_17"```.
 As has been said, the model in the ```log_dir``` will be automatically loaded.
 
 ##### Visualize training from TensorBoard
@@ -204,6 +204,10 @@ Avg|0.6597722861515888
 ```
 which should be able to reproduce the numbers reported in the paper.
 If you meet any problem reproduce the numbers, please do not hesitate to contact us, you feed back on the environment settings and parameter settings will be well appreciated, since we are trying to provide the community a solid proposal.
+
+##### Kill the session
+
+Run```python kill.py``` to kill the session.
 
 ## Meet some issues?
 
@@ -255,19 +259,19 @@ Our reward function is able to capture these transitions of the attentions smoot
 
 ## Details of the mat data file.
 
-The mat file includes 76 cells, corresponding to the HM data of all 76 videos. 
-Each cell records the longitude and latitude of HM for 58 subjects, with a total of 116 columns. 
-The longitude and latitude are arranged alternately. 
-For example, the first and second column is the latitude and longitude of the first subject, respectively. 
-Note that the sampling rate of the data is twice as the video FPS. 
-The HM data takes the front center as the origin, and the upper & left as the positive direction. 
+The mat file includes 76 cells, corresponding to the HM data of all 76 videos.
+Each cell records the longitude and latitude of HM for 58 subjects, with a total of 116 columns.
+The longitude and latitude are arranged alternately.
+For example, the first and second column is the latitude and longitude of the first subject, respectively.
+Note that the sampling rate of the data is twice as the video FPS.
+The HM data takes the front center as the origin, and the upper & left as the positive direction.
 Thus, the longitude ranges from -180 to 180, and the latitude ranges from -90 to 90.
 
 
 
 ## Authors
 
-[Yuhang Song](https://yuhangsong.my.cam) | [Mai Xu](http://45.77.201.133/html/Members/maixu.html) | [Jianyi Wang](http://45.77.201.133/html/Members/jianyiwang.html) | [Minglang Qiao](http://45.77.201.133/html/Members/minglangqiao.html) | [Zulin Wang](http://www.ee.buaa.edu.cn/info/1040/1130.htm) 
+[Yuhang Song](https://yuhangsong.my.cam) | [Mai Xu](http://45.77.201.133/html/Members/maixu.html) | [Jianyi Wang](http://45.77.201.133/html/Members/jianyiwang.html) | [Minglang Qiao](http://45.77.201.133/html/Members/minglangqiao.html) | [Zulin Wang](http://www.ee.buaa.edu.cn/info/1040/1130.htm)
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:
 <img src="imgs/YuhangSong.png" width="200">  |  <img src="imgs/MaiXu.png" width="200">  |  <img src="imgs/JianyiWang.png" width="200">  | <img src="imgs/minglang.jpeg" width="200"> | <img src="imgs/ZulinWang.png" width="200">
 

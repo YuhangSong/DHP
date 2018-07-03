@@ -22,7 +22,7 @@ if mode in ['off_line']:
     procedure = 'train'
     if procedure in 'train':
         # train for 1.113M steps
-        number_trained_steps = 1.113 * (10^6)
+        number_trained_steps = 1113000
     elif procedure in ['test']:
         # set to -1 to make it unlimited
         number_trained_steps = -1

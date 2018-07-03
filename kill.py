@@ -18,8 +18,5 @@ def run():
     '''excute cmds'''
     os.system("\n".join(cmds))
 
-    subprocess.call(["rm", "-r", 'temp'])
-
-
 if __name__ == "__main__":
     run()

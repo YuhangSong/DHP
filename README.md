@@ -10,7 +10,7 @@ This repository provides [**database**](#download-and-setup-pvs-hm-database), [*
 [*Liangyu Huo*](http://45.77.201.133/html/Members/minglangqiao.html),
 [*Zulin Wang*](http://www.ee.buaa.edu.cn/info/1040/1130.htm).
 
-Submitted to [TPAMI](https://www.computer.org/web/tpami) with **Minor Revision** at the **2nd** round of review.
+Accpeted by [**TPAMI**](https://www.computer.org/web/tpami).
 By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
 
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>

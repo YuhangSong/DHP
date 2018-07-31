@@ -2,7 +2,7 @@
 
 This repository provides [**database**](#download-and-setup-pvs-hm-database), [**code**](#setup-an-environment-to-run-our-code) and [**results visualization**](#results-visualization) for reproducing all the reported results in the paper:
 
-* [**Modeling Attention in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://arxiv.org/abs/1710.10755)
+* [**Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://ieeexplore.ieee.org/document/8418756/)
 [*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
 [*Mai Xu* &#8224;&#8727;](http://45.77.201.133/html/Members/maixu.html),
 [*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html),

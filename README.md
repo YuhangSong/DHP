@@ -20,11 +20,6 @@ Specifically, this repository includes guidelines to:
 * [Setup a environment to run our code.](#setup-an-environment-to-run-our-code)
 * [Reproduce visualized results from the paper.](#results-visualization)
 
-**Warning**: We have been working a updated version of DHP based on PyTorch with much more friendly setup procedures and strong GPU acceleration (The structure of the code is also cleaner).
-This project is currently maintained, but will be depreciated in the future.
-
-See [DHP-PyTorch](https://github.com/YuhangSong/DHP-pytorch) for the updated version. (Currently unavailable due to the copyright of our work)
-
 ## Download PVS-HMEM database
 
 Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement database) database contains both **Head Movement** and **Eye Movement** data of **58** subjects on **76** panoramic videos.
@@ -101,7 +96,6 @@ The converted YUV files will take about 600 Gb.
 The reason we have to use YUV files is that, the remap function that get FoV from a 360 image is a binary file that takes YUV and output YUV.
 We have developed a Python version of remap, but it turns out to be even slower than just reading and writing YUV files into the disk (for more then 5 times).
 We are trying to see if remap is important to produce our results.
-If not, we are going to depreciate remap in the Pytorch version of DHP.
 
 Note that ```train.py``` is a script that starts multiple process managed by tmux.
 Thus, after running ```train.py```, you can use ```tmux attach=session -t a3c``` to see how each process goes.

@@ -69,8 +69,30 @@ git clone https://github.com/YuhangSong/DHP-TensorFlow.git
 # make remap excuatble
 cd DHP-TensorFlow
 chmod +x ./remap
-# you may run ./remap here to make sure the remap is excuatble
 ```
+Now you should run ```./remap``` to make sure the remap is excuatble.
+It will log information as follows:
+```
+./remap [-i input] [-o output] [-f filter] [-m m] [-n n] [-w w] [-h h] [-t tf] [-y] src dst
+	-i ... Input  file type: cube, rect, eqar, merc                   [rect]
+	-o ... Output file type: cube, rect, eqar, merc, view             [rect]
+	-f ... Filter type: nearest, linear, bicubic                   [bicubic]
+	-m ... Input  height list                                          [500]
+	-b ... Input  width                                                 [2m]
+	-n ... Output height                                               [500]
+	-v ... Output width                                                 [2n]
+	-w ... Viewport width                                              [200]
+	-h ... Viewport height                                             [200]
+	-x ... Viewport fov x in degree                                     [90]
+	-y ... Viewport fov y in degree                                     [90]
+	-p ... Viewport center position phi (latitude)(degrees)              [0]
+	-l ... Viewport center position tht (longitude)(degrees)             [0]
+	-t ... Tracking data file                                         [none]
+	-y ... Blend data together (only works with orec, etc ...)         [off]
+	-z ... Number of frames                                            [MAX]
+	-s ... Number of the start frame                                     [0]
+```
+If it is working, check [a corresponding issue](###remap-failed)
 
 ## Run our code
 
@@ -100,6 +122,8 @@ We are trying to see if remap is important to produce our results.
 Note that ```train.py``` is a script that starts multiple process managed by tmux.
 Thus, after running ```train.py```, you can use ```tmux attach=session -t a3c``` to see how each process goes.
 More about tmux can be found [here](https://github.com/tmux/tmux).
+
+**Warning:** After you run train.py, it will start a tmux session, where the program runs. If you are using mode = 'data_processor', please make sure each window exit normally and your task is complete without any error by navigating to each window of the tmux session.
 
 Generate groundtruth heatmaps. Set ```mode = 'data_processor'``` and ```data_processor_id = 'generate_groundtruth_heatmaps'``` in ```config.py``` and run:
 ```bash
@@ -235,6 +259,12 @@ all_model_checkpoint_paths: "model.ckpt-5361444"
 all_model_checkpoint_paths: "model.ckpt-5362210"
 ```
 and delete ```<log_dir>/train/model.ckpt-5362890``` will remove the most recent ckpt at 5362890 and restore the ckpt at 5362210.
+
+#### Remap failed.
+
+It is likely that you are running remap on ```/media/..``` instead of ```/home/...```, since the remap is only excutable on home.
+A quick fix is to copy remap to your home, chmod and test if it is excutable.
+After you comfirm that it works in home, change ```./remap``` in ```vr_player.py``` to ```[ABSOLUTE_PATH_TO_YOUR_HOME]/remap```.
 
 ## Results Visualization
 

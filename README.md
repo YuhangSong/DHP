@@ -306,3 +306,21 @@ We would like to give special thanks to following researchers, for their valuabl
 <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200"> | <img src="imgs/xx.png" width="200">
 
 The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.
+
+## Cite
+
+Please use this bibtex if you want to cite our work.
+
+```
+@ARTICLE{8418756,
+author={M. Xu and Y. Song and J. Wang and M. Qiao and L. Huo and Z. Wang},
+journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
+year={2018},
+volume={},
+number={},
+pages={1-1},
+doi={10.1109/TPAMI.2018.2858783},
+ISSN={0162-8828},
+month={},}
+```

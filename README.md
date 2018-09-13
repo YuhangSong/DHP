@@ -312,15 +312,12 @@ The code is based on [the A3C implementation](https://github.com/openai/universe
 Please use this bibtex if you want to cite our work.
 
 ```
-@ARTICLE{8418756,
-author={M. Xu and Y. Song and J. Wang and M. Qiao and L. Huo and Z. Wang},
-journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
-title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
-year={2018},
-volume={},
-number={},
-pages={1-1},
-doi={10.1109/TPAMI.2018.2858783},
-ISSN={0162-8828},
-month={},}
+@article{xupredicting,
+  title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
+  author={Xu, Mai and Song, Yuhang and Wang, Jianyi and Qiao, MingLang and Huo, Liangyu and Wang, Zulin},
+  journal={IEEE Transactions on Pattern Analysis \& Machine Intelligence},
+  number={1},
+  pages={1--1},
+  publisher={IEEE}
+}
 ```

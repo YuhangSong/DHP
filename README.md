@@ -316,7 +316,7 @@ Please use this bibtex if you want to cite our work.
   title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
   author={Xu, Mai and Song, Yuhang and Wang, Jianyi and Qiao, MingLang and Huo, Liangyu and Wang, Zulin},
   journal={IEEE Transactions on Pattern Analysis \& Machine Intelligence},
-  number={1},
+  number={99},
   pages={1--1},
   publisher={IEEE}
 }

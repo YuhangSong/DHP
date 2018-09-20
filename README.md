@@ -22,12 +22,11 @@ Specifically, this repository includes guidelines to:
 
 If you find our paper, database or code useful for your research, please cite:
 ```
-@article{xupredicting,
-  title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
+@article{xu2018predicting,
+  title={Predicting head movement in panoramic video: A deep reinforcement learning approach},
   author={Xu, Mai and Song, Yuhang and Wang, Jianyi and Qiao, MingLang and Huo, Liangyu and Wang, Zulin},
-  journal={IEEE Transactions on Pattern Analysis \& Machine Intelligence},
-  number={99},
-  pages={1--1},
+  journal={IEEE transactions on pattern analysis and machine intelligence},
+  year={2018},
   publisher={IEEE}
 }
 ```

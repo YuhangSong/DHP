@@ -20,6 +20,18 @@ Specifically, this repository includes guidelines to:
 * [Setup a environment to run our code.](#setup-an-environment-to-run-our-code)
 * [Reproduce visualized results from the paper.](#results-visualization)
 
+If you find our paper, database or code useful for your research, please cite:
+```
+@article{xupredicting,
+  title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
+  author={Xu, Mai and Song, Yuhang and Wang, Jianyi and Qiao, MingLang and Huo, Liangyu and Wang, Zulin},
+  journal={IEEE Transactions on Pattern Analysis \& Machine Intelligence},
+  number={99},
+  pages={1--1},
+  publisher={IEEE}
+}
+```
+
 ## Download PVS-HMEM database
 
 Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement database) database contains both **Head Movement** and **Eye Movement** data of **58** subjects on **76** panoramic videos.
@@ -306,18 +318,3 @@ We would like to give special thanks to following researchers, for their valuabl
 <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200">  |  <img src="imgs/xx.png" width="200"> | <img src="imgs/xx.png" width="200">
 
 The code is based on [the A3C implementation](https://github.com/openai/universe-starter-agent) by OpenAI, we thank a lot for their contribution to the community.
-
-## Cite
-
-Please use this bibtex if you want to cite our work.
-
-```
-@article{xupredicting,
-  title={Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach},
-  author={Xu, Mai and Song, Yuhang and Wang, Jianyi and Qiao, MingLang and Huo, Liangyu and Wang, Zulin},
-  journal={IEEE Transactions on Pattern Analysis \& Machine Intelligence},
-  number={99},
-  pages={1--1},
-  publisher={IEEE}
-}
-```

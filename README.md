@@ -3,14 +3,14 @@
 This repository provides [**database**](#download-and-setup-pvs-hm-database), [**code**](#setup-an-environment-to-run-our-code) and [**results visualization**](#results-visualization) for reproducing all the reported results in the paper:
 
 * [**Predicting Head Movement in Panoramic Video: A Deep Reinforcement Learning Approach.**](https://ieeexplore.ieee.org/document/8418756/)
-[*Yuhang Song* &#8224;](https://yuhangsong.my.cam/),
+[*Yuhang Song* &#8224;](http://www.cs.ox.ac.uk/people/yuhang.song/),
 [*Mai Xu* &#8224;&#8727;](http://45.77.201.133/html/Members/maixu.html),
 [*Jianyi Wang*](http://45.77.201.133/html/Members/jianyiwang.html),
 [*Minglang Qiao*](http://45.77.201.133/html/Members/minglangqiao.html),
 [*Liangyu Huo*](http://45.77.201.133/html/Members/minglangqiao.html),
 [*Zulin Wang*](http://www.ee.buaa.edu.cn/info/1040/1130.htm).
 
-Accpeted by [**TPAMI**](https://www.computer.org/web/tpami).
+Published on [**IEEE Transactions on Pattern Analysis and Machine Intelligence**](https://www.computer.org/web/tpami) in 2018.
 By [MC2 Lab](http://45.77.201.133/) @ [Beihang University](http://ev.buaa.edu.cn/).
 
 <p align="center"><img src="https://github.com/YuhangSong/DHP/blob/master/imgs/VRBasketball_all.gif"/></p>

@@ -61,9 +61,9 @@ If you are not familiar with things in this section, refer to [my personal basic
 
 ### Requirements:
 
-* Install go-vncdriver from [OpenAI](https://github.com/openai/go-vncdriver).
-* Install FFMPEG by ```sudo apt-get install ffmpeg```
-* OpenCV 2.4
+* Install go-vncdriver from [OpenAI](https://github.com/openai/go-vncdriver);
+* Install FFMPEG by ```sudo apt-get install ffmpeg```;
+* Instell OpenCV 2.4, you can use the script [here](https://github.com/jayrambhia/Install-OpenCV);
 
 Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
 ```

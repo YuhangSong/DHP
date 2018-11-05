@@ -59,6 +59,12 @@ For more details of the ```FULLdata_per_video_frame.mat``` file, refer to [here]
 
 If you are not familiar with things in this section, refer to [my personal basic setup](https://github.com/YuhangSong/Cool-Ubuntu-For-DL) for some guidelines or simply google it.
 
+### Requirements:
+
+* Install go-vncdriver from [OpenAI](https://github.com/openai/go-vncdriver).
+* Install FFMPEG by ```sudo apt-get install ffmpeg```
+* OpenCV 2.4
+
 Install [Anaconda](https://www.anaconda.com/) according to the guidelines on their [official site](https://www.anaconda.com/download/), then install other requirements with command lines:
 ```
 sudo apt-get install tmux
@@ -73,6 +79,9 @@ source activate dhp_env
 
 # install packages
 pip install gym tensorflow universe
+conda install matplotlib
+pip install opencv-contrib-python
+conda install -c conda-forge imageio
 
 # clone project
 git clone https://github.com/YuhangSong/DHP-TensorFlow.git

@@ -43,7 +43,7 @@ Our PVS-HMEM (Panoramic Video Sequences with Head Movement & Eye Movement databa
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/SpaceWar2_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Pearl_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Predator_all.gif)
 ![](https://github.com/YuhangSong/DHP/blob/master/imgs/Camping_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/CandyCarnival_all.gif)  |  ![](https://github.com/YuhangSong/DHP/blob/master/imgs/NotBeAloneTonight_all.gif)
 
-Download our PVS-HM database from [DropBox](https://www.dropbox.com/home/Yuhang%20Song/Dataset?preview=PVS-HM.tar.gz).
+Download our PVS-HM database from [DropBox (Click to view)](https://www.dropbox.com/s/swenk8b33vs6151/PVS-HM.tar.gz?dl=0).
 Please feel free to [contact us by clicking here](mailto:yuhang.song@some.ox.ac.uk,maixu@buaa.edu.cn,IceClearWJY@buaa.edu.cn,MinglangQiao@buaa.edu.cn,huoliangyu@buaa.edu.cn) so that we can give you access permission to the file.
 Then extract it with:
 ```
@@ -196,7 +196,7 @@ For results under more evaluation protocol. You may want to generate and store g
 
 ##### Load our trained model
 
-To load our trained model, download our model from [DropBox link](https://www.dropbox.com/s/o2e5l0bi3h3t6tm/reproduce_17.tar.gz?dl=0), extract it to the path ```../results/```, and set ```log_dir = "../results/reproduce_17"```.
+To load our trained model, download our model from [DropBox (click to view)](https://www.dropbox.com/s/7noao91fe6ucm3h/reproduce_17.tar.gz?dl=0), extract it to the path ```../results/```, and set ```log_dir = "../results/reproduce_17"```.
 As has been said, the model in the ```log_dir``` will be automatically loaded.
 
 ##### Visualize training from TensorBoard
